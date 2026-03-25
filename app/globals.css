@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+#nprogress .bar {
+  background: #556b2f;
+  height: 3px;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px #556b2f;
+}
