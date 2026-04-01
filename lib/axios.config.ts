@@ -55,7 +55,6 @@ const createAxiosInstance = (tokenKey: string) => {
         customError.message = "No response from server";
       }
 
-      console.error("API Request Failed:", customError);
       return Promise.reject(customError);
     },
   );

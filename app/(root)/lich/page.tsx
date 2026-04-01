@@ -1,44 +1,28 @@
 "use client";
-import { nanoid } from "nanoid";
-import { useState } from "react";
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import interactionPlugin from "@fullcalendar/interaction";
-import { EventInput } from "@fullcalendar/core";
 
-const Page = () => {
-  const [events, setEvents] = useState<EventInput[]>([]);
-  console.log(events);
-  const handleSelect = (info: any) => {
-    const title = prompt("Nhập nhiệm vụ");
+import CalendarPage from "@/components/calendar/CalendarPage";
+import Cookies from "js-cookie";
 
-    if (title) {
-      const newEvent = {
-        id: nanoid(),
-        title,
-        start: info.start,
-        end: info.end,
-        allDay: true,
-      };
+// Decode role from stored JWT or user cookie.
+// Adjust the cookie key / parsing logic to match your auth setup.
+function getUserRole(): string {
+  try {
+    const raw = Cookies.get("authToken");
+    if (!raw) return "STANDING_MILITIA";
+    // JWT payload is the second segment, base64url-encoded
+    const payload = JSON.parse(atob(raw.split(".")[1]));
+    return (payload?.role as string) ?? "STANDING_MILITIA";
+  } catch {
+    return "STANDING_MILITIA";
+  }
+}
 
-      setEvents((prev) => [...prev, newEvent]);
-    }
-  };
+export default function LichPage() {
+  const role = getUserRole();
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Lịch trực</h1>
-
-      <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin]}
-        initialView="dayGridMonth"
-        selectable={true}
-        select={handleSelect}
-        editable={true}
-        events={events}
-      />
-    </div>
+    // Flush with the layout's padding by using negative margins if needed.
+    // The layout already wraps children in <div className="p-4 md:p-6">
+    <CalendarPage role={role} />
   );
-};
-
-export default Page;
+}

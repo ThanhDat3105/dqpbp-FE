@@ -32,7 +32,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
             {["11 Trang", "5 Module", "100% Tiếng Việt", "Responsive"].map(
               (item, i) => (
