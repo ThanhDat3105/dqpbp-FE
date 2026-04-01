@@ -2,6 +2,7 @@
 
 import CalendarPage from "@/components/calendar/CalendarPage";
 import Cookies from "js-cookie";
+import { Suspense } from "react";
 
 // Decode role from stored JWT or user cookie.
 // Adjust the cookie key / parsing logic to match your auth setup.
@@ -23,6 +24,8 @@ export default function LichPage() {
   return (
     // Flush with the layout's padding by using negative margins if needed.
     // The layout already wraps children in <div className="p-4 md:p-6">
-    <CalendarPage role={role} />
+    <Suspense fallback={<div>Loading...</div>}>
+      <CalendarPage role={role} />
+    </Suspense>
   );
 }
