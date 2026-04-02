@@ -2,7 +2,7 @@ import Link from "next/link";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-import { activityAPI, TaskInterface } from "@/service/API/activity.api";
+import { activityAPI, TaskInterface } from "@/services/api/activity";
 import Information from "@/components/activity_detail/Information";
 import TaskCard from "@/components/activity_detail/TaskCard";
 

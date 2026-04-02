@@ -7,7 +7,7 @@ import ArrowLeftIcon from "@mui/icons-material/ArrowLeft";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
 import { formatMonth } from "@/utils/formatDate";
 import Link from "next/link";
-import { activityAPI, ActivityInterface } from "@/service/API/activity.api";
+import { activityAPI, ActivityInterface } from "@/services/api/activity";
 import MultiCheckbox from "@/components/MultiCheckbox";
 import useDebounce from "@/hooks/useDebounce";
 import Loading from "../../../components/Loaing";

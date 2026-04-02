@@ -11,16 +11,10 @@ import {
 } from "@mui/icons-material";
 import clsx from "clsx";
 import SidebarItem from "./SidebarItem";
-import { menuConfig, type MenuItem } from "@/lib/sidebar.config";
-
-interface User {
-  fullName?: string;
-  role?: "admin" | "dqtt" | "user";
-  team?: string;
-}
+import { menuConfig } from "@/lib/sidebar.config";
+import { useAuth } from "@/context/AuthContext";
 
 interface SidebarProps {
-  currentUser: User;
   onLogout: () => void;
   mobileOpen?: boolean;
   onMobileOpen?: (open: boolean) => void;
@@ -29,15 +23,16 @@ interface SidebarProps {
 const COLLAPSE_KEY = "sidebar-collapsed";
 
 export default function Sidebar({
-  currentUser,
   onLogout,
   mobileOpen = false,
   onMobileOpen,
 }: SidebarProps) {
+  const { logout, user } = useAuth();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [openMenus, setOpenMenus] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Hydrate collapsed state from localStorage
   useEffect(() => {
@@ -83,15 +78,25 @@ export default function Sidebar({
     onMobileOpen?.(false);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     handleMobileClose();
     onLogout();
+
+    try {
+      const res = await logout();
+
+      console.log(res);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Filter menu items based on user role
   const visibleMenuItems = menuConfig.filter((item) => {
     if (!item.role) return true;
-    return item.role === currentUser.role;
+    return item.role === user?.role;
   });
 
   if (!mounted) return null;
@@ -173,19 +178,17 @@ export default function Sidebar({
           {!collapsed && (
             <div className="min-w-0">
               <p className="text-sm font-semibold truncate">
-                {currentUser.fullName || "Khách"}
+                {user?.name || "Khách"}
               </p>
               <span
                 className={clsx(
                   "inline-block text-xs px-2 py-0.5 rounded-full mt-1",
-                  currentUser.role === "admin"
+                  user?.role === "COMMANDER"
                     ? "bg-orange-100 text-orange-700"
                     : "bg-blue-100 text-blue-700",
                 )}
               >
-                {currentUser.role === "admin"
-                  ? "Admin"
-                  : currentUser.team || "DQTT"}
+                {user?.role === "COMMANDER" ? "Chỉ huy" : user?.team || "DQTT"}
               </span>
             </div>
           )}
@@ -218,7 +221,9 @@ export default function Sidebar({
           title={collapsed ? "Đăng xuất" : ""}
         >
           <Logout fontSize="small" />
-          {!collapsed && <span>Đăng xuất</span>}
+          {!collapsed && (
+            <span>{loading ? "Đang đăng xuất..." : "Đăng xuất"}</span>
+          )}
         </button>
       </div>
     </>

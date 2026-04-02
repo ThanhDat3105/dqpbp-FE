@@ -22,6 +22,7 @@ export default function HomePage() {
               className="size-24 object-contain"
               width={40}
               height={40}
+              unoptimized
             />
 
             <div>

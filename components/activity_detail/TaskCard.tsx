@@ -2,7 +2,7 @@
 
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import { ActivityInterface, TaskInterface } from "@/service/API/activity.api";
+import { ActivityInterface, TaskInterface } from "@/services/api/activity";
 
 export default function TaskCard({
   task,

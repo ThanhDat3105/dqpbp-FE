@@ -7,7 +7,7 @@ export interface MenuItem {
   label: string;
   href?: string;
   icon: ElementType;
-  role?: "admin" | "dqtt" | "user";
+  role?: "STANDING_MILITIA" | "COMMANDER";
   children?: MenuItem[];
 }
 
@@ -22,7 +22,7 @@ export const menuConfig: MenuItem[] = [
     id: "dashboard",
     label: "Dashboard",
     icon: Assessment,
-    role: "admin",
+    role: "COMMANDER",
     children: [
       {
         id: "dashboard-summary",
@@ -64,7 +64,7 @@ export const menuConfig: MenuItem[] = [
       {
         id: "activities-calendar",
         label: "Lịch",
-        href: "/activity/calendar",
+        href: "/calendar",
         icon: Event,
       },
     ],

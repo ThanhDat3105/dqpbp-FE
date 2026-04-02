@@ -4,7 +4,7 @@ import Link from "next/link";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import { format } from "date-fns";
-import { ActivityInterface } from "@/service/API/activity.api";
+import { ActivityInterface } from "@/services/api/activity";
 
 interface ActivityCardProps {
   activity: ActivityInterface;

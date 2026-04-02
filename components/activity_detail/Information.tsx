@@ -1,6 +1,6 @@
 "use client";
 
-import { ActivityInterface } from "@/service/API/activity.api";
+import { ActivityInterface } from "@/services/api/activity";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 

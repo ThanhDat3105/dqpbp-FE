@@ -12,7 +12,7 @@ import clsx from "clsx";
 import CalendarHeader from "./CalendarHeader";
 import CalendarGrid from "./CalendarGrid";
 import type { ViewMode, CalendarMetaData } from "./types";
-import { fetchCalendar } from "@/service/API/calendar.api";
+import { fetchCalendar } from "@/services/api/calendar";
 
 dayjs.extend(weekday);
 dayjs.extend(isSameOrBefore);

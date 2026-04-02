@@ -46,7 +46,6 @@ const getActivities = async ({
     });
     return res.data.metaData;
   } catch (error) {
-    console.error("Error fetching activities:", error);
     throw error;
   }
 };
