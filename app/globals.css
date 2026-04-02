@@ -5,6 +5,14 @@
   height: 3px;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 #nprogress .peg {
   box-shadow: 0 0 10px #556b2f;
+}
+
+.MuiOutlinedInput-root {
+  padding: 0 39px 0 9px !important;
 }
