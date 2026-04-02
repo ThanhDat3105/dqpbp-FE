@@ -6,6 +6,7 @@ import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import clsx from "clsx";
 import type { MenuItem } from "@/lib/sidebar.config";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface SidebarItemProps {
   item: MenuItem;
@@ -26,23 +27,59 @@ export default function SidebarItem({
   const Icon = item.icon;
   const [showTooltip, setShowTooltip] = useState(false);
 
-  // Check if current route or any child route is active
+  // 🔥 Check active
   const isActive = (href?: string) => {
     if (!href) return false;
     return pathname === href || pathname.startsWith(href + "/");
   };
 
-  // Item is active if it has an active child or direct match
   const itemIsActive =
     isActive(item.href) ||
     (item.children?.some((child) => isActive(child.href)) ?? false);
 
-  // Regular link item (no children)
+  // 🔥 Check có phải activities không
+  const isActivities =
+    item.id === "activities" ||
+    item.href?.includes("/ActivityList") ||
+    item.href?.includes("/calendar") ||
+    item.children?.some(
+      (child) =>
+        child.href?.includes("/ActivityList") ||
+        child.href?.includes("/calendar"),
+    );
+
+  // 🔥 Handle click (main item)
+  const handleClick = (e: React.MouseEvent) => {
+    // Nếu có children → chỉ toggle
+    if (item.children && item.children.length > 0) {
+      onToggle?.();
+      return;
+    }
+
+    if (!isActivities) {
+      e.preventDefault();
+      toast("Coming soon...");
+    }
+  };
+
+  // 🔥 Handle click child
+  const handleChildClick = (href?: string) => (e: React.MouseEvent) => {
+    const isChildActivities =
+      href?.includes("/ActivityList") || href?.includes("/calendar");
+
+    if (!isChildActivities) {
+      e.preventDefault();
+      toast("Coming soon...");
+    }
+  };
+
+  // ─── ITEM KHÔNG CÓ CHILD ─────────────────────────
   if (!item.children || item.children.length === 0) {
     return (
       <div className="relative group">
         <Link
           href={item.href || "#"}
+          onClick={handleClick}
           className={clsx(
             "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
             "hover:bg-gray-100 active:bg-gray-200",
@@ -59,31 +96,22 @@ export default function SidebarItem({
             fontSize="small"
           />
           {!collapsed && (
-            <span
-              className={clsx(
-                "text-sm font-medium truncate",
-                "transition-opacity duration-200",
-              )}
-            >
-              {item.label}
-            </span>
+            <span className="text-sm font-medium truncate">{item.label}</span>
           )}
         </Link>
 
-        {/* Tooltip on hover when collapsed */}
         {collapsed && (
           <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 hidden group-hover:block">
             <div className="bg-gray-900 text-white text-xs py-1.5 px-2 rounded shadow-lg whitespace-nowrap">
               {item.label}
             </div>
-            <div className="bg-gray-900 h-2.5 w-2.5 absolute left-0 top-1/2 -translate-y-1/2 -ml-1.5 transform rotate-45" />
           </div>
         )}
       </div>
     );
   }
 
-  // Dropdown item (has children)
+  // ─── ITEM CÓ CHILD ─────────────────────────
   return (
     <div className="relative group">
       <button
@@ -120,28 +148,22 @@ export default function SidebarItem({
         )}
       </button>
 
-      {/* Tooltip on hover when collapsed */}
       {collapsed && (
         <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 hidden group-hover:block">
           <div className="bg-gray-900 text-white text-xs py-1.5 px-2 rounded shadow-lg whitespace-nowrap">
             {item.label}
           </div>
-          <div className="bg-gray-900 h-2.5 w-2.5 absolute left-0 top-1/2 -translate-y-1/2 -ml-1.5 transform rotate-45" />
         </div>
       )}
 
-      {/* Dropdown menu */}
+      {/* CHILDREN */}
       {!collapsed && isOpen && item.children && (
-        <div
-          className={clsx(
-            "ml-2 border-l-2 border-gray-200 pl-3 space-y-1 mt-1",
-            "animate-in fade-in duration-200",
-          )}
-        >
+        <div className="ml-2 border-l-2 border-gray-200 pl-3 space-y-1 mt-1">
           {item.children.map((child) => (
             <Link
               key={child.id}
               href={child.href || "#"}
+              onClick={handleChildClick(child.href)}
               className={clsx(
                 "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200",
                 "hover:bg-gray-100 active:bg-gray-200",
@@ -152,7 +174,7 @@ export default function SidebarItem({
             >
               <span
                 className={clsx(
-                  "w-1.5 h-1.5 rounded-full shrink-0",
+                  "w-1.5 h-1.5 rounded-full",
                   isActive(child.href) ? "bg-indigo-600" : "bg-gray-400",
                 )}
               />
