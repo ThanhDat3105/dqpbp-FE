@@ -29,30 +29,72 @@ const CalendarCell = memo(function CalendarCell({
   const d = dayjs(date);
   const hasData = dayData && dayData.length > 0;
 
-  // ── Flatten to a renderable list ─────────────────────────────────────────
-  const items: { taskId: number; title: string; status: "pending" | "done"; subLabel?: string }[] = [];
+  // ── Transform with role-based logic + deduplication ──────────────────────
+  const items: {
+    id: string | number;
+    taskId?: number;
+    title: string;
+    status?: "pending" | "done";
+    subLabel?: string;
+    taskCount?: number;
+    isActivity?: boolean;
+  }[] = [];
 
   if (hasData) {
     if (role === "COMMANDER" && isActivityList(dayData)) {
+      // COMMANDER: Group and deduplicate by activity_name
       const activities = dayData as CalendarActivity[];
+      const activityMap = new Map<string, { task_id: number; title: string; status: "pending" | "done" }[]>();
+
+      // Merge activities with same name
       for (const act of activities) {
-        for (const task of act.tasks) {
+        const existing = activityMap.get(act.activity_name) || [];
+        const newTasks = act.tasks.map(t => ({
+          task_id: t.task_id,
+          title: t.title,
+          status: t.status,
+        }));
+        activityMap.set(act.activity_name, [...existing, ...newTasks]);
+      }
+
+      // Create one item per activity
+      for (const [activityName, tasks] of activityMap.entries()) {
+        if (tasks.length > 0) {
           items.push({
-            taskId: task.task_id,
-            title: task.title,
-            status: task.status,
-            subLabel: act.activity_name,
+            id: activityName,
+            title: activityName,
+            taskCount: tasks.length,
+            isActivity: true,
           });
         }
       }
     } else {
-      const tasks = dayData as CalendarTaskItem[];
-      for (const t of tasks) {
-        items.push({
-          taskId: t.task_id,
-          title: t.title,
-          status: t.status,
-        });
+      // STANDING_MILITIA: Flatten all tasks individually
+      if (isActivityList(dayData)) {
+        const activities = dayData as CalendarActivity[];
+        for (const act of activities) {
+          for (const task of act.tasks) {
+            items.push({
+              id: task.task_id,
+              taskId: task.task_id,
+              title: task.title,
+              status: task.status,
+              subLabel: act.activity_name,
+              isActivity: false,
+            });
+          }
+        }
+      } else {
+        const tasks = dayData as CalendarTaskItem[];
+        for (const t of tasks) {
+          items.push({
+            id: t.task_id,
+            taskId: t.task_id,
+            title: t.title,
+            status: t.status,
+            isActivity: false,
+          });
+        }
       }
     }
   }
@@ -87,11 +129,14 @@ const CalendarCell = memo(function CalendarCell({
         <div className="flex-1 min-h-0 flex flex-col gap-0.5 overflow-hidden">
           {visible.map((item) => (
             <EventItem
-              key={item.taskId}
+              key={item.id}
+              id={item.id}
               taskId={item.taskId}
               title={item.title}
               status={item.status}
               subLabel={item.subLabel}
+              taskCount={item.taskCount}
+              isActivity={item.isActivity}
               compact={compact}
             />
           ))}

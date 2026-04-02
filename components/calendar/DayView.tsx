@@ -30,38 +30,81 @@ const DayView = memo(function DayView({
   const key = currentDate.format("YYYY-MM-DD");
   const dayData = data[key];
 
-  // 🔥 Flatten events + thêm dueDate
+  // 🔥 Transform data with role-based logic + deduplication
   const events = useMemo(() => {
     const result: {
-      taskId: number;
+      id: string | number;
+      taskId?: number;
       title: string;
-      status: "pending" | "done";
+      status?: "pending" | "done";
       dueDate: string;
       subLabel?: string;
+      taskCount?: number;
+      isActivity?: boolean;
     }[] = [];
 
-    if (dayData && dayData.length > 0) {
-      if (role === "COMMANDER" && isActivityList(dayData)) {
-        const acts = dayData as CalendarActivity[];
+    if (!dayData || dayData.length === 0) return result;
 
+    if (role === "COMMANDER" && isActivityList(dayData)) {
+      // COMMANDER: Group and deduplicate by activity_name
+      const acts = dayData as CalendarActivity[];
+      const activityMap = new Map<string, { task_id: number; title: string; due_date: string; status: "pending" | "done" }[]>();
+
+      // Merge activities with same name
+      for (const act of acts) {
+        const existing = activityMap.get(act.activity_name) || [];
+        const newTasks = act.tasks.map(t => ({
+          task_id: t.task_id,
+          title: t.title,
+          due_date: t.due_date,
+          status: t.status,
+        }));
+        activityMap.set(act.activity_name, [...existing, ...newTasks]);
+      }
+
+      // Create one item per activity with merged tasks
+      for (const [activityName, tasks] of activityMap.entries()) {
+        if (tasks.length > 0) {
+          // Find earliest due_date
+          const earliestDate = tasks.reduce((min, t) => {
+            return new Date(t.due_date) < new Date(min.due_date) ? t : min;
+          }).due_date;
+
+          result.push({
+            id: activityName,
+            title: activityName,
+            taskCount: tasks.length,
+            dueDate: earliestDate,
+            isActivity: true,
+          });
+        }
+      }
+    } else {
+      // STANDING_MILITIA: Flatten all tasks individually
+      if (isActivityList(dayData)) {
+        const acts = dayData as CalendarActivity[];
         for (const act of acts) {
           for (const t of act.tasks) {
             result.push({
+              id: t.task_id,
               taskId: t.task_id,
               title: t.title,
               status: t.status,
-              dueDate: t.due_date, // 👈 dùng timestamp
+              dueDate: t.due_date,
               subLabel: act.activity_name,
+              isActivity: false,
             });
           }
         }
       } else {
         for (const t of dayData as CalendarTaskItem[]) {
           result.push({
+            id: t.task_id,
             taskId: t.task_id,
             title: t.title,
             status: t.status,
             dueDate: t.due_date,
+            isActivity: false,
           });
         }
       }
@@ -155,11 +198,14 @@ const DayView = memo(function DayView({
                   <div className="flex flex-col gap-1.5">
                     {hourEvents.map((ev) => (
                       <EventItem
-                        key={ev.taskId}
+                        key={ev.id}
+                        id={ev.id}
                         taskId={ev.taskId}
                         title={ev.title}
                         status={ev.status}
                         subLabel={ev.subLabel}
+                        taskCount={ev.taskCount}
+                        isActivity={ev.isActivity}
                         compact={false}
                       />
                     ))}

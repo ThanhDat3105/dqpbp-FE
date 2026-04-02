@@ -19,11 +19,7 @@ dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
 dayjs.locale("vi");
 
-interface CalendarPageProps {
-  role: string;
-}
-
-export default function CalendarPage({ role }: CalendarPageProps) {
+export default function CalendarPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const today = useMemo(() => dayjs(), []);
@@ -186,7 +182,6 @@ export default function CalendarPage({ role }: CalendarPageProps) {
           viewMode={viewMode}
           currentDate={currentDate}
           data={data}
-          role={role}
           today={today}
         />
       </div>

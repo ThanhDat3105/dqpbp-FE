@@ -32,35 +32,109 @@ const WeekView = memo(function WeekView({
     startOfWeek.add(i, "day"),
   );
 
-  // Get all events for a day, labeled for rendering
   function getDayEvents(day: Dayjs): {
-    taskId: number;
+    id: string | number;
+    taskId?: number;
     title: string;
-    status: "pending" | "done";
+    status?: "pending" | "done";
+    dueDate: string;
     subLabel?: string;
+    taskCount?: number;
+    isActivity?: boolean;
   }[] {
     const key = day.format("YYYY-MM-DD");
     const dayData = data[key];
     if (!dayData || dayData.length === 0) return [];
 
+    const result: {
+      id: string | number;
+      taskId?: number;
+      title: string;
+      status?: "pending" | "done";
+      dueDate: string;
+      subLabel?: string;
+      taskCount?: number;
+      isActivity?: boolean;
+    }[] = [];
+
     if (role === "COMMANDER" && isActivityList(dayData)) {
+      // COMMANDER: Group and deduplicate by activity_name
       const acts = dayData as CalendarActivity[];
-      return acts.flatMap((act) =>
-        act.tasks.map((t) => ({
+      const activityMap = new Map<string, { task_id: number; title: string; due_date: string; status: "pending" | "done" }[]>();
+
+      // Merge activities with same name
+      for (const act of acts) {
+        const existing = activityMap.get(act.activity_name) || [];
+        const newTasks = act.tasks.map(t => ({
+          task_id: t.task_id,
+          title: t.title,
+          due_date: t.due_date,
+          status: t.status,
+        }));
+        activityMap.set(act.activity_name, [...existing, ...newTasks]);
+      }
+
+      // Create one item per activity
+      for (const [activityName, tasks] of activityMap.entries()) {
+        if (tasks.length > 0) {
+          const earliestDate = tasks.reduce((min, t) => {
+            return new Date(t.due_date) < new Date(min.due_date) ? t : min;
+          }).due_date;
+
+          result.push({
+            id: activityName,
+            title: activityName,
+            taskCount: tasks.length,
+            dueDate: earliestDate,
+            isActivity: true,
+          });
+        }
+      }
+    } else {
+      // STANDING_MILITIA: Flatten all tasks individually
+      if (isActivityList(dayData)) {
+        const acts = dayData as CalendarActivity[];
+
+        result.push(...acts.flatMap((act) =>
+          act.tasks.map((t) => ({
+            id: t.task_id,
+            taskId: t.task_id,
+            title: t.title,
+            status: t.status,
+            dueDate: t.due_date,
+            subLabel: act.activity_name,
+            isActivity: false,
+          })),
+        ));
+      } else {
+        result.push(...(dayData as CalendarTaskItem[]).map((t) => ({
+          id: t.task_id,
           taskId: t.task_id,
           title: t.title,
           status: t.status,
-          subLabel: act.activity_name,
-        })),
-      );
+          dueDate: t.due_date,
+          isActivity: false,
+        })));
+      }
     }
 
-    return (dayData as CalendarTaskItem[]).map((t) => ({
-      taskId: t.task_id,
-      title: t.title,
-      status: t.status,
-    }));
+    return result;
   }
+
+  const groupEventsByHour = (events: any[]) => {
+    const map: Record<number, typeof events> = {};
+
+    for (let i = 0; i < 24; i++) {
+      map[i] = [];
+    }
+
+    events.forEach((ev) => {
+      const hour = dayjs(ev.dueDate).hour();
+      map[hour].push(ev);
+    });
+
+    return map;
+  };
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -72,10 +146,7 @@ const WeekView = memo(function WeekView({
           return (
             <div
               key={day.format("YYYY-MM-DD")}
-              className={clsx(
-                "py-2 text-center",
-                i === 0 && "text-red-500",
-              )}
+              className={clsx("py-2 text-center", i === 0 && "text-red-500")}
             >
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 {WEEKDAYS_SHORT[i]}
@@ -113,9 +184,8 @@ const WeekView = memo(function WeekView({
             {days.map((day, di) => {
               const isToday = day.isSame(today, "day");
               const events = getDayEvents(day);
-              // For the week view we show all events in the 8:00 slot (business hours)
-              // and keep other slots empty — a simplified approach matching the spec
-              const showEvents = hour === 0 && events.length > 0;
+              const eventsByHour = groupEventsByHour(events);
+              const hourEvents = eventsByHour[hour];
 
               return (
                 <div
@@ -127,23 +197,21 @@ const WeekView = memo(function WeekView({
                     di === 0 && "bg-red-50/10",
                   )}
                 >
-                  {showEvents && (
+                  {hourEvents.length > 0 && (
                     <div className="flex flex-col gap-0.5">
-                      {events.slice(0, 4).map((ev) => (
+                      {hourEvents.map((ev) => (
                         <EventItem
-                          key={ev.taskId}
+                          key={ev.id}
+                          id={ev.id}
                           taskId={ev.taskId}
                           title={ev.title}
                           status={ev.status}
                           subLabel={ev.subLabel}
+                          taskCount={ev.taskCount}
+                          isActivity={ev.isActivity}
                           compact={true}
                         />
                       ))}
-                      {events.length > 4 && (
-                        <span className="text-[10px] text-gray-500 pl-1">
-                          +{events.length - 4} more
-                        </span>
-                      )}
                     </div>
                   )}
                 </div>

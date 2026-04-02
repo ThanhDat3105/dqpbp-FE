@@ -7,12 +7,12 @@ import type { ViewMode, CalendarMetaData } from "./types";
 import MonthView from "./MonthView";
 import WeekView from "./WeekView";
 import DayView from "./DayView";
+import { useAuth } from "@/context/AuthContext";
 
 interface CalendarGridProps {
   viewMode: ViewMode;
   currentDate: Dayjs;
   data: CalendarMetaData;
-  role: string;
   today: Dayjs;
 }
 
@@ -20,9 +20,10 @@ const CalendarGrid = memo(function CalendarGrid({
   viewMode,
   currentDate,
   data,
-  role,
   today,
 }: CalendarGridProps) {
+  const { user } = useAuth();
+
   return (
     <div
       className={clsx(
@@ -34,7 +35,7 @@ const CalendarGrid = memo(function CalendarGrid({
         <MonthView
           currentDate={currentDate}
           data={data}
-          role={role}
+          role={user?.role || "STANDING_MILITIA"}
           today={today}
         />
       )}
@@ -42,7 +43,7 @@ const CalendarGrid = memo(function CalendarGrid({
         <WeekView
           currentDate={currentDate}
           data={data}
-          role={role}
+          role={user?.role || "STANDING_MILITIA"}
           today={today}
         />
       )}
@@ -50,7 +51,7 @@ const CalendarGrid = memo(function CalendarGrid({
         <DayView
           currentDate={currentDate}
           data={data}
-          role={role}
+          role={user?.role || "STANDING_MILITIA"}
           today={today}
         />
       )}

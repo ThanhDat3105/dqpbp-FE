@@ -56,7 +56,7 @@ const getActivityDetail = async (id: string): Promise<ActivityInterface> => {
 
     return res.data.metaData;
   } catch (error) {
-    console.error("Error fetching activity detail:", error);
+    // console.error("Error fetching activity detail:", error);
     throw error;
   }
 };
