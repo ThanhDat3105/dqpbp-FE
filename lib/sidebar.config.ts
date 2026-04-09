@@ -58,7 +58,7 @@ export const menuConfig: MenuItem[] = [
       {
         id: "activities-list",
         label: "Danh sách",
-        href: "/ActivityList",
+        href: "/activities",
         icon: Event,
       },
       {

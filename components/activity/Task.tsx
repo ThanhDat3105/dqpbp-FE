@@ -1,247 +1,237 @@
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import AddIcon from "@mui/icons-material/Add";
-import { departments, TaskInterface } from "@/services/api/activity";
-import { Autocomplete, TextField } from "@mui/material";
-import { ZodFormattedError } from "zod";
-import { TaskFormData } from "@/lib/validations";
+import { Trash2, Lightbulb, AlertTriangle, Plus } from "lucide-react";
+import { departments } from "@/services/api/activity";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { MultiSelect } from "../ui/multi-select";
 
-type TaskErrors = ZodFormattedError<TaskFormData> | undefined;
+interface TaskData {
+  title: string;
+  team: string;
+  assignees: string[];
+  due_date: string;
+  notes: string;
+  report_fields: Array<{ name: string; value: string }>;
+  status: string;
+  accepted_at: string | null;
+  completed: boolean;
+  created_at: Date | string;
+  updated_at: Date | string;
+}
 
 interface Props {
-  task: Omit<TaskInterface, "id" | "activity_id">;
-  index: number;
-  errors?: TaskErrors;
-  handleDeleteTask: (index: number) => void;
-  handleAddReportField: (index: number) => void;
-  handleRemoveReportField: (taskIndex: number, fieldIndex: number) => void;
-  handleChangeTask: (e: any) => void;
-  handleChangeReportField: (
-    taskIndex: number,
+  task: TaskData;
+  taskIndex: number;
+  errors?: Record<string, string>;
+  onDeleteTask: () => void;
+  onChangeField: (field: string, value: any) => void;
+  onAddReportField: () => void;
+  onRemoveReportField: (fieldIndex: number) => void;
+  onChangeReportField: (
     fieldIndex: number,
     key: "name" | "value",
     value: string,
   ) => void;
-  handleChangeAssignees: (taskIndex: number, userIds: string[]) => void;
 }
 
 export default function Task({
   task,
-  index,
-  errors,
-  handleDeleteTask,
-  handleAddReportField,
-  handleRemoveReportField,
-  handleChangeTask,
-  handleChangeReportField,
-  handleChangeAssignees,
+  taskIndex,
+  errors = {},
+  onDeleteTask,
+  onChangeField,
+  onAddReportField,
+  onRemoveReportField,
+  onChangeReportField,
 }: Props) {
+  const getUserOptions = (team: string) => {
+    const selectedDept = departments.find((d) => d.value === team);
+
+    const users = selectedDept
+      ? selectedDept.teams
+      : departments.flatMap((d) => d.teams || []);
+
+    return users.map((u) => ({
+      value: u.id,
+      label: u.name,
+    }));
+  };
+
   return (
-    <div className="border border-gray-200 rounded-xl p-5 bg-gray-50">
+    <div className="border border-gray-200 rounded-lg p-5 bg-gray-50">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold text-gray-800">Nhiệm vụ {index + 1}</h3>
-        <button
-          className="text-red-500 hover:bg-red-100 p-1 cursor-pointer transition-all rounded flex items-center justify-center"
-          onClick={() => handleDeleteTask(index)}
+        <h3 className="font-semibold text-gray-800">
+          Nhiệm Vụ {taskIndex + 1}
+        </h3>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onDeleteTask}
+          className="text-red-500 hover:bg-red-100 h-8"
         >
-          <DeleteOutlineIcon fontSize="small" />
-        </button>
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="space-y-4">
         {/* Title */}
-        <div>
-          <label className="text-sm font-medium text-gray-700">
-            Tên nhiệm vụ <span className="text-red-500">*</span>
-          </label>
-          <input
-            data-error={`tasks.${index}.title`}
-            placeholder="VD: Chuẩn bị vũ khí"
-            className={`mt-1 w-full px-3 py-2 border rounded-lg bg-white focus:outline-none transition-colors ${
-              errors?.title?._errors?.length
-                ? "border-red-500 focus:ring-2 focus:ring-red-200"
-                : "border-gray-300 focus:ring-2 focus:ring-olive"
-            }`}
+        <FormField
+          label="Tên Nhiệm Vụ"
+          required
+          error={errors[`tasks.${taskIndex}.title`]}
+        >
+          <Input
             value={task.title}
-            onChange={handleChangeTask}
-            name="title"
+            onChange={(e) => onChangeField("title", e.target.value)}
+            placeholder="VD: Chuẩn bị vũ khí"
           />
-          {errors?.title?._errors?.[0] && (
-            <p className="mt-1 text-sm text-red-500">
-              {errors.title._errors[0]}
-            </p>
-          )}
-        </div>
+        </FormField>
 
         {/* Team */}
-        <div>
-          <label className="text-sm font-medium text-gray-700">
-            Tổ phụ trách
-          </label>
+        <FormField
+          label="Tổ Phụ Trách"
+          error={errors[`tasks.${taskIndex}.team`]}
+          hint={
+            <div className="flex items-center gap-1 text-gray-500">
+              <Lightbulb className="h-3 w-3" />
+              Chọn tổ để lọc người thực hiện
+            </div>
+          }
+        >
           <select
-            data-error={`tasks.${index}.team`}
-            className={`mt-1 w-full px-3 py-2 border rounded-lg bg-white focus:outline-none transition-colors ${
-              errors?.team?._errors?.length
-                ? "border-red-500 focus:ring-2 focus:ring-red-200"
-                : "border-gray-300 focus:ring-2 focus:ring-olive"
-            }`}
             value={task.team}
-            name="team"
-            onChange={handleChangeTask}
+            onChange={(e) => {
+              onChangeField("assignees", []);
+              onChangeField("team", e.target.value);
+            }}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option>Tất cả</option>
+            <option value="">Tất cả</option>
             {departments.map((dept) => (
               <option key={dept.value} value={dept.value}>
                 {dept.label}
               </option>
             ))}
           </select>
+        </FormField>
 
-          <p className="mt-1 text-xs text-gray-500 flex items-center gap-1">
-            <LightbulbOutlinedIcon fontSize="inherit" /> Chọn tổ để lọc người
-            thực hiện
-          </p>
-          {errors?.team?._errors?.[0] && (
-            <p className="mt-1 text-sm text-red-500">
-              {errors.team._errors[0]}
-            </p>
-          )}
-        </div>
-
-        {/* Assignee */}
-        <div>
-          <label className="text-sm font-medium text-gray-700">
-            Người thực hiện <span className="text-red-500">*</span>
-          </label>
-
-          <div
-            data-error={`tasks.${index}.assignees`}
-            className={`mt-1 border rounded-lg transition-colors ${
-              errors?.assignees?._errors?.length
-                ? "border-red-500"
-                : "border-gray-300"
-            }`}
-          >
-            <Autocomplete
-              multiple
-              options={
-                departments.find((dept) => dept.value === task.team)?.teams ||
-                []
-              }
-              getOptionLabel={(option) => option.name}
-              value={(
-                departments.find((dept) => dept.value === task.team)?.teams ||
-                []
-              ).filter((user) => task.assignees?.includes(user.id))}
-              onChange={(_, newValue) => {
-                handleChangeAssignees(
-                  index,
-                  newValue.map((item) => item.id),
-                );
-              }}
-              renderInput={(params) => (
-                <TextField {...params} placeholder="Chọn người thực hiện" />
-              )}
-            />
-          </div>
-
-          <p className="mt-1 text-xs text-gray-500">
-            Bạn có thể chọn nhiều người
-          </p>
-          {errors?.assignees?._errors?.[0] && (
-            <p className="mt-1 text-sm text-red-500">
-              {errors.assignees._errors[0]}
-            </p>
-          )}
-        </div>
-
-        {/* Date */}
-        <div>
-          <label className="text-sm font-medium text-gray-700">
-            Thời hạn hoàn thành
-          </label>
-          <input
-            data-error={`tasks.${index}.dueDate`}
-            type="date"
-            className={`mt-1 w-full px-3 py-2 border rounded-lg bg-white focus:outline-none transition-colors ${
-              errors?.dueDate?._errors?.length
-                ? "border-red-500 focus:ring-2 focus:ring-red-200"
-                : "border-gray-300 focus:ring-2 focus:ring-olive"
-            }`}
-            value={
-              task.dueDate
-                ? new Date(task.dueDate).toISOString().split("T")[0]
-                : ""
-            }
-            onChange={handleChangeTask}
-            name="dueDate"
+        {/* Assignees */}
+        <FormField
+          label="Người Thực Hiện"
+          required
+          error={errors[`tasks.${taskIndex}.assignees`]}
+        >
+          <MultiSelect
+            options={getUserOptions(task.team)}
+            value={task.assignees}
+            onValueChange={(value) => onChangeField("assignees", value)}
+            placeholder="Chọn người thực hiện..."
           />
 
-          <p className="mt-1 text-xs text-orange-600 flex items-center gap-1">
-            <WarningAmberIcon fontSize="inherit" /> Khi quá hạn, hệ thống sẽ gửi
-            email cảnh báo tự động
+          <p className="text-xs text-gray-500 mt-1">
+            💡 Bạn có thể chọn nhiều người
           </p>
-          {errors?.dueDate?._errors?.[0] && (
-            <p className="mt-1 text-sm text-red-500">
-              {errors.dueDate._errors[0]}
-            </p>
-          )}
-        </div>
+        </FormField>
 
-        {/* Report fields */}
-        <div className="border-t pt-4 mt-4">
+        {/* Due Date */}
+        <FormField
+          label="Thời Hạn Hoàn Thành"
+          error={errors[`tasks.${taskIndex}.due_date`]}
+          hint={
+            <div className="flex items-center gap-1 text-yellow-600">
+              <AlertTriangle className="h-3 w-3" />
+              Khi quá hạn, hệ thống sẽ gửi email cảnh báo
+            </div>
+          }
+        >
+          <Input
+            type="datetime-local"
+            value={task.due_date}
+            onChange={(e) => onChangeField("due_date", e.target.value)}
+          />
+        </FormField>
+
+        {/* Report Fields */}
+        <div className="border-t pt-4">
           <div className="flex justify-between items-center mb-2">
             <label className="text-sm font-medium text-gray-700">
-              Hạng mục báo cáo (tùy chọn)
+              Hạng Mục Báo Cáo (tùy chọn)
             </label>
-
-            <button
-              onClick={() => handleAddReportField(index)}
-              className="text-sm text-olive flex items-center gap-1 hover:opacity-80"
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onAddReportField}
+              className="text-slate-700 h-7"
             >
-              <AddIcon fontSize="small" />
-              Thêm hạng mục
-            </button>
+              <Plus className="h-4 w-4" />
+              Thêm
+            </Button>
           </div>
 
-          {/* Empty */}
-          {task.reportFields.length === 0 && (
-            <p className="text-xs text-gray-500 italic mb-2">
+          {task.report_fields.length === 0 ? (
+            <p className="text-xs text-gray-400 italic">
               Chưa có hạng mục báo cáo nào
             </p>
+          ) : (
+            <div className="space-y-2">
+              {task.report_fields.map((field, fieldIdx) => (
+                <div key={fieldIdx} className="flex gap-2">
+                  <Input
+                    value={field.name}
+                    onChange={(e) =>
+                      onChangeReportField(fieldIdx, "name", e.target.value)
+                    }
+                    placeholder="VD: Số lượng súng..."
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onRemoveReportField(fieldIdx)}
+                    className="text-red-500 hover:bg-red-100 h-10 w-10"
+                  >
+                    ✕
+                  </Button>
+                </div>
+              ))}
+            </div>
           )}
-
-          {/* Field item */}
-          <div className="space-y-2">
-            {task.reportFields.map((field, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <input
-                  data-error={`tasks.${index}.reportFields.${idx}.name`}
-                  placeholder="VD: Số lượng súng, Số người tham gia..."
-                  className={`flex-1 px-3 py-2 border rounded-lg text-sm transition-colors ${
-                    errors?.reportFields?.[idx]?.name?._errors?.length
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
-                  value={field.name}
-                  onChange={(e) =>
-                    handleChangeReportField(index, idx, "name", e.target.value)
-                  }
-                  name={`reportFields.${idx}.name`}
-                />
-                <button
-                  className="text-red-500 hover:bg-red-100 transition-all size-6 cursor-pointer rounded flex items-center justify-center"
-                  onClick={() => handleRemoveReportField(index, idx)}
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Reusable FormField Component
+ */
+interface FormFieldProps {
+  label: string;
+  required?: boolean;
+  error?: string;
+  hint?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+function FormField({
+  label,
+  required = false,
+  error,
+  hint,
+  children,
+}: FormFieldProps) {
+  return (
+    <div>
+      <label className="text-sm font-medium text-gray-700 block mb-2">
+        {label}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
+      {children}
+      {hint && <div className="mt-1 text-xs">{hint}</div>}
+      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
     </div>
   );
 }

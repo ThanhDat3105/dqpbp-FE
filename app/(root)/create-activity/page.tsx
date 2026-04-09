@@ -1,76 +1,58 @@
 "use client";
 
 import { useState } from "react";
-import { ZodFormattedError } from "zod";
-import AddIcon from "@mui/icons-material/Add";
-import InfoOutlineIcon from "@mui/icons-material/InfoOutline";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
-import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
-import TaskOutlinedIcon from "@mui/icons-material/TaskOutlined";
-import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
-import { CreateActivityInterface, departments } from "@/services/api/activity";
-import Task from "@/components/activity/Task";
+import { z } from "zod";
+import { Plus, Info, ListTodo, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  createActivitySchema,
-  CreateActivityFormData,
-} from "@/lib/validations";
+  activityAPI,
+  CreateActivityInterface,
+  departments,
+} from "@/services/api/activity";
+import Task from "@/components/activity/Task";
+import { createActivitySchema } from "@/lib/validations";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
-type FormErrors = ZodFormattedError<CreateActivityFormData>;
-
-// Helper function to find first error path recursively
-const findFirstErrorPath = (errors: FormErrors): string | null => {
-  const traverse = (obj: any, path: string[] = []): string | null => {
-    for (const key in obj) {
-      if (obj[key]?._errors && obj[key]._errors.length > 0) {
-        return [...path, key].join(".");
-      }
-      if (typeof obj[key] === "object" && obj[key] !== null) {
-        const result = traverse(obj[key], [...path, key]);
-        if (result) return result;
-      }
-    }
-    return null;
-  };
-  return traverse(errors);
-};
-
-// Helper function to get error message by path
-const getErrorMessage = (
-  errors: FormErrors,
-  path: string,
-): string | undefined => {
-  const keys = path.split(".");
-  let current: any = errors;
-
-  for (const key of keys) {
-    if (current[key]) {
-      current = current[key];
-    } else {
-      return undefined;
-    }
-  }
-
-  return current?._errors?.[0];
-};
-
-// Helper function to scroll to error element
-const scrollToError = (errorPath: string) => {
-  const element = document.querySelector(`[data-error="${errorPath}"]`);
-  if (element) {
-    element.scrollIntoView({ behavior: "smooth", block: "center" });
-    (element as HTMLInputElement | HTMLSelectElement).focus();
-  }
-};
+interface FormData {
+  name: string;
+  work_type: string;
+  department: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  document_number: string;
+  attached_files: string[];
+  tasks: Array<{
+    id: number;
+    title: string;
+    team: string;
+    assignees: string[];
+    due_date: string;
+    notes: string;
+    report_fields: Array<{ id: number; name: string; value: string }>;
+    status: string;
+    accepted_at: string | null;
+    completed: boolean;
+    created_at: Date | string;
+    updated_at: Date | string;
+  }>;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function CreateActivityPage() {
-  const [form, setForm] = useState<CreateActivityInterface>({
+  const router = useRouter();
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     work_type: "",
-    work_group: "",
     department: "",
     location: "",
-    start_date: new Date(),
-    end_date: new Date(),
+    start_date: new Date().toISOString().split("T")[0],
+    end_date: new Date().toISOString().split("T")[0],
     document_number: "",
     attached_files: [],
     tasks: [],
@@ -79,35 +61,98 @@ export default function CreateActivityPage() {
     updated_at: new Date().toISOString(),
   });
 
-  const [errors, setErrors] = useState<FormErrors | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: any) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
-    setForm((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[name];
+        return updated;
+      });
+    }
   };
 
-  const handleChangeTask = (e: any) => {
-    const { name, value } = e.target;
+  const validateForm = (): boolean => {
+    try {
+      createActivitySchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
 
-    setForm((prev) => ({
-      ...prev,
-      tasks: [{ ...prev.tasks[0], [name]: value }],
-    }));
+        error.issues.forEach((err) => {
+          const field = err.path[0] as string;
+          if (field && !fieldErrors[field]) {
+            fieldErrors[field] = err.message;
+          }
+        });
+
+        setErrors(fieldErrors);
+      }
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    console.log(errors);
+
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const payload: CreateActivityInterface = {
+        ...formData,
+        tasks: formData.tasks.map((task) => ({
+          ...task,
+          created_at:
+            typeof task.created_at === "string"
+              ? task.created_at
+              : task.created_at.toISOString(),
+          updated_at:
+            typeof task.updated_at === "string"
+              ? task.updated_at
+              : task.updated_at.toISOString(),
+          report_fields: task.report_fields.map(({ id, ...rest }) => rest),
+        })),
+      };
+
+      const response = await activityAPI.createActivity(payload);
+
+      if (response && response.metaData) {
+        toast.success("Tạo hoạt động thành công!");
+        router.push("/activities");
+      }
+    } catch (error) {
+      toast.error("Có lỗi xảy ra khi tạo hoạt động!");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddTask = () => {
-    setForm((prev) => ({
+    setFormData((prev) => ({
       ...prev,
       tasks: [
         ...prev.tasks,
         {
+          id: Math.random(),
           title: "",
           team: "",
           assignees: [],
-          dueDate: new Date().toISOString(),
+          due_date: "",
           notes: "",
-          reportFields: [],
+          report_fields: [],
+          status: "pending",
           accepted_at: null,
           completed: false,
           created_at: new Date(),
@@ -117,391 +162,306 @@ export default function CreateActivityPage() {
     }));
   };
 
-  const handleDeleteTask = (index: number) => {
-    setForm((prev) => ({
+  const handleDeleteTask = (id: number) => {
+    setFormData((prev) => ({
       ...prev,
-      tasks: prev.tasks.filter((_, i) => i !== index),
+      tasks: prev.tasks.filter((task) => task.id !== id),
     }));
   };
 
-  const handleAddReportField = (taskIndex: number) => {
-    setForm((prev) => {
+  const handleChangeTask = (taskId: number, field: string, value: any) => {
+    setFormData((prev) => {
       const updatedTasks = [...prev.tasks];
+      const taskIndex = updatedTasks.findIndex((task) => task.id === taskId);
+      if (taskIndex === -1) return prev;
+
       updatedTasks[taskIndex] = {
         ...updatedTasks[taskIndex],
-        reportFields: [
-          ...updatedTasks[taskIndex].reportFields,
-          { name: "", value: "" },
-        ],
+        [field]: value,
       };
       return { ...prev, tasks: updatedTasks };
     });
   };
 
-  const handleRemoveReportField = (taskIndex: number, fieldIndex: number) => {
-    setForm((prev) => {
-      const updatedTasks = [...prev.tasks];
-      updatedTasks[taskIndex] = {
-        ...updatedTasks[taskIndex],
-        reportFields: updatedTasks[taskIndex].reportFields.filter(
-          (_, i) => i !== fieldIndex,
-        ),
-      };
+  const handleAddReportField = (taskId: number) => {
+    setFormData((prev) => {
+      const updatedTasks = prev.tasks.map((task) => {
+        if (task.id !== taskId) return task;
+
+        return {
+          ...task,
+          report_fields: [
+            ...task.report_fields,
+            { id: Math.random(), name: "", value: "" },
+          ],
+        };
+      });
+
+      return { ...prev, tasks: updatedTasks };
+    });
+  };
+
+  const handleRemoveReportField = (taskId: number, fieldIndex: number) => {
+    setFormData((prev) => {
+      const updatedTasks = prev.tasks.map((task) => {
+        if (task.id !== taskId) return task;
+
+        return {
+          ...task,
+          report_fields: task.report_fields.filter(
+            (_, index) => index !== fieldIndex,
+          ),
+        };
+      });
+
       return { ...prev, tasks: updatedTasks };
     });
   };
 
   const handleChangeReportField = (
-    taskIndex: number,
+    taskId: number,
     fieldIndex: number,
     key: "name" | "value",
     value: string,
   ) => {
-    setForm((prev) => {
+    setFormData((prev) => {
       const updatedTasks = [...prev.tasks];
-
-      const updatedFields = [...updatedTasks[taskIndex].reportFields];
-
-      updatedFields[fieldIndex] = {
-        ...updatedFields[fieldIndex],
-        [key]: value,
-      };
-
-      updatedTasks[taskIndex] = {
-        ...updatedTasks[taskIndex],
-        reportFields: updatedFields,
-      };
-
-      return { ...prev, tasks: updatedTasks };
-    });
-  };
-
-  const handleChangeAssignees = (taskIndex: number, userIds: string[]) => {
-    setForm((prev) => {
-      const updatedTasks = [...prev.tasks];
-      updatedTasks[taskIndex] = {
-        ...updatedTasks[taskIndex],
-        assignees: userIds,
-      };
-      return { ...prev, tasks: updatedTasks };
-    });
-  };
-
-  const handleCreateActivity = () => {
-    const result = createActivitySchema.safeParse(form);
-
-    if (!result.success) {
-      const formatted = result.error.format();
-      setErrors(formatted);
-
-      const firstErrorPath = findFirstErrorPath(formatted);
-      if (firstErrorPath) {
-        setTimeout(() => scrollToError(firstErrorPath), 100);
+      const taskIndex = updatedTasks.findIndex((task) => task.id === taskId);
+      if (taskIndex !== -1) {
+        updatedTasks[taskIndex].report_fields[fieldIndex][key] = value;
       }
-      return;
-    }
-
-    setErrors(null);
-    const validData = result.data;
-    console.log("Valid data:", validData);
-    // TODO: Send to API
+      return { ...prev, tasks: updatedTasks };
+    });
   };
 
   return (
-    <div className="p-6 bg-gray-100">
-      <div className="bg-white rounded-xl p-6 border border-gray-200 max-w-5xl mx-auto space-y-6">
-        {/* Title */}
-        <div className="flex items-center gap-2 font-semibold text-gray-700">
-          <InfoOutlineIcon />
-          Thông tin cơ bản
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-5xl mx-auto bg-white rounded-xl border border-gray-200 shadow-sm">
+        {/* Header */}
+        <div className="border-b border-gray-200 px-6 py-4">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Tạo Hoạt Động Mới
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Nhập thông tin cơ bản và những nhiệm vụ cần hoàn thành
+          </p>
         </div>
 
-        <div className="space-y-4">
-          {/* Tên kế hoạch */}
-          <div>
-            <label className="block font-medium mb-1 text-sm">
-              Tên kế hoạch <span className="text-red-500">*</span>
-            </label>
-            <input
-              data-error="name"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              placeholder="VD: Huấn luyện sử dụng vũ khí"
-              className={`w-full border rounded-lg px-3 py-2 focus:outline-none placeholder:text-md transition-colors ${
-                errors?.name?._errors?.length
-                  ? "border-red-500 focus:ring-2 focus:ring-red-200"
-                  : "border-gray-200 focus:ring-2 focus:ring-olive"
-              }`}
-            />
-            {errors?.name?._errors?.[0] && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.name._errors[0]}
-              </p>
-            )}
+        <form onSubmit={handleSubmit} className="space-y-8 p-4 md:p-6">
+          {/* ================= BASIC INFO ================= */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
+            {/* Header */}
+            <div className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-gray-600" />
+              <h2 className="font-semibold text-gray-800 text-lg">
+                Thông Tin Cơ Bản
+              </h2>
+            </div>
+
+            {/* Name */}
+            <FormField label="Tên Kế Hoạch" required error={errors.name}>
+              <Input
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="VD: Huấn luyện sử dụng vũ khí"
+                className={errors.name ? "border-red-500" : ""}
+              />
+            </FormField>
+
+            {/* Work Type + Department */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                label="Loại Hoạt Động"
+                required
+                error={errors.work_type}
+              >
+                <select
+                  name="work_type"
+                  value={formData.work_type}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.work_type ? "border-red-500" : "border-gray-200"
+                  }`}
+                >
+                  <option value="">-- Chọn loại công việc --</option>
+                  <option value="suddenly">Công việc đột xuất</option>
+                  <option value="annual">Công việc theo năm</option>
+                </select>
+              </FormField>
+
+              <FormField label="Tổ Công Tác" required error={errors.department}>
+                <select
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.department ? "border-red-500" : "border-gray-200"
+                  }`}
+                >
+                  <option value="">-- Chọn tổ công tác --</option>
+                  {departments.map((dept) => (
+                    <option key={dept.value} value={dept.value}>
+                      {dept.label}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+            </div>
+
+            {/* Location + Date */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <FormField label="Địa Điểm" required error={errors.location}>
+                <Input
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="VD: Sân tập P10"
+                  className={errors.location ? "border-red-500" : ""}
+                />
+              </FormField>
+
+              <FormField
+                label="Ngày Bắt Đầu"
+                required
+                error={errors.start_date}
+              >
+                <Input
+                  type="datetime-local"
+                  name="start_date"
+                  value={formData.start_date}
+                  onChange={handleChange}
+                  className={errors.start_date ? "border-red-500" : ""}
+                />
+              </FormField>
+
+              <FormField label="Ngày Kết Thúc" required error={errors.end_date}>
+                <Input
+                  type="datetime-local"
+                  name="end_date"
+                  value={formData.end_date}
+                  onChange={handleChange}
+                  className={errors.end_date ? "border-red-500" : ""}
+                />
+              </FormField>
+            </div>
+
+            {/* Document + File */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label="Số Công Văn">
+                <Input
+                  name="document_number"
+                  value={formData.document_number}
+                  onChange={handleChange}
+                  placeholder="VD: 123/CV..."
+                />
+              </FormField>
+
+              <FormField label="Tài Liệu Liên Quan">
+                <input
+                  type="file"
+                  multiple
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 file:mr-2 file:px-3 file:py-1 file:text-sm file:bg-gray-100 file:rounded hover:file:bg-gray-200 cursor-pointer"
+                />
+              </FormField>
+            </div>
           </div>
 
-          {/* Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Loại hoạt động */}
-            <div>
-              <label className="block font-medium mb-1 text-sm">
-                Loại hoạt động <span className="text-red-500">*</span>
-              </label>
-              <select
-                data-error="work_type"
-                name="work_type"
-                value={form.work_type}
-                onChange={handleChange}
-                className={`w-full border rounded-lg px-3 py-2 bg-white transition-colors ${
-                  errors?.work_type?._errors?.length
-                    ? "border-red-500 focus:ring-2 focus:ring-red-200"
-                    : "border-gray-200 focus:ring-2 focus:ring-olive"
-                }`}
-              >
-                <option value="">-- Chọn loại công việc --</option>
-                <option value="suddenly">Công việc phát sinh (đột xuất)</option>
-                <option value="annual">Công việc theo kế hoạch năm</option>
-              </select>
-              {errors?.work_type?._errors?.[0] && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.work_type._errors[0]}
-                </p>
-              )}
+          {/* ================= TASKS ================= */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <ListTodo className="h-5 w-5 text-gray-600" />
+                <h2 className="font-semibold text-gray-800 text-lg">
+                  Nhiệm Vụ
+                </h2>
+              </div>
+
+              <Button type="button" size="sm" onClick={handleAddTask}>
+                <Plus className="h-4 w-4 mr-1" />
+                Thêm
+              </Button>
             </div>
 
-            {/* Tổ công tác */}
-            <div>
-              <label className="block font-medium mb-1 text-sm">
-                Tổ công tác <span className="text-red-500">*</span>
-              </label>
-              <select
-                data-error="work_group"
-                name="work_group"
-                value={form.work_group}
-                onChange={handleChange}
-                className={`w-full border rounded-lg px-3 py-2 bg-white transition-colors ${
-                  errors?.work_group?._errors?.length
-                    ? "border-red-500 focus:ring-2 focus:ring-red-200"
-                    : "border-gray-200 focus:ring-2 focus:ring-olive"
-                }`}
-              >
-                <option value="">-- Chọn nhóm công việc --</option>
-                <option value="training">Công tác Huấn luyện</option>
-                <option value="deployment">Công tác Điều động</option>
-                <option value="political">Công tác Chính trị</option>
-                <option value="combat_readiness_check">
-                  Kiểm tra tính chiến đấu
-                </option>
-                <option value="entertainment_sports">
-                  Văn nghệ - Thể thao
-                </option>
-              </select>
-              {errors?.work_group?._errors?.[0] && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.work_group._errors[0]}
-                </p>
-              )}
-            </div>
-
-            {/* Tổ phụ trách */}
-            <div>
-              <label className="block font-medium mb-1 text-sm">
-                Tổ phụ trách <span className="text-red-500">*</span>
-              </label>
-              <select
-                data-error="department"
-                name="department"
-                value={form.department}
-                onChange={handleChange}
-                className={`w-full border rounded-lg px-3 py-2 bg-white transition-colors ${
-                  errors?.department?._errors?.length
-                    ? "border-red-500 focus:ring-2 focus:ring-red-200"
-                    : "border-gray-200 focus:ring-2 focus:ring-olive"
-                }`}
-              >
-                <option value="">-- Chọn tổ --</option>
-                {departments.map((dept) => (
-                  <option key={dept.value} value={dept.value}>
-                    {dept.label}
-                  </option>
+            {formData.tasks.length === 0 ? (
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center text-gray-500">
+                <ListTodo className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                <p>Chưa có nhiệm vụ nào</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {formData.tasks.map((task, index) => (
+                  <div key={index} className="border rounded-xl p-4 bg-gray-50">
+                    <Task
+                      task={task}
+                      taskIndex={index}
+                      errors={errors}
+                      onDeleteTask={() => handleDeleteTask(task.id)}
+                      onChangeField={(field, value) =>
+                        handleChangeTask(task.id, field, value)
+                      }
+                      onAddReportField={() => handleAddReportField(task.id)}
+                      onRemoveReportField={(i) =>
+                        handleRemoveReportField(task.id, i)
+                      }
+                      onChangeReportField={(i, key, value) =>
+                        handleChangeReportField(task.id, i, key, value)
+                      }
+                    />
+                  </div>
                 ))}
-              </select>
-              {errors?.department?._errors?.[0] && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.department._errors[0]}
-                </p>
-              )}
-            </div>
-
-            {/* Địa điểm */}
-            <div>
-              <label className="block font-medium mb-1 text-sm">Địa điểm</label>
-              <input
-                data-error="location"
-                name="location"
-                value={form.location}
-                onChange={handleChange}
-                placeholder="VD: Sân tập P10, Kho vũ khí..."
-                className={`w-full border rounded-lg px-3 py-2 transition-colors ${
-                  errors?.location?._errors?.length
-                    ? "border-red-500 focus:ring-2 focus:ring-red-200"
-                    : "border-gray-200 focus:ring-2 focus:ring-olive"
-                }`}
-              />
-              {errors?.location?._errors?.[0] && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.location._errors[0]}
-                </p>
-              )}
-            </div>
-
-            {/* Ngày bắt đầu */}
-            <div>
-              <label className="block font-medium mb-1 text-sm">
-                Ngày bắt đầu <span className="text-red-500">*</span>
-              </label>
-              <input
-                data-error="start_date"
-                type="date"
-                name="start_date"
-                value={
-                  form.start_date
-                    ? new Date(form.start_date).toISOString().split("T")[0]
-                    : ""
-                }
-                onChange={handleChange}
-                className={`w-full border rounded-lg px-3 py-2 transition-colors ${
-                  errors?.start_date?._errors?.length
-                    ? "border-red-500 focus:ring-2 focus:ring-red-200"
-                    : "border-gray-200 focus:ring-2 focus:ring-olive"
-                }`}
-              />
-              {errors?.start_date?._errors?.[0] && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.start_date._errors[0]}
-                </p>
-              )}
-            </div>
-
-            {/* Ngày kết thúc */}
-            <div>
-              <label className="block font-medium mb-1 text-sm">
-                Ngày kết thúc <span className="text-red-500">*</span>
-              </label>
-              <input
-                data-error="end_date"
-                type="date"
-                name="end_date"
-                value={
-                  form.end_date
-                    ? new Date(form.end_date).toISOString().split("T")[0]
-                    : ""
-                }
-                onChange={handleChange}
-                className={`w-full border rounded-lg px-3 py-2 transition-colors ${
-                  errors?.end_date?._errors?.length
-                    ? "border-red-500 focus:ring-2 focus:ring-red-200"
-                    : "border-gray-200 focus:ring-2 focus:ring-olive"
-                }`}
-              />
-              {errors?.end_date?._errors?.[0] && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.end_date._errors[0]}
-                </p>
-              )}
-            </div>
-
-            {/* Số công văn */}
-            <div>
-              <label className="block font-medium mb-1 text-sm">
-                Số công văn
-              </label>
-              <input
-                name="document_number"
-                value={form.document_number}
-                onChange={handleChange}
-                placeholder="VD: 123/CV-DQ..."
-                className="w-full border border-gray-200 rounded-lg px-3 py-2"
-              />
-              <p className="mt-1 text-xs text-gray-500 flex items-center gap-1">
-                <LightbulbOutlinedIcon className="size-3!" /> Số hiệu công văn
-                liên quan (nếu có)
-              </p>
-            </div>
-
-            {/* Upload */}
-            <div>
-              <label className="block font-medium mb-1 text-sm">
-                Tài liệu liên quan
-              </label>
-              <input
-                type="file"
-                multiple
-                className="w-full border border-gray-200 rounded-lg px-3 py-2"
-              />
-              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                <AttachFileIcon className="size-3!" /> Hỗ trợ: PDF, DOC, DOCX,
-                JPG, PNG (Tối đa 10MB)
-              </p>
-            </div>
-          </div>
-
-          {/* Nhiệm vụ */}
-          <div>
-            <div className="flex justify-between items-center mb-3">
-              <span className="font-semibold flex items-center gap-1">
-                <TaskOutlinedIcon /> Nhiệm vụ
-              </span>
-
-              <button
-                onClick={handleAddTask}
-                className="flex items-center gap-2 bg-olive-500 text-white px-4 py-2 rounded-lg hover:bg-olive-600/90"
-              >
-                <AddIcon fontSize="small" />
-                Thêm nhiệm vụ
-              </button>
-            </div>
-
-            {form.tasks.length === 0 && (
-              <div className="border-2 border-dashed rounded-lg p-10 text-center text-gray-500">
-                Chưa có nhiệm vụ nào. Nhấn "Thêm nhiệm vụ" để bắt đầu.
               </div>
             )}
 
-            <div className="pt-5 space-y-5">
-              {form.tasks.map((task, index) => {
-                return (
-                  <Task
-                    key={index}
-                    task={task}
-                    index={index}
-                    handleDeleteTask={handleDeleteTask}
-                    handleAddReportField={handleAddReportField}
-                    handleRemoveReportField={handleRemoveReportField}
-                    handleChangeTask={handleChangeTask}
-                    handleChangeReportField={handleChangeReportField}
-                    handleChangeAssignees={handleChangeAssignees}
-                  />
-                );
-              })}
-            </div>
+            {errors.tasks && (
+              <p className="text-sm text-red-500">{errors.tasks}</p>
+            )}
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex justify-end gap-3 mt-6">
-          <button className="border px-4 py-2 rounded-lg hover:bg-gray-100">
-            Hủy
-          </button>
-          <button
-            onClick={handleCreateActivity}
-            className="bg-olive-500 text-white px-4 py-2 rounded-lg hover:bg-olive-600 flex items-center gap-2"
-          >
-            <SaveOutlinedIcon fontSize="small" /> Tạo hoạt động
-          </button>
-        </div>
+          <div className="p-4 flex justify-end gap-3">
+            <Button type="button" variant="outline">
+              Hủy
+            </Button>
+
+            <Button type="submit" disabled={loading}>
+              <Save className="h-4 w-4 mr-2" />
+              {loading ? "Đang lưu..." : "Tạo Hoạt Động"}
+            </Button>
+          </div>
+        </form>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Reusable FormField Component
+ * Provides consistent label + error + input styling
+ */
+interface FormFieldProps {
+  label: string;
+  required?: boolean;
+  error?: string;
+  hint?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+function FormField({
+  label,
+  required = false,
+  error,
+  hint,
+  children,
+}: FormFieldProps) {
+  return (
+    <div>
+      <Label className="text-sm font-medium text-gray-700 block mb-2">
+        {label}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
+      </Label>
+      {children}
+      {hint && <div className="mt-1 text-xs">{hint}</div>}
+      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
     </div>
   );
 }

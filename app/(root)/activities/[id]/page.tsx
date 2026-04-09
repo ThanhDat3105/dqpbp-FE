@@ -42,7 +42,7 @@ export default function ActivityDetailPage() {
   }
 
   return (
-    <div className="flex bg-gray-50 min-h-screen">
+    <div className="flex bg-gray-50">
       <main className="flex-1 flex flex-col">
         <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
           <div className="flex flex-col gap-2 flex-1">
@@ -68,7 +68,7 @@ export default function ActivityDetailPage() {
           </div>
 
           <Link
-            href="/ActivityList"
+            href="/activities"
             className="px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm sm:text-base"
           >
             <ArrowBackIcon fontSize="small" />
@@ -82,7 +82,12 @@ export default function ActivityDetailPage() {
           {activity?.tasks?.length > 0 && (
             <div className="w-full lg:flex-1 space-y-4 sm:space-y-6">
               {activity.tasks.map((task: TaskInterface) => (
-                <TaskCard key={task.id} task={task} activity={activity} />
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  activity={activity}
+                  fetchActivityDetail={fetchActivityDetail}
+                />
               ))}
             </div>
           )}

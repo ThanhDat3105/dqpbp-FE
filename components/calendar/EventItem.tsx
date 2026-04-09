@@ -25,7 +25,7 @@ const EventItem = memo(function EventItem({
   isActivity = false,
   compact = false,
 }: EventItemProps) {
-  const href = isActivity ? `/ActivityList` : `/ActivityList/${taskId}`;
+  const href = isActivity ? `/activities` : `/activities/${taskId}`;
 
   return (
     <Link

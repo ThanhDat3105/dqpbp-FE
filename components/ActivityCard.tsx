@@ -27,7 +27,7 @@ const ActivityCard = ({ activity }: ActivityCardProps) => {
 
   return (
     <Link
-      href={"/ActivityList/1"}
+      href={`/activities/${activity.id}`}
       className="bg-white p-3 sm:p-5 rounded-lg border border-gray-200 hover:shadow-lg transition-all cursor-pointer flex flex-col"
     >
       {/* Header Section */}

@@ -11,86 +11,34 @@ export interface Department {
 
 export const departments: Department[] = [
   {
-    value: "1",
-    label: "Tổ 1",
+    value: "administration_office",
+    label: "Tổ Văn thư – Văn phòng",
     teams: [
-      {
-        id: "u1",
-        name: "Nguyễn Văn A",
-      },
-      {
-        id: "u9",
-        name: "Bùi Văn G",
-      },
-      {
-        id: "u2",
-        name: "Trần Thị B",
-      },
-      {
-        id: "u3",
-        name: "Lê Văn C",
-      },
+      { id: "u1", name: "Nguyễn Văn A" },
+      { id: "u9", name: "Bùi Văn G" },
+      { id: "u2", name: "Trần Thị B" },
+      { id: "u3", name: "Lê Văn C" },
     ],
   },
   {
-    value: "2",
-    label: "Tổ 2",
-    teams: [
-      {
-        id: "u2",
-        name: "Trần Thị B",
-      },
-    ],
+    value: "planning",
+    label: "Tổ Tham mưu",
+    teams: [{ id: "u2", name: "Trần Thị B" }],
   },
   {
-    value: "3",
-    label: "Tổ 3",
-    teams: [
-      {
-        id: "u3",
-        name: "Lê Văn C",
-      },
-    ],
+    value: "political_affairs",
+    label: "Tổ Chính trị",
+    teams: [{ id: "u3", name: "Lê Văn C" }],
   },
   {
-    value: "4",
-    label: "Tổ 4",
-    teams: [
-      {
-        id: "u4",
-        name: "Phạm Thị D",
-      },
-    ],
+    value: "logistics",
+    label: "Tổ Hậu cần",
+    teams: [{ id: "u4", name: "Phạm Thị D" }],
   },
   {
-    value: "5",
-    label: "Tổ 5",
-    teams: [
-      {
-        id: "u5",
-        name: "Hoàng Văn E",
-      },
-    ],
-  },
-  {
-    value: "6",
-    label: "Tổ 6",
-    teams: [
-      {
-        id: "u6",
-        name: "Đỗ Thị F",
-      },
-    ],
-  },
-  {
-    value: "9",
-    label: "Tổ 9",
-    teams: [
-      {
-        id: "u9",
-        name: "Bùi Văn G",
-      },
-    ],
+    value: "mobilization_recruitment",
+    label: "Tổ Động viên – Tuyển quân",
+    teams: [{ id: "u5", name: "Hoàng Văn E" }],
   },
 ];
 
@@ -114,11 +62,10 @@ export interface ActivityInterface {
 
 export interface CreateActivityInterface {
   name: string;
-  work_group: string;
   work_type: string;
   department: string;
-  start_date: Date;
-  end_date: Date;
+  start_date: string;
+  end_date: string;
   location: string;
   document_number: string;
   attached_files: string[];
@@ -134,14 +81,17 @@ export interface TaskInterface {
   title: string;
   team: string;
   assignees: string[];
-  dueDate: string;
+  due_date: string;
   notes: string;
-  reportFields: { name: string; value: string }[];
-  accepted_at: Date | null;
+  report_fields: { name: string; value: string }[];
+  accepted_at: string | null;
   completed: boolean;
-  created_at: Date;
-  updated_at: Date;
+  created_at: string;
+  updated_at: string;
+  status: "pending" | "in_progress" | "completed" | "cancelled" | string;
 }
+
+export type TaskStatus = "pending" | "in_progress" | "completed";
 
 const getActivities = async ({
   month,
@@ -166,7 +116,47 @@ const getActivityDetail = async (id: string): Promise<ActivityInterface> => {
 
     return res.data.metaData;
   } catch (error) {
-    // console.error("Error fetching activity detail:", error);
+    throw error;
+  }
+};
+
+const updateReportFields = async (
+  activity_id: string,
+  task_id: string,
+  report_fields: { name: string; value: string }[],
+) => {
+  try {
+    const res = await axiosInstance.patch(
+      `/api/activities-task/${activity_id}/tasks/${task_id}`,
+      { report_fields },
+    );
+
+    return res.data.metaData;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const updateTaskStatus = async (task_id: string, status: TaskStatus) => {
+  try {
+    const res = await axiosInstance.put(`/api/activities-task/${task_id}`, {
+      status,
+    });
+
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const createActivity = async (payload: CreateActivityInterface) => {
+  try {
+    const res = await axiosInstance.post(`/api/activities`, payload);
+
+    console.log(res)
+
+    return res.data;
+  } catch (error) {
     throw error;
   }
 };
@@ -174,4 +164,7 @@ const getActivityDetail = async (id: string): Promise<ActivityInterface> => {
 export const activityAPI = {
   getActivities,
   getActivityDetail,
+  updateReportFields,
+  updateTaskStatus,
+  createActivity,
 };

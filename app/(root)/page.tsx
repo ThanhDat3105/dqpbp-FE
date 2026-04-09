@@ -56,7 +56,7 @@ export default function HomePage() {
           </Link>
 
           <Link
-            href="/ActivityList"
+            href="/activities"
             className="px-4 py-2 bg-gray-100 rounded-lg"
           >
             Danh sách kế hoạch
@@ -124,7 +124,7 @@ export default function HomePage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Danh sách kế hoạch */}
           <Link
-            href="/ActivityList"
+            href="/activities"
             className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
           >
             <div className="flex items-center gap-3">

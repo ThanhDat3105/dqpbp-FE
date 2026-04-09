@@ -21,7 +21,7 @@ export default function Information({
 
   return (
     <div className="flex-1 relative">
-      <div className="bg-white rounded-lg border shadow border-gray-200 p-6 sticky top-20">
+      <div className="bg-white rounded-lg border shadow border-gray-200 p-6 sticky top-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4">
           Thông tin chi tiết
         </h2>
@@ -33,12 +33,7 @@ export default function Information({
           </div>
 
           <div>
-            <p className="text-sm text-gray-500 mb-1">Nhóm công việc</p>
-            <p className="font-medium text-gray-900">{activity.work_group}</p>
-          </div>
-
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Tổ phụ trách</p>
+            <p className="text-sm text-gray-500 mb-1">Tổ công tác</p>
             <p className="font-medium text-gray-900">{activity.department}</p>
           </div>
 
@@ -63,7 +58,7 @@ export default function Information({
             </p>
           </div>
 
-          <div className="col-span-2">
+          <div>
             <p className="text-sm text-gray-500 mb-1">Địa điểm</p>
             <p className="font-medium text-gray-900">{activity.location}</p>
           </div>

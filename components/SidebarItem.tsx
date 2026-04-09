@@ -40,11 +40,11 @@ export default function SidebarItem({
   // 🔥 Check có phải activities không
   const isActivities =
     item.id === "activities" ||
-    item.href?.includes("/ActivityList") ||
+    item.href?.includes("/activities") ||
     item.href?.includes("/calendar") ||
     item.children?.some(
       (child) =>
-        child.href?.includes("/ActivityList") ||
+        child.href?.includes("/activities") ||
         child.href?.includes("/calendar"),
     );
 
@@ -65,7 +65,7 @@ export default function SidebarItem({
   // 🔥 Handle click child
   const handleChildClick = (href?: string) => (e: React.MouseEvent) => {
     const isChildActivities =
-      href?.includes("/ActivityList") || href?.includes("/calendar");
+      href?.includes("/activities") || href?.includes("/calendar");
 
     if (!isChildActivities) {
       e.preventDefault();
