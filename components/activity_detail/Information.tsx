@@ -1,6 +1,7 @@
 "use client";
 
 import { ActivityInterface } from "@/services/api/activity";
+import { handleGetDepartment, handleGetWorkType } from "@/utils/activity";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 
@@ -13,7 +14,8 @@ export default function Information({
 
   useEffect(() => {
     const progress =
-      (activity.tasks.filter((task) => task.completed).length * 100) /
+      (activity.tasks.filter((task) => task.status === "completed").length *
+        100) /
       activity.tasks.length;
 
     setProgress(Math.round(progress));
@@ -29,12 +31,16 @@ export default function Information({
         <div className="grid grid-cols-2 gap-6">
           <div>
             <p className="text-sm text-gray-500 mb-1">Loại công việc</p>
-            <p className="font-medium text-gray-900">{activity.work_type}</p>
+            <p className="font-medium text-gray-900">
+              {handleGetWorkType(activity.work_type)}
+            </p>
           </div>
 
           <div>
             <p className="text-sm text-gray-500 mb-1">Tổ công tác</p>
-            <p className="font-medium text-gray-900">{activity.department}</p>
+            <p className="font-medium text-gray-900">
+              {handleGetDepartment(activity.department)}
+            </p>
           </div>
 
           <div>
@@ -65,25 +71,32 @@ export default function Information({
 
           <div className="border-t col-span-2 border-gray-200"></div>
 
-          <div className="space-y-2 col-span-2">
-            <div className="flex justify-between text-xs sm:text-sm">
-              <span className="text-gray-600 font-bold">Tiến độ thực hiện</span>
+          {activity.tasks.length > 0 && (
+            <div className="space-y-2 col-span-2">
+              <div className="flex justify-between text-xs sm:text-sm">
+                <span className="text-gray-600 font-bold">
+                  Tiến độ thực hiện
+                </span>
 
-              <span className="font-bold text-olive">{progress}%</span>
+                <span className="font-bold text-olive">{progress}%</span>
+              </div>
+
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className={`${progress === 100 ? "bg-green-500" : "bg-olive-500"} h-2 rounded-full`}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+
+              <p>
+                {
+                  activity.tasks.filter((task) => task.status === "completed")
+                    .length
+                }{" "}
+                / {activity.tasks.length} Nhiệm vụ đã hoàn thành
+              </p>
             </div>
-
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className={`${progress === 100 ? "bg-green-500" : "bg-olive-500"} h-2 rounded-full`}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-
-            <p>
-              {activity.tasks.filter((task) => task.completed).length} /{" "}
-              {activity.tasks.length} Nhiệm vụ đã hoàn thành
-            </p>
-          </div>
+          )}
         </div>
       </div>
     </div>

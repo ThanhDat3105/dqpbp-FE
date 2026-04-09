@@ -1,10 +1,17 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import { format } from "date-fns";
 import { ActivityInterface } from "@/services/api/activity";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { handleGetDepartment, handleGetWorkType } from "@/utils/activity";
 
 interface ActivityCardProps {
   activity: ActivityInterface;
@@ -18,8 +25,10 @@ const ActivityCard = ({ activity }: ActivityCardProps) => {
       setProgress(0);
       return;
     }
+
     const progress =
-      (activity.tasks.filter((task) => task.completed).length * 100) /
+      (activity.tasks.filter((task) => task.status === "completed").length *
+        100) /
       activity.tasks.length;
 
     setProgress(Math.round(progress));
@@ -33,9 +42,18 @@ const ActivityCard = ({ activity }: ActivityCardProps) => {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-3">
         <div className="flex-1 min-w-0">
-          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 line-clamp-2">
-            {activity.name}
-          </h3>
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 line-clamp-1 cursor-pointer">
+                  {activity.name}
+                </h3>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{activity.name}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           <p className="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3 flex items-center gap-1 flex-wrap">
             <svg
@@ -127,12 +145,12 @@ const ActivityCard = ({ activity }: ActivityCardProps) => {
               clipRule="evenodd"
             />
           </svg>
-          <span>{activity.work_type}</span>
+          <span>{handleGetWorkType(activity.work_type)}</span>
         </span>
 
         <span className="px-2 py-1 bg-orange-100 text-orange-700 flex items-center text-sm rounded-full font-bold gap-1">
           <PeopleOutlinedIcon fontSize="small" />
-          <span>{activity.department}</span>
+          <span>{handleGetDepartment(activity.department)}</span>
         </span>
 
         <span className="px-2 py-1 bg-purple-100 text-purple-700 flex items-center text-sm rounded-full font-bold">
@@ -175,23 +193,25 @@ const ActivityCard = ({ activity }: ActivityCardProps) => {
           <span>{activity.tasks.length} nhiệm vụ</span>
         </p>
 
-        <p className="flex items-center gap-1 text-xs sm:text-sm">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            className="shrink-0"
-          >
-            <path
-              fill="currentColor"
-              fillRule="evenodd"
-              d="M2.5 1.25c-.103 0-.2.04-.27.108a.35.35 0 0 0-.105.248v10.788c0 .09.037.18.106.247a.38.38 0 0 0 .269.109h9c.103 0 .2-.04.27-.109a.35.35 0 0 0 .105-.247V4.968c0-.1-.04-.197-.112-.268L8.354 1.357a.38.38 0 0 0-.263-.107zM1.355.466C1.661.166 2.073 0 2.5 0h5.591c.426 0 .835.167 1.138.465l3.409 3.343c.311.305.487.724.487 1.16v7.426c0 .43-.174.84-.48 1.14S11.927 14 11.5 14h-9c-.427 0-.84-.166-1.145-.466s-.48-.71-.48-1.14V1.606c0-.43.174-.84.48-1.14m5.829 5.921c0-.345.28-.625.625-.625h2.25a.625.625 0 1 1 0 1.25h-2.25a.625.625 0 0 1-.625-.625m.625 3.022a.625.625 0 0 0 0 1.25h2.25a.625.625 0 1 0 0-1.25zM6.367 8.277a.75.75 0 0 1 .165 1.048l-1.396 1.917a.75.75 0 0 1-1.132.094l-.838-.822a.75.75 0 1 1 1.05-1.07l.218.213l.886-1.215a.75.75 0 0 1 1.047-.165m.165-2.661a.75.75 0 1 0-1.212-.883l-.886 1.215l-.217-.213a.75.75 0 1 0-1.05 1.07l.837.822a.75.75 0 0 0 1.132-.094z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span>{activity.document_number}</span>
-        </p>
+        {activity.document_number && (
+          <p className="flex items-center gap-1 text-xs sm:text-sm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              className="shrink-0"
+            >
+              <path
+                fill="currentColor"
+                fillRule="evenodd"
+                d="M2.5 1.25c-.103 0-.2.04-.27.108a.35.35 0 0 0-.105.248v10.788c0 .09.037.18.106.247a.38.38 0 0 0 .269.109h9c.103 0 .2-.04.27-.109a.35.35 0 0 0 .105-.247V4.968c0-.1-.04-.197-.112-.268L8.354 1.357a.38.38 0 0 0-.263-.107zM1.355.466C1.661.166 2.073 0 2.5 0h5.591c.426 0 .835.167 1.138.465l3.409 3.343c.311.305.487.724.487 1.16v7.426c0 .43-.174.84-.48 1.14S11.927 14 11.5 14h-9c-.427 0-.84-.166-1.145-.466s-.48-.71-.48-1.14V1.606c0-.43.174-.84.48-1.14m5.829 5.921c0-.345.28-.625.625-.625h2.25a.625.625 0 1 1 0 1.25h-2.25a.625.625 0 0 1-.625-.625m.625 3.022a.625.625 0 0 0 0 1.25h2.25a.625.625 0 1 0 0-1.25zM6.367 8.277a.75.75 0 0 1 .165 1.048l-1.396 1.917a.75.75 0 0 1-1.132.094l-.838-.822a.75.75 0 1 1 1.05-1.07l.218.213l.886-1.215a.75.75 0 0 1 1.047-.165m.165-2.661a.75.75 0 1 0-1.212-.883l-.886 1.215l-.217-.213a.75.75 0 1 0-1.05 1.07l.837.822a.75.75 0 0 0 1.132-.094z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span>{activity.document_number}</span>
+          </p>
+        )}
       </div>
     </Link>
   );

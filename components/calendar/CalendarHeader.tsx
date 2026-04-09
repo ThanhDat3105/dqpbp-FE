@@ -3,6 +3,7 @@
 import React, { memo } from "react";
 import clsx from "clsx";
 import type { ViewMode } from "./types";
+import Notification from "../notification/Notification";
 
 interface CalendarHeaderProps {
   viewMode: ViewMode;
@@ -62,7 +63,11 @@ const CalendarHeader = memo(function CalendarHeader({
             stroke="currentColor"
             strokeWidth={2}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
 
@@ -84,7 +89,11 @@ const CalendarHeader = memo(function CalendarHeader({
             stroke="currentColor"
             strokeWidth={2}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         </button>
       </div>
@@ -93,6 +102,8 @@ const CalendarHeader = memo(function CalendarHeader({
       <h2 className="flex-1 text-lg font-semibold text-gray-800 tracking-tight select-none">
         {label}
       </h2>
+
+      <Notification />
 
       {/* View selector */}
       <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">

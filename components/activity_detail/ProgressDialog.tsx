@@ -1,4 +1,4 @@
-import { TaskStatus } from "@/services/api/activity";
+import { TaskInterface, TaskStatus } from "@/services/api/activity";
 import {
   Dialog,
   DialogContent,
@@ -15,22 +15,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 interface Props {
+  formData: TaskInterface;
   openProgressModal: boolean;
   setOpenProgressModal: (open: boolean) => void;
   selectedStatus: TaskStatus;
   setSelectedStatus: React.Dispatch<React.SetStateAction<TaskStatus>>;
-  canSelectCompleted: boolean;
   isAllFieldsFilled: boolean;
   loading: boolean;
   handleSubmitStatus: () => Promise<void>;
 }
 
 export default function ProgressDialog({
-  canSelectCompleted,
+  formData,
   handleSubmitStatus,
   isAllFieldsFilled,
   loading,
@@ -39,7 +38,8 @@ export default function ProgressDialog({
   setOpenProgressModal,
   setSelectedStatus,
 }: Props) {
-  console.log(canSelectCompleted);
+  const canSelectCompleted =
+    formData.status === "in_progress" && isAllFieldsFilled;
 
   return (
     <Dialog open={openProgressModal} onOpenChange={setOpenProgressModal}>

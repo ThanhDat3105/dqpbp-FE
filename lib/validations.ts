@@ -12,7 +12,7 @@ const taskSchema = z.object({
     .string()
     .min(1, { message: "Tên nhiệm vụ là bắt buộc" })
     .min(3, { message: "Tên nhiệm vụ phải có ít nhất 3 ký tự" }),
-  team: z.string().min(1, { message: "Tổ phụ trách là bắt buộc" }),
+  team: z.array(z.string()).default([]),
   assignees: z
     .array(z.string())
     .min(1, { message: "Phải chọn ít nhất một người thực hiện" }),

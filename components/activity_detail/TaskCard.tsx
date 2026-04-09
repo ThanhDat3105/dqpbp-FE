@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import {
@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import ReportDialog from "./ReportDialog";
 import ProgressDialog from "./ProgressDialog";
+import { handleGetDepartment } from "@/utils/activity";
+import MobilizeDialog from "./MobilizeDialog";
 
 export default function TaskCard({
   task,
@@ -31,9 +33,17 @@ export default function TaskCard({
   const [loading, setLoading] = useState(false);
   const [openReportModal, setOpenReportModal] = useState(false);
   const [openProgressModal, setOpenProgressModal] = useState(false);
+  const [openMobilizeModal, setOpenMobilizeModal] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus>(
     (task.status as TaskStatus) || "pending",
   );
+
+  // Sync formData and selectedStatus whenever the task prop is refreshed
+  // (e.g. after fetchActivityDetail() resolves following a report submission)
+  useEffect(() => {
+    setFormData(task);
+    setSelectedStatus((task.status as TaskStatus) || "pending");
+  }, [task]);
 
   // Compute field validation
   const hasEmptyFields = useMemo(() => {
@@ -45,17 +55,14 @@ export default function TaskCard({
     );
   }, [formData.report_fields]);
 
-  const isAllFieldsFilled = useMemo(() => {
-    if (!formData.report_fields || formData.report_fields.length === 0) {
+  const isAllFieldsFilled = () => {
+    if (!task.report_fields || task.report_fields.length === 0) {
       return true;
     }
-    return formData.report_fields.every(
+    return task.report_fields.every(
       (field) => field.value && field.value.trim() !== "",
     );
-  }, [formData.report_fields]);
-
-  const canSelectCompleted =
-    formData.status === "in_progress" && isAllFieldsFilled;
+  };
 
   // Handlers for report fields
   const handleReportFieldChange = (index: number, value: string) => {
@@ -80,6 +87,7 @@ export default function TaskCard({
 
       toast.success("Cập nhật báo cáo thành công");
       setOpenReportModal(false);
+      await fetchActivityDetail();
     } catch (err) {
       const errorMessage =
         err instanceof axios.AxiosError
@@ -98,7 +106,7 @@ export default function TaskCard({
       setLoading(true);
 
       // Validate completed status
-      if (selectedStatus === "completed" && !isAllFieldsFilled) {
+      if (selectedStatus === "completed" && !isAllFieldsFilled()) {
         toast.error("Vui lòng điền đầy đủ báo cáo trước khi hoàn thành");
         return;
       }
@@ -136,7 +144,7 @@ export default function TaskCard({
           <div className="flex flex-col items-start gap-4 text-sm text-gray-500 mt-1">
             <span className="flex items-center gap-1">
               <PeopleOutlinedIcon fontSize="small" />
-              {activity?.department}
+              {handleGetDepartment(activity?.department)}
             </span>
 
             {formData?.assignees?.length > 0 && (
@@ -230,6 +238,16 @@ export default function TaskCard({
             >
               Cập nhật tiến độ
             </Button>
+            {task.requires_dqcd && (
+              <Button
+                onClick={() => setOpenMobilizeModal(true)}
+                disabled={loading}
+                variant="outline"
+                className="flex-1"
+              >
+                Điều động DQCĐ
+              </Button>
+            )}
           </div>
 
           {/* ===== REPORT MODAL ===== */}
@@ -245,14 +263,20 @@ export default function TaskCard({
 
           {/* ===== PROGRESS MODAL ===== */}
           <ProgressDialog
-            canSelectCompleted={canSelectCompleted}
+            formData={formData}
             handleSubmitStatus={handleSubmitStatus}
-            isAllFieldsFilled={isAllFieldsFilled}
+            isAllFieldsFilled={isAllFieldsFilled()}
             loading={loading}
             openProgressModal={openProgressModal}
             selectedStatus={selectedStatus}
             setOpenProgressModal={setOpenProgressModal}
             setSelectedStatus={setSelectedStatus}
+          />
+
+          <MobilizeDialog
+            loading={loading}
+            openMobilizeModal={openMobilizeModal}
+            setOpenMobilizeModal={setOpenMobilizeModal}
           />
         </>
       ) : (

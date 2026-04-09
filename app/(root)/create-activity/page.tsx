@@ -28,7 +28,7 @@ interface FormData {
   tasks: Array<{
     id: number;
     title: string;
-    team: string;
+    team: string[];
     assignees: string[];
     due_date: string;
     notes: string;
@@ -38,6 +38,7 @@ interface FormData {
     completed: boolean;
     created_at: Date | string;
     updated_at: Date | string;
+    requires_dqcd: boolean;
   }>;
   created_by: string;
   created_at: string;
@@ -62,13 +63,72 @@ export default function CreateActivityPage() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [dateErrors, setDateErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  const validateDateRange = (
+    start: string,
+    end: string,
+    tasks: FormData["tasks"],
+  ) => {
+    const newDateErrors: Record<string, string> = {};
+
+    if (start && end && start > end) {
+      newDateErrors["start_date"] =
+        "Ngày bắt đầu không được lớn hơn ngày kết thúc";
+    }
+
+    tasks.forEach((task, index) => {
+      if (!task.due_date) return;
+      if (start && task.due_date < start) {
+        const display = new Date(start).toLocaleDateString("vi-VN");
+        newDateErrors[`tasks.${index}.due_date`] =
+          `Thời hạn hoàn thành phải từ ngày bắt đầu kế hoạch (${display}) trở đi`;
+      } else if (end && task.due_date > end) {
+        const display = new Date(end).toLocaleDateString("vi-VN");
+        newDateErrors[`tasks.${index}.due_date`] =
+          `Thời hạn hoàn thành phải trước hoặc bằng ngày kết thúc kế hoạch (${display})`;
+      }
+    });
+
+    setDateErrors(newDateErrors);
+    return newDateErrors;
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    const nextFormData = { ...formData, [name]: value };
+    setFormData(nextFormData);
+
+    if (name === "start_date" && value) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const startDate = new Date(value);
+
+      if (startDate < today) {
+        setErrors((prev) => ({
+          ...prev,
+          start_date: `Ngày bắt đầu không được nhỏ hơn ngày hiện tại (${today.toLocaleDateString("vi-VN")})`,
+        }));
+      } else {
+        setErrors((prev) => {
+          const updated = { ...prev };
+          delete updated.start_date;
+          return updated;
+        });
+      }
+    }
+
+    if (name === "start_date" || name === "end_date") {
+      const start = name === "start_date" ? value : formData.start_date;
+      const end = name === "end_date" ? value : formData.end_date;
+
+      validateDateRange(start, end, formData.tasks);
+    }
 
     if (errors[name]) {
       setErrors((prev) => {
@@ -80,6 +140,14 @@ export default function CreateActivityPage() {
   };
 
   const validateForm = (): boolean => {
+    // Check date errors first
+    const currentDateErrors = validateDateRange(
+      formData.start_date,
+      formData.end_date,
+      formData.tasks,
+    );
+    if (Object.keys(currentDateErrors).length > 0) return false;
+
     try {
       createActivitySchema.parse(formData);
       setErrors({});
@@ -101,10 +169,10 @@ export default function CreateActivityPage() {
     }
   };
 
+  const hasDraftDateErrors = Object.keys(dateErrors).length > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    console.log(errors);
 
     if (!validateForm()) return;
 
@@ -123,6 +191,7 @@ export default function CreateActivityPage() {
               ? task.updated_at
               : task.updated_at.toISOString(),
           report_fields: task.report_fields.map(({ id, ...rest }) => rest),
+          requires_dqcd: task.requires_dqcd,
         })),
       };
 
@@ -147,7 +216,7 @@ export default function CreateActivityPage() {
         {
           id: Math.random(),
           title: "",
-          team: "",
+          team: [],
           assignees: [],
           due_date: "",
           notes: "",
@@ -157,6 +226,7 @@ export default function CreateActivityPage() {
           completed: false,
           created_at: new Date(),
           updated_at: new Date(),
+          requires_dqcd: false,
         },
       ],
     }));
@@ -179,6 +249,12 @@ export default function CreateActivityPage() {
         ...updatedTasks[taskIndex],
         [field]: value,
       };
+
+      // Re-validate task due_dates when any task field changes
+      if (field === "due_date") {
+        validateDateRange(prev.start_date, prev.end_date, updatedTasks);
+      }
+
       return { ...prev, tasks: updatedTasks };
     });
   };
@@ -395,7 +471,9 @@ export default function CreateActivityPage() {
                     <Task
                       task={task}
                       taskIndex={index}
-                      errors={errors}
+                      errors={{ ...errors, ...dateErrors }}
+                      activityStartDate={formData.start_date}
+                      activityEndDate={formData.end_date}
                       onDeleteTask={() => handleDeleteTask(task.id)}
                       onChangeField={(field, value) =>
                         handleChangeTask(task.id, field, value)
@@ -423,7 +501,7 @@ export default function CreateActivityPage() {
               Hủy
             </Button>
 
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || hasDraftDateErrors}>
               <Save className="h-4 w-4 mr-2" />
               {loading ? "Đang lưu..." : "Tạo Hoạt Động"}
             </Button>

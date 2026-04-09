@@ -11,6 +11,7 @@ import { activityAPI, ActivityInterface } from "@/services/api/activity";
 import MultiCheckbox from "@/components/MultiCheckbox";
 import useDebounce from "@/hooks/useDebounce";
 import Loading from "../../../components/Loaing";
+import Notification from "@/components/notification/Notification";
 
 export default function ActivityListPage() {
   const [activities, setActivities] = useState<ActivityInterface[]>([]);
@@ -84,12 +85,7 @@ export default function ActivityListPage() {
           {/* RIGHT */}
           <div className="flex items-center gap-4">
             {/* Notification */}
-            <div className="relative cursor-pointer">
-              <span className="material-symbols-outlined text-gray-600 text-2xl">
-                🔔
-              </span>
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
-            </div>
+            <Notification />
 
             {/* Button create */}
             <Link

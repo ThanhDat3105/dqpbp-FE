@@ -67,6 +67,18 @@ export const menuConfig: MenuItem[] = [
         href: "/calendar",
         icon: Event,
       },
+      {
+        id: "activities-qdtt",
+        label: "Lịch Trực DQTT",
+        href: "/calendar-qdtt",
+        icon: Event,
+      },
+      {
+        id: "activities-qdcd",
+        label: "Lịch Trực DQCĐ",
+        href: "/calendar-qdcd",
+        icon: Event,
+      },
     ],
   },
   {

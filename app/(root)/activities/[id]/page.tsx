@@ -10,6 +10,7 @@ import { useParams } from "next/navigation";
 import { activityAPI, TaskInterface } from "@/services/api/activity";
 import Information from "@/components/activity_detail/Information";
 import TaskCard from "@/components/activity_detail/TaskCard";
+import { handleGetDepartment, handleGetWorkType } from "@/utils/activity";
 
 export default function ActivityDetailPage() {
   const params = useParams();
@@ -52,12 +53,12 @@ export default function ActivityDetailPage() {
 
             <div className="flex gap-2 mb-3 flex-wrap">
               <span className="px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded-full font-bold flex gap-1 items-center">
-                <span>{activity.work_type}</span>
+                <span>{handleGetWorkType(activity.work_type)}</span>
               </span>
 
               <span className="px-2 py-1 bg-orange-100 text-orange-700 flex items-center text-sm rounded-full font-bold gap-1">
                 <PeopleOutlinedIcon fontSize="small" />
-                <span>{activity.department}</span>
+                <span>{handleGetDepartment(activity.department)}</span>
               </span>
 
               <span className="px-2 py-1 bg-purple-100 text-purple-700 flex items-center text-sm rounded-full font-bold">

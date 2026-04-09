@@ -3,25 +3,31 @@ import { departments } from "@/services/api/activity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiSelect } from "../ui/multi-select";
+import { Label } from "@/components/ui/label";
+import { Switch } from "../ui/switch";
 
 interface TaskData {
+  id: number;
   title: string;
-  team: string;
+  team: string[];
   assignees: string[];
   due_date: string;
   notes: string;
-  report_fields: Array<{ name: string; value: string }>;
+  report_fields: Array<{ id: number; name: string; value: string }>;
   status: string;
   accepted_at: string | null;
   completed: boolean;
   created_at: Date | string;
   updated_at: Date | string;
+  requires_dqcd: boolean;
 }
 
 interface Props {
   task: TaskData;
   taskIndex: number;
   errors?: Record<string, string>;
+  activityStartDate?: string;
+  activityEndDate?: string;
   onDeleteTask: () => void;
   onChangeField: (field: string, value: any) => void;
   onAddReportField: () => void;
@@ -37,23 +43,25 @@ export default function Task({
   task,
   taskIndex,
   errors = {},
+  activityStartDate,
+  activityEndDate,
   onDeleteTask,
   onChangeField,
   onAddReportField,
   onRemoveReportField,
   onChangeReportField,
 }: Props) {
-  const getUserOptions = (team: string) => {
-    const selectedDept = departments.find((d) => d.value === team);
+  const getUserOptions = (teams: string[]) => {
+    if (teams.length === 0) {
+      return departments
+        .flatMap((d) => d.teams || [])
+        .map((u) => ({ value: u.id, label: u.name }));
+    }
 
-    const users = selectedDept
-      ? selectedDept.teams
-      : departments.flatMap((d) => d.teams || []);
-
-    return users.map((u) => ({
-      value: u.id,
-      label: u.name,
-    }));
+    return departments
+      .filter((d) => teams.includes(d.value))
+      .flatMap((d) => d.teams || [])
+      .map((u) => ({ value: u.id, label: u.name }));
   };
 
   return (
@@ -99,21 +107,18 @@ export default function Task({
             </div>
           }
         >
-          <select
+          <MultiSelect
+            options={departments.map((dept) => ({
+              value: dept.value,
+              label: dept.label,
+            }))}
             value={task.team}
-            onChange={(e) => {
+            onValueChange={(value) => {
               onChangeField("assignees", []);
-              onChangeField("team", e.target.value);
+              onChangeField("team", value);
             }}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Tất cả</option>
-            {departments.map((dept) => (
-              <option key={dept.value} value={dept.value}>
-                {dept.label}
-              </option>
-            ))}
-          </select>
+            placeholder="Chọn tổ phụ trách..."
+          />
         </FormField>
 
         {/* Assignees */}
@@ -123,6 +128,7 @@ export default function Task({
           error={errors[`tasks.${taskIndex}.assignees`]}
         >
           <MultiSelect
+            disabled={task.team.length === 0}
             options={getUserOptions(task.team)}
             value={task.assignees}
             onValueChange={(value) => onChangeField("assignees", value)}
@@ -148,9 +154,23 @@ export default function Task({
           <Input
             type="datetime-local"
             value={task.due_date}
+            min={activityStartDate || undefined}
+            max={activityEndDate || undefined}
             onChange={(e) => onChangeField("due_date", e.target.value)}
           />
         </FormField>
+
+        {/* Due Date */}
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="requires_dqcd"
+            checked={task.requires_dqcd}
+            onCheckedChange={(value) => onChangeField("requires_dqcd", value)}
+          />
+          <Label htmlFor="requires_dqcd">
+            Loại nhiệm vụ cần điều động DQCĐ
+          </Label>
+        </div>
 
         {/* Report Fields */}
         <div className="border-t pt-4">

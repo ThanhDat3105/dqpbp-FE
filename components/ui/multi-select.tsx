@@ -9,12 +9,12 @@ export interface MultiSelectOption {
   label: string;
 }
 
-interface MultiSelectProps
-  extends React.InputHTMLAttributes<HTMLDivElement> {
+interface MultiSelectProps extends React.InputHTMLAttributes<HTMLDivElement> {
   options: MultiSelectOption[];
   value?: string[];
   onValueChange?: (values: string[]) => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
 const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
@@ -25,6 +25,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       onValueChange,
       placeholder = "Select items...",
       className,
+      disabled,
       ...props
     },
     ref,
@@ -65,8 +66,11 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     return (
       <div ref={containerRef} className={cn("relative w-full", className)}>
         <div
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex min-h-8 w-full flex-wrap gap-1 rounded border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-slate-950 focus-within:ring-offset-2 cursor-pointer dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:focus-within:ring-slate-300"
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          className={cn(
+            "flex min-h-8 w-full flex-wrap gap-1 rounded border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-slate-950 focus-within:ring-offset-2 cursor-pointer dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:focus-within:ring-slate-300",
+            disabled && "opacity-50 cursor-not-allowed",
+          )}
         >
           {selectedLabels.length > 0 ? (
             <>
