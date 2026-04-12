@@ -7,7 +7,10 @@ interface AvailabilityRowProps {
   isEven: boolean;
 }
 
-export default function AvailabilityRow({ user, isEven }: AvailabilityRowProps) {
+export default function AvailabilityRow({
+  user,
+  isEven,
+}: AvailabilityRowProps) {
   return (
     <>
       {/* ── Morning row ── */}

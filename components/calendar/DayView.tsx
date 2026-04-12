@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState, useEffect, useRef, useCallback } from "react";
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
 import clsx from "clsx";
@@ -28,9 +28,18 @@ const DayView = memo(function DayView({
   today,
 }: DayViewProps) {
   const key = currentDate.format("YYYY-MM-DD");
+  const isToday = currentDate.isSame(today, "day");
+  const currentHourRef = useRef<HTMLDivElement>(null);
+
+  const getNow = useCallback(() => {
+    const now = dayjs();
+    return { hour: now.hour(), minute: now.minute() };
+  }, []);
+
+  const [currentTime, setCurrentTime] = useState(getNow);
+
   const dayData = data[key];
 
-  // 🔥 Transform data with role-based logic + deduplication
   const events = useMemo(() => {
     const result: {
       id: string | number;
@@ -46,14 +55,20 @@ const DayView = memo(function DayView({
     if (!dayData || dayData.length === 0) return result;
 
     if (role === "COMMANDER" && isActivityList(dayData)) {
-      // COMMANDER: Group and deduplicate by activity_name
       const acts = dayData as CalendarActivity[];
-      const activityMap = new Map<string, { task_id: number; title: string; due_date: string; status: "pending" | "done" }[]>();
+      const activityMap = new Map<
+        string,
+        {
+          task_id: number;
+          title: string;
+          due_date: string;
+          status: "pending" | "done";
+        }[]
+      >();
 
-      // Merge activities with same name
       for (const act of acts) {
         const existing = activityMap.get(act.activity_name) || [];
-        const newTasks = act.tasks.map(t => ({
+        const newTasks = act.tasks.map((t) => ({
           task_id: t.task_id,
           title: t.title,
           due_date: t.due_date,
@@ -113,7 +128,22 @@ const DayView = memo(function DayView({
     return result;
   }, [dayData, role]);
 
-  // 🔥 Group theo giờ (tối ưu, tránh filter 24 lần)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(getNow());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [getNow]);
+
+  useEffect(() => {
+    if (isToday && currentHourRef.current) {
+      currentHourRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, []);
+
   const eventsByHour = useMemo(() => {
     const map: Record<number, typeof events> = {};
 
@@ -129,7 +159,7 @@ const DayView = memo(function DayView({
     return map;
   }, [events]);
 
-  const isToday = currentDate.isSame(today, "day");
+  const { hour: currentHour, minute: currentMinute } = currentTime;
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -174,10 +204,15 @@ const DayView = memo(function DayView({
         {HOURS.map((hour) => {
           const hourEvents = eventsByHour[hour];
 
+          const isCurrentHour = isToday && hour === currentHour;
+          const topPercent = (currentMinute / 60) * 100;
+
           return (
             <div
               key={hour}
+              ref={isCurrentHour ? currentHourRef : undefined}
               className="flex border-b border-gray-100 min-h-16 group"
+              style={isCurrentHour ? { position: "relative" } : undefined}
             >
               {/* Time label */}
               <div className="w-16 shrink-0 flex items-start justify-end pr-3 pt-1 border-r border-gray-100">
@@ -212,6 +247,16 @@ const DayView = memo(function DayView({
                   </div>
                 )}
               </div>
+
+              {isCurrentHour && (
+                <div
+                  className="absolute left-16 right-0 flex items-center pointer-events-none z-10"
+                  style={{ top: `${topPercent}%` }}
+                >
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0 -ml-1.5" />
+                  <div className="flex-1 h-0.5 bg-red-500" />
+                </div>
+              )}
             </div>
           );
         })}

@@ -22,7 +22,12 @@ interface AvailabilityTableProps {
 }
 
 const LEGEND_ORDER: SlotStatus[] = [
-  "available", "busy", "partial", "flexible", "night", "off",
+  "available",
+  "busy",
+  "partial",
+  "flexible",
+  "night",
+  "off",
 ];
 
 export default function AvailabilityTable({
@@ -159,7 +164,9 @@ export default function AvailabilityTable({
 
               {/* Total */}
               <th className="border border-gray-300 px-2 py-2.5 text-center font-semibold text-gray-700 text-xs min-w-[80px]">
-                Số lần<br />huy động
+                Số lần
+                <br />
+                huy động
               </th>
             </tr>
           </thead>
@@ -177,7 +184,11 @@ export default function AvailabilityTable({
               </tr>
             ) : (
               filtered.map((user, i) => (
-                <AvailabilityRow key={user.id} user={user} isEven={i % 2 === 0} />
+                <AvailabilityRow
+                  key={user.id}
+                  user={user}
+                  isEven={i % 2 === 0}
+                />
               ))
             )}
           </tbody>

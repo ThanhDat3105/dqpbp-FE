@@ -1,142 +1,108 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Bell } from "lucide-react";
-import AvailabilityTable from "@/components/availability/availability-table";
-import { MOCK_SCHEDULES } from "@/components/availability/availability-data";
-import {
-  getMonday,
-  formatFullDate,
-  getIsoWeek,
-} from "@/components/schedule/schedule-data";
-import Notification from "@/components/notification/Notification";
+import React, { useState, useEffect } from "react";
+import { scheduleAPI, WeeklyResponse } from "@/services/api/schedule";
+import { WeekNavigator } from "@/components/weekly-schedule/WeekNavigator";
+import { LegendBar } from "@/components/weekly-schedule/LegendBar";
+import { ExportExcelButton } from "@/components/weekly-schedule/ExportExcelButton";
+import { ScheduleTable } from "@/components/weekly-schedule/ScheduleTable";
+import { Search } from "lucide-react";
+import { addWeeks, subWeeks, format, startOfWeek, parseISO } from "date-fns";
+import { toast } from "sonner";
 
-export default function CalendarQdcdPage() {
-  const [monday, setMonday] = useState<Date>(() => getMonday(new Date()));
+function getMonday(date: Date): string {
+  const d = startOfWeek(date, { weekStartsOn: 1 });
+  return format(d, "yyyy-MM-dd");
+}
 
-  const handlePrevWeek = useCallback(() => {
-    setMonday((prev) => {
-      const d = new Date(prev);
-      d.setDate(d.getDate() - 7);
-      return d;
-    });
-  }, []);
+export default function WeeklySchedulePage() {
+  const [weekStart, setWeekStart] = useState<string>(() =>
+    getMonday(new Date()),
+  );
+  const [data, setData] = useState<WeeklyResponse | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [search, setSearch] = useState<string>("");
 
-  const handleNextWeek = useCallback(() => {
-    setMonday((prev) => {
-      const d = new Date(prev);
-      d.setDate(d.getDate() + 7);
-      return d;
-    });
-  }, []);
+  const fetchWeeklySchedule = async (dateStr: string) => {
+    setLoading(true);
+    try {
+      const response = await scheduleAPI.getWeeklySchedule(dateStr);
+      setData(response);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(
+        error?.response?.data?.error || "Failed to fetch weekly schedule",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
+  useEffect(() => {
+    fetchWeeklySchedule(weekStart);
+  }, [weekStart]);
 
-  const weekLabel = `Tuần ${getIsoWeek(monday)}: ${formatFullDate(monday)} – ${formatFullDate(sunday)}`;
+  const handlePrevWeek = () => {
+    const prev = format(subWeeks(parseISO(weekStart), 1), "yyyy-MM-dd");
+    setWeekStart(prev);
+  };
+
+  const handleNextWeek = () => {
+    const next = format(addWeeks(parseISO(weekStart), 1), "yyyy-MM-dd");
+    setWeekStart(next);
+  };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
-      {/* ── Page header ── */}
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {/* Left: title */}
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto flex flex-col space-y-6">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-              Lịch làm việc / Thời khóa biểu
+            <h1 className="text-2xl font-bold text-gray-900">
+              Lịch có thể công tác trong tuần của DQCĐ
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Quản lý lịch huy động và tình trạng sẵn sàng của các thành viên
-              dân quân
+            <p className="text-sm text-gray-600 mt-1">
+              Quản lý và xem lịch công tác của các thành viên DQCĐ trong tuần
             </p>
           </div>
 
-          {/* Right: bell + week nav */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Notification bell */}
-            <Notification />
-
-            {/* Week navigation */}
-            <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1">
-              <button
-                id="avail-header-prev"
-                onClick={handlePrevWeek}
-                aria-label="Tuần trước"
-                className="p-1 rounded hover:bg-gray-200 transition-colors"
-              >
-                <ChevronLeft className="h-4 w-4 text-gray-600" />
-              </button>
-
-              <span className="text-sm font-semibold text-gray-700 whitespace-nowrap px-2 min-w-[220px] text-center">
-                {weekLabel}
-              </span>
-
-              <button
-                id="avail-header-next"
-                onClick={handleNextWeek}
-                aria-label="Tuần sau"
-                className="p-1 rounded hover:bg-gray-200 transition-colors"
-              >
-                <ChevronRight className="h-4 w-4 text-gray-600" />
-              </button>
+          <div className="flex items-center gap-4">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo tên..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[200px]"
+              />
             </div>
+
+            {/* Export Button */}
+            {data && (
+              <ExportExcelButton
+                members={data.members}
+                weekLabel={`Week ${data.week.week_number} (${data.week.start})`}
+              />
+            )}
           </div>
         </div>
-      </header>
 
-      {/* ── Main content ── */}
-      <main className="flex-1 p-4 sm:p-6">
-        {/* Summary stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-          {[
-            {
-              label: "Tổng thành viên",
-              value: MOCK_SCHEDULES.length,
-              color: "text-blue-700",
-              bg: "bg-blue-50 border-blue-100",
-            },
-            {
-              label: "Sẵn sàng hôm nay",
-              value: 5,
-              color: "text-green-700",
-              bg: "bg-green-50 border-green-100",
-            },
-            {
-              label: "Đang bận",
-              value: 2,
-              color: "text-red-700",
-              bg: "bg-red-50 border-red-100",
-            },
-            {
-              label: "Tổng lần huy động",
-              value: MOCK_SCHEDULES.reduce(
-                (s, u) => s + u.total_assignments,
-                0,
-              ),
-              color: "text-[#4a6318]",
-              bg: "bg-[#6B8E23]/5 border-[#6B8E23]/15",
-            },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className={`rounded-lg border p-3 ${stat.bg} flex flex-col gap-0.5`}
-            >
-              <span className="text-xs text-gray-500">{stat.label}</span>
-              <span className={`text-2xl font-extrabold ${stat.color}`}>
-                {stat.value}
-              </span>
-            </div>
-          ))}
+        {/* Navigator & Legend */}
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <WeekNavigator
+            week={data?.week || null}
+            weekStart={weekStart}
+            onPrev={handlePrevWeek}
+            onNext={handleNextWeek}
+          />
+          <LegendBar />
         </div>
 
-        {/* Availability table */}
-        <AvailabilityTable
-          users={MOCK_SCHEDULES}
-          weekLabel={weekLabel}
-          onPrevWeek={handlePrevWeek}
-          onNextWeek={handleNextWeek}
-        />
-      </main>
+        {/* Schedule Table */}
+        <ScheduleTable data={data} loading={loading} search={search} />
+      </div>
     </div>
   );
 }
