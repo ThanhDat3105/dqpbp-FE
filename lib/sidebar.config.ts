@@ -7,7 +7,7 @@ export interface MenuItem {
   label: string;
   href?: string;
   icon: ElementType;
-  role?: "STANDING_MILITIA" | "COMMANDER";
+  role?: "DQTT" | "CHI_HUY";
   children?: MenuItem[];
 }
 
@@ -22,7 +22,7 @@ export const menuConfig: MenuItem[] = [
     id: "dashboard",
     label: "Dashboard",
     icon: Assessment,
-    role: "COMMANDER",
+    role: "CHI_HUY",
     children: [
       {
         id: "dashboard-summary",

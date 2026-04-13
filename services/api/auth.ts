@@ -17,7 +17,7 @@ export interface Token {
 export interface User {
   id: number;
   name: string;
-  role: "STANDING_MILITIA" | "COMMANDER";
+  role: "DQTT" | "CHI_HUY" | "TO_TRUONG" | "DQCD";
   team: string;
 }
 

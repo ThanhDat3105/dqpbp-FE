@@ -41,15 +41,18 @@ const CalendarCell = memo(function CalendarCell({
   }[] = [];
 
   if (hasData) {
-    if (role === "COMMANDER" && isActivityList(dayData)) {
-      // COMMANDER: Group and deduplicate by activity_name
+    if (role === "CHI_HUY" && isActivityList(dayData)) {
+      // CHI_HUY: Group and deduplicate by activity_name
       const activities = dayData as CalendarActivity[];
-      const activityMap = new Map<string, { task_id: number; title: string; status: "pending" | "done" }[]>();
+      const activityMap = new Map<
+        string,
+        { task_id: number; title: string; status: "pending" | "done" }[]
+      >();
 
       // Merge activities with same name
       for (const act of activities) {
         const existing = activityMap.get(act.activity_name) || [];
-        const newTasks = act.tasks.map(t => ({
+        const newTasks = act.tasks.map((t) => ({
           task_id: t.task_id,
           title: t.title,
           status: t.status,
@@ -69,7 +72,7 @@ const CalendarCell = memo(function CalendarCell({
         }
       }
     } else {
-      // STANDING_MILITIA: Flatten all tasks individually
+      // DQTT: Flatten all tasks individually
       if (isActivityList(dayData)) {
         const activities = dayData as CalendarActivity[];
         for (const act of activities) {
@@ -114,7 +117,9 @@ const CalendarCell = memo(function CalendarCell({
         <span
           className={clsx(
             "flex items-center justify-center font-semibold transition-all duration-150",
-            compact ? "w-6 h-6 text-sm rounded-full" : "w-7 h-7 text-base rounded-full",
+            compact
+              ? "w-6 h-6 text-sm rounded-full"
+              : "w-7 h-7 text-base rounded-full",
             isToday
               ? "bg-emerald-600 text-white shadow-sm"
               : "text-gray-700 hover:bg-gray-100",

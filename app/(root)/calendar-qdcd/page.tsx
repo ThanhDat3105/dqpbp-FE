@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { scheduleAPI, WeeklyResponse } from "@/services/api/schedule";
 import { WeekNavigator } from "@/components/weekly-schedule/WeekNavigator";
 import { LegendBar } from "@/components/weekly-schedule/LegendBar";
@@ -9,6 +9,14 @@ import { ScheduleTable } from "@/components/weekly-schedule/ScheduleTable";
 import { Search } from "lucide-react";
 import { addWeeks, subWeeks, format, startOfWeek, parseISO } from "date-fns";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function getMonday(date: Date): string {
   const d = startOfWeek(date, { weekStartsOn: 1 });
@@ -16,20 +24,25 @@ function getMonday(date: Date): string {
 }
 
 export default function WeeklySchedulePage() {
+  const { user } = useAuth();
   const [weekStart, setWeekStart] = useState<string>(() =>
     getMonday(new Date()),
   );
   const [data, setData] = useState<WeeklyResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [search, setSearch] = useState<string>("");
+  const [unitFilter, setUnitFilter] = useState<string>("all");
 
   const fetchWeeklySchedule = async (dateStr: string) => {
     setLoading(true);
     try {
-      const response = await scheduleAPI.getWeeklySchedule(dateStr);
+      const response = await scheduleAPI.getWeeklySchedule(
+        dateStr,
+        String(user?.id),
+        unitFilter,
+      );
       setData(response);
     } catch (error: any) {
-      console.error(error);
       toast.error(
         error?.response?.data?.error || "Failed to fetch weekly schedule",
       );
@@ -40,7 +53,7 @@ export default function WeeklySchedulePage() {
 
   useEffect(() => {
     fetchWeeklySchedule(weekStart);
-  }, [weekStart]);
+  }, [weekStart, unitFilter]);
 
   const handlePrevWeek = () => {
     const prev = format(subWeeks(parseISO(weekStart), 1), "yyyy-MM-dd");
@@ -78,6 +91,27 @@ export default function WeeklySchedulePage() {
                 className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[200px]"
               />
             </div>
+
+            {user?.role === "CHI_HUY" && (
+              <Select value={unitFilter} onValueChange={setUnitFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Tất cả đơn vị" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="all">Tất cả đơn vị</SelectItem>
+
+                  {Array.from({ length: 23 }, (_, i) => {
+                    const value = `a${i + 1}`;
+                    return (
+                      <SelectItem key={value} value={value}>
+                        {value.toUpperCase()}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            )}
 
             {/* Export Button */}
             {data && (

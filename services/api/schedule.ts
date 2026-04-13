@@ -48,9 +48,9 @@ export interface UpdateMobilizePayload {
   mobilize_count: number;
 }
 
-const getWeeklySchedule = async (weekStart: string): Promise<WeeklyResponse> => {
+const getWeeklySchedule = async (weekStart: string, user_id: string, unitFilter: string): Promise<WeeklyResponse> => {
   const res = await axiosInstance.get(`/api/schedule/weekly`, {
-    params: { week_start: weekStart },
+    params: { week_start: weekStart, user_id, unit_filter: unitFilter },
   });
   // Using assumption that res.data may wrap in a generic format or directly be the response
   // If the backend returns wrapped `metaData`, need to handle. 

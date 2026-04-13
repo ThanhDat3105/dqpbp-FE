@@ -3,7 +3,7 @@ import { axiosInstance } from "@/lib/axios.config";
 export interface User {
   id: number;
   name: string;
-  role: "STANDING_MILITIA" | "COMMANDER";
+  role: "DQTT" | "CHI_HUY";
   team: string;
 }
 

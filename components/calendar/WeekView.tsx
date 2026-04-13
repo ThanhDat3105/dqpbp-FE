@@ -57,15 +57,23 @@ const WeekView = memo(function WeekView({
       isActivity?: boolean;
     }[] = [];
 
-    if (role === "COMMANDER" && isActivityList(dayData)) {
-      // COMMANDER: Group and deduplicate by activity_name
+    if (role === "CHI_HUY" && isActivityList(dayData)) {
+      // CHI_HUY: Group and deduplicate by activity_name
       const acts = dayData as CalendarActivity[];
-      const activityMap = new Map<string, { task_id: number; title: string; due_date: string; status: "pending" | "done" }[]>();
+      const activityMap = new Map<
+        string,
+        {
+          task_id: number;
+          title: string;
+          due_date: string;
+          status: "pending" | "done";
+        }[]
+      >();
 
       // Merge activities with same name
       for (const act of acts) {
         const existing = activityMap.get(act.activity_name) || [];
-        const newTasks = act.tasks.map(t => ({
+        const newTasks = act.tasks.map((t) => ({
           task_id: t.task_id,
           title: t.title,
           due_date: t.due_date,
@@ -91,30 +99,34 @@ const WeekView = memo(function WeekView({
         }
       }
     } else {
-      // STANDING_MILITIA: Flatten all tasks individually
+      // DQTT: Flatten all tasks individually
       if (isActivityList(dayData)) {
         const acts = dayData as CalendarActivity[];
 
-        result.push(...acts.flatMap((act) =>
-          act.tasks.map((t) => ({
+        result.push(
+          ...acts.flatMap((act) =>
+            act.tasks.map((t) => ({
+              id: t.task_id,
+              taskId: t.task_id,
+              title: t.title,
+              status: t.status,
+              dueDate: t.due_date,
+              subLabel: act.activity_name,
+              isActivity: false,
+            })),
+          ),
+        );
+      } else {
+        result.push(
+          ...(dayData as CalendarTaskItem[]).map((t) => ({
             id: t.task_id,
             taskId: t.task_id,
             title: t.title,
             status: t.status,
             dueDate: t.due_date,
-            subLabel: act.activity_name,
             isActivity: false,
           })),
-        ));
-      } else {
-        result.push(...(dayData as CalendarTaskItem[]).map((t) => ({
-          id: t.task_id,
-          taskId: t.task_id,
-          title: t.title,
-          status: t.status,
-          dueDate: t.due_date,
-          isActivity: false,
-        })));
+        );
       }
     }
 

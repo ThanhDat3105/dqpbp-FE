@@ -35,7 +35,7 @@ const CalendarGrid = memo(function CalendarGrid({
         <MonthView
           currentDate={currentDate}
           data={data}
-          role={user?.role || "STANDING_MILITIA"}
+          role={user?.role || "DQTT"}
           today={today}
         />
       )}
@@ -43,7 +43,7 @@ const CalendarGrid = memo(function CalendarGrid({
         <WeekView
           currentDate={currentDate}
           data={data}
-          role={user?.role || "STANDING_MILITIA"}
+          role={user?.role || "DQTT"}
           today={today}
         />
       )}
@@ -51,7 +51,7 @@ const CalendarGrid = memo(function CalendarGrid({
         <DayView
           currentDate={currentDate}
           data={data}
-          role={user?.role || "STANDING_MILITIA"}
+          role={user?.role || "DQTT"}
           today={today}
         />
       )}

@@ -54,7 +54,7 @@ const DayView = memo(function DayView({
 
     if (!dayData || dayData.length === 0) return result;
 
-    if (role === "COMMANDER" && isActivityList(dayData)) {
+    if (role === "CHI_HUY" && isActivityList(dayData)) {
       const acts = dayData as CalendarActivity[];
       const activityMap = new Map<
         string,
@@ -95,7 +95,7 @@ const DayView = memo(function DayView({
         }
       }
     } else {
-      // STANDING_MILITIA: Flatten all tasks individually
+      // DQTT: Flatten all tasks individually
       if (isActivityList(dayData)) {
         const acts = dayData as CalendarActivity[];
         for (const act of acts) {

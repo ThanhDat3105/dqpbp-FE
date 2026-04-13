@@ -183,12 +183,12 @@ export default function Sidebar({
               <span
                 className={clsx(
                   "inline-block text-xs px-2 py-0.5 rounded-full mt-1",
-                  user?.role === "COMMANDER"
+                  user?.role === "CHI_HUY"
                     ? "bg-orange-100 text-orange-700"
                     : "bg-blue-100 text-blue-700",
                 )}
               >
-                {user?.role === "COMMANDER" ? "Chỉ huy" : user?.team || "DQTT"}
+                {user?.role === "CHI_HUY" ? "Chỉ huy" : user?.team || "DQTT"}
               </span>
             </div>
           )}
