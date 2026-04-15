@@ -13,7 +13,7 @@ interface MonthViewProps {
   today: Dayjs;
 }
 
-const WEEKDAYS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
 const MonthView = memo(function MonthView({
   currentDate,
@@ -23,7 +23,7 @@ const MonthView = memo(function MonthView({
 }: MonthViewProps) {
   // Build the 6-week grid
   const startOfMonth = currentDate.startOf("month");
-  const startOfGrid = startOfMonth.startOf("week"); // Sunday = 0
+  const startOfGrid = startOfMonth.startOf("isoWeek"); // Monday
 
   const weeks: Dayjs[][] = [];
   let pointer = startOfGrid;
@@ -45,7 +45,7 @@ const MonthView = memo(function MonthView({
             key={day}
             className={clsx(
               "py-2 text-center text-xs font-semibold uppercase tracking-wider",
-              i === 0 ? "text-red-500" : "text-gray-500",
+              i === 6 ? "text-red-500" : "text-gray-500",
             )}
           >
             {day}

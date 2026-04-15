@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import dayjs, { type Dayjs } from "dayjs";
 import "dayjs/locale/vi";
 import weekday from "dayjs/plugin/weekday";
+import isoWeek from "dayjs/plugin/isoWeek";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import clsx from "clsx";
@@ -15,6 +16,7 @@ import type { ViewMode, CalendarMetaData } from "./types";
 import { fetchCalendar } from "@/services/api/calendar";
 
 dayjs.extend(weekday);
+dayjs.extend(isoWeek);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
 dayjs.locale("vi");
@@ -54,8 +56,8 @@ export default function CalendarPage() {
       return currentDate.format("D MMMM YYYY");
     }
     if (viewMode === "week") {
-      const start = currentDate.startOf("week");
-      const end = currentDate.endOf("week");
+      const start = currentDate.startOf("isoWeek");
+      const end = currentDate.endOf("isoWeek");
       if (start.month() === end.month()) {
         return `${start.date()} – ${end.date()} tháng ${start.format("M, YYYY")}`;
       }

@@ -311,7 +311,7 @@ export default function CreateActivityPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-5xl mx-auto bg-white rounded-xl border border-gray-200 shadow-sm">
         {/* Header */}
         <div className="border-b border-gray-200 px-6 py-4">

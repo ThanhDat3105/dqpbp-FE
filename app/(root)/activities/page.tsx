@@ -70,7 +70,7 @@ export default function ActivityListPage() {
   return (
     <main className="flex-1 flex flex-col overflow-hidden">
       {/* Content */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header>
         <div className="flex items-center justify-between">
           {/* LEFT */}
           <div>

@@ -19,7 +19,7 @@ interface WeekViewProps {
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const WEEKDAYS_SHORT = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+const WEEKDAYS_SHORT = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
 const WeekView = memo(function WeekView({
   currentDate,
@@ -27,7 +27,7 @@ const WeekView = memo(function WeekView({
   role,
   today,
 }: WeekViewProps) {
-  const startOfWeek = currentDate.startOf("week");
+  const startOfWeek = currentDate.startOf("isoWeek");
   const days: Dayjs[] = Array.from({ length: 7 }, (_, i) =>
     startOfWeek.add(i, "day"),
   );
@@ -158,7 +158,7 @@ const WeekView = memo(function WeekView({
           return (
             <div
               key={day.format("YYYY-MM-DD")}
-              className={clsx("py-2 text-center", i === 0 && "text-red-500")}
+              className={clsx("py-2 text-center", i === 6 && "text-red-500")}
             >
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 {WEEKDAYS_SHORT[i]}
@@ -206,7 +206,7 @@ const WeekView = memo(function WeekView({
                     "border-r border-gray-200 last:border-r-0 p-0.5",
                     "hover:bg-gray-50/60 transition-colors duration-100",
                     isToday && "bg-emerald-50/30",
-                    di === 0 && "bg-red-50/10",
+                    di === 6 && "bg-red-50/10",
                   )}
                 >
                   {hourEvents.length > 0 && (

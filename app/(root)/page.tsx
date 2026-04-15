@@ -55,10 +55,7 @@ export default function HomePage() {
             Đăng nhập
           </Link>
 
-          <Link
-            href="/activities"
-            className="px-4 py-2 bg-gray-100 rounded-lg"
-          >
+          <Link href="/activities" className="px-4 py-2 bg-gray-100 rounded-lg">
             Danh sách kế hoạch
           </Link>
 
