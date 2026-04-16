@@ -3,8 +3,8 @@ import { axiosInstance } from "@/lib/axios.config";
 export type ShiftType = 'SANG' | 'CHIEU' | 'DEM';
 
 export interface SlotData {
-  start: string;  // "07:00"
-  end: string;    // "10:00"
+  start: string;
+  end: string;
 }
 
 export interface DaySchedule {
@@ -17,7 +17,7 @@ export interface MemberSchedule {
   user_id: number;
   name: string;
   mobilize_count: number;
-  schedule: Record<string, DaySchedule>; // key: 1–7
+  schedule: Record<string, DaySchedule>;
 }
 
 export interface WeekInfo {
@@ -46,6 +46,17 @@ export interface UpdateMobilizePayload {
   user_id: number;
   week_start: string;
   mobilize_count: number;
+}
+
+export interface RegisterSchedule {
+  user_id: number,
+  week_start: string,
+  schedules: {
+    day_of_week: number,
+    shift: string,
+    start_time: string,
+    end_time: string,
+  }[]
 }
 
 const getWeeklySchedule = async (weekStart: string, user_id: string, unitFilter: string): Promise<WeeklyResponse> => {
@@ -79,9 +90,15 @@ const updateMobilizeCount = async (payload: UpdateMobilizePayload) => {
   return res.data;
 };
 
+const registerSchedule = async (payload: RegisterSchedule) => {
+  const res = await axiosInstance.post(`/api/schedule/register`, payload);
+  return res.data;
+};
+
 export const scheduleAPI = {
   getWeeklySchedule,
   upsertTemplate,
   deleteTemplate,
   updateMobilizeCount,
+  registerSchedule
 };

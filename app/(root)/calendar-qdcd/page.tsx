@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import DialogRegisterSchedule from "@/components/schedule/DialogRegister";
 
 function getMonday(date: Date): string {
   const d = startOfWeek(date, { weekStartsOn: 1 });
@@ -32,6 +33,7 @@ export default function WeeklySchedulePage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [search, setSearch] = useState<string>("");
   const [unitFilter, setUnitFilter] = useState<string>("all");
+  const [isWeekend, setIsWeekend] = useState(false);
 
   const fetchWeeklySchedule = async (dateStr: string) => {
     setLoading(true);
@@ -65,6 +67,13 @@ export default function WeeklySchedulePage() {
     setWeekStart(next);
   };
 
+  useEffect(() => {
+    const today = new Date().getDay();
+    if (today === 0 || today === 6) {
+      setIsWeekend(true);
+    }
+  }, []);
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto flex flex-col space-y-6">
@@ -91,6 +100,8 @@ export default function WeeklySchedulePage() {
                 className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[200px]"
               />
             </div>
+
+            {user?.role === "DQCD" && !isWeekend && <DialogRegisterSchedule />}
 
             {user?.role === "CHI_HUY" && (
               <Select value={unitFilter} onValueChange={setUnitFilter}>
