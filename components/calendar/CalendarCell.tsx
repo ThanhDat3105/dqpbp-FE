@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import { memo } from "react";
 import dayjs from "dayjs";
 import clsx from "clsx";
 import EventItem from "./EventItem";
@@ -8,11 +8,11 @@ import type { DayData, CalendarActivity, CalendarTaskItem } from "./types";
 import { isActivityList } from "./types";
 
 interface CalendarCellProps {
-  date: string; // "YYYY-MM-DD"
+  date: string;
   dayData: DayData | undefined;
   role: string;
   isToday: boolean;
-  isCurrentMonth?: boolean; // for month view grey-out
+  isCurrentMonth?: boolean;
   compact?: boolean;
   maxVisible?: number;
 }
@@ -31,10 +31,10 @@ const CalendarCell = memo(function CalendarCell({
 
   // ── Transform with role-based logic + deduplication ──────────────────────
   const items: {
-    id: string | number;
+    id: string;
     taskId?: number;
     title: string;
-    status?: "pending" | "done";
+    status?: "pending" | "completed";
     subLabel?: string;
     taskCount?: number;
     isActivity?: boolean;
@@ -46,7 +46,7 @@ const CalendarCell = memo(function CalendarCell({
       const activities = dayData as CalendarActivity[];
       const activityMap = new Map<
         string,
-        { task_id: number; title: string; status: "pending" | "done" }[]
+        { task_id: number; title: string; status: "pending" | "completed" }[]
       >();
 
       // Merge activities with same name
@@ -78,7 +78,7 @@ const CalendarCell = memo(function CalendarCell({
         for (const act of activities) {
           for (const task of act.tasks) {
             items.push({
-              id: task.task_id,
+              id: task.task_id.toString(),
               taskId: task.task_id,
               title: task.title,
               status: task.status,
@@ -91,7 +91,7 @@ const CalendarCell = memo(function CalendarCell({
         const tasks = dayData as CalendarTaskItem[];
         for (const t of tasks) {
           items.push({
-            id: t.task_id,
+            id: t.task_id.toString(),
             taskId: t.task_id,
             title: t.title,
             status: t.status,
@@ -134,8 +134,8 @@ const CalendarCell = memo(function CalendarCell({
         <div className="flex-1 min-h-0 flex flex-col gap-0.5 overflow-hidden">
           {visible.map((item) => (
             <EventItem
+              task={item}
               key={item.id}
-              id={item.id}
               taskId={item.taskId}
               title={item.title}
               status={item.status}

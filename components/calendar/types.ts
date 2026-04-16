@@ -14,7 +14,7 @@ export interface CalendarTask {
   task_id: number;
   title: string;
   due_date: string; // Format: "YYYY-MM-DD HH:mm:ss" from API
-  status: "pending" | "done";
+  status: "pending" | "completed";
   team: string;
 }
 
@@ -34,7 +34,7 @@ export interface CalendarTaskItem {
   task_id: number;
   title: string;
   due_date: string; // Format: "YYYY-MM-DD HH:mm:ss" from API
-  status: "pending" | "done";
+  status: "pending" | "completed";
   activity_id: number;
 }
 

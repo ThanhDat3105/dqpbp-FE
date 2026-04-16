@@ -23,51 +23,70 @@ import { Button } from "@/components/ui/button";
 import { useActivity } from "@/context/ActivityContext";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Props {
-  task: TaskInterface;
-  formData: TaskInterface;
+  openUpdateTask: boolean;
+  setOpenUpdateTask: React.Dispatch<React.SetStateAction<boolean>>;
+  task: {
+    id: string;
+    taskId?: number | undefined;
+    title: string;
+    status?: "pending" | "completed" | undefined;
+    subLabel?: string | undefined;
+    taskCount?: number | undefined;
+    isActivity?: boolean | undefined;
+  };
+  formData: {
+    id: string;
+    taskId?: number | undefined;
+    title: string;
+    status?: "pending" | "completed" | undefined;
+    subLabel?: string | undefined;
+    taskCount?: number | undefined;
+    isActivity?: boolean | undefined;
+  };
   loading: boolean;
-  setFormData: React.Dispatch<React.SetStateAction<TaskInterface>>;
+  setFormData: React.Dispatch<
+    React.SetStateAction<{
+      id: string;
+      taskId?: number | undefined;
+      title: string;
+      status?: "pending" | "completed" | undefined;
+      subLabel?: string | undefined;
+      taskCount?: number | undefined;
+      isActivity?: boolean | undefined;
+    }>
+  >;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function ProgressDialog({
+  openUpdateTask,
+  setOpenUpdateTask,
   task,
   formData,
   loading,
   setFormData,
   setLoading,
 }: Props) {
-  const { openUpdateTask, setOpenUpdateTask, fetchActivityDetail, activity } =
-    useActivity();
+  const router = useRouter();
+  const { fetchActivityDetail, activity } = useActivity();
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus>(
     (task.status as TaskStatus) || "pending",
   );
-
-  const isAllFieldsFilled = () => {
-    if (!task.report_fields || task.report_fields.length === 0) {
-      return true;
-    }
-    return task.report_fields.every(
-      (field) => field.value && field.value.trim() !== "",
-    );
-  };
-
-  const canSelectCompleted =
-    formData.status === "in_progress" && isAllFieldsFilled();
 
   const handleSubmitStatus = async () => {
     try {
       setLoading(true);
 
       // Validate completed status
-      if (selectedStatus === "completed" && !isAllFieldsFilled()) {
+      if (selectedStatus === "completed") {
         toast.error("Vui lòng điền đầy đủ báo cáo trước khi hoàn thành");
         return;
       }
 
-      await activityAPI.updateTaskStatus(formData.id, selectedStatus);
+      await activityAPI.updateTaskStatus(Number(formData.id), selectedStatus);
 
       toast.success("Cập nhật trạng thái thành công");
       setOpenUpdateTask(false);
@@ -109,13 +128,7 @@ export default function ProgressDialog({
             <SelectContent>
               <SelectItem value="pending">Chưa bắt đầu</SelectItem>
               <SelectItem value="in_progress">Đang thực hiện</SelectItem>
-              <SelectItem
-                value="completed"
-                disabled={!canSelectCompleted}
-                className={!canSelectCompleted ? "opacity-50" : ""}
-              >
-                Hoàn thành
-              </SelectItem>
+              <SelectItem value="completed">Hoàn thành</SelectItem>
             </SelectContent>
           </Select>
           <span className="text-sm text-yellow-500">
@@ -128,6 +141,13 @@ export default function ProgressDialog({
         <DialogFooter className="gap-2">
           <Button
             variant="outline"
+            onClick={() => router.push(`/activities/${task.id}`)}
+            disabled={loading}
+          >
+            Xem chi tiết
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => setOpenUpdateTask(false)}
             disabled={loading}
           >
@@ -135,9 +155,7 @@ export default function ProgressDialog({
           </Button>
           <Button
             onClick={handleSubmitStatus}
-            disabled={
-              loading || (selectedStatus === "completed" && !isAllFieldsFilled)
-            }
+            disabled={loading || selectedStatus === "completed"}
           >
             {loading ? "Đang cập nhật..." : "Cập nhật trạng thái"}
           </Button>

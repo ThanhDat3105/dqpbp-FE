@@ -1,14 +1,24 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import clsx from "clsx";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import ProgressDialog from "./ProgressDialog";
 
 interface EventItemProps {
-  id?: string | number;
+  task: {
+    id: string;
+    taskId?: number | undefined;
+    title: string;
+    status?: "pending" | "completed" | undefined;
+    subLabel?: string | undefined;
+    taskCount?: number | undefined;
+    isActivity?: boolean | undefined;
+  };
   taskId?: number;
   title: string;
-  status?: "pending" | "done";
+  status?: "pending" | "completed";
   subLabel?: string;
   taskCount?: number;
   isActivity?: boolean;
@@ -16,7 +26,7 @@ interface EventItemProps {
 }
 
 const EventItem = memo(function EventItem({
-  id,
+  task,
   taskId,
   title,
   status,
@@ -25,25 +35,43 @@ const EventItem = memo(function EventItem({
   isActivity = false,
   compact = false,
 }: EventItemProps) {
+  const { user } = useAuth();
+  const [formData, setFormData] = useState<{
+    id: string;
+    taskId?: number | undefined;
+    title: string;
+    status?: "pending" | "completed" | undefined;
+    subLabel?: string | undefined;
+    taskCount?: number | undefined;
+    isActivity?: boolean | undefined;
+  }>({
+    id: task.id,
+    taskId: task.taskId,
+    title: task.title,
+    status: task.status,
+    subLabel: task.subLabel,
+    taskCount: task.taskCount,
+    isActivity: task.isActivity,
+  });
+  const [loading, setLoading] = useState(false);
+  const [openUpdateTask, setOpenUpdateTask] = useState(false);
+
+  const className = clsx(
+    "group w-full text-left flex items-center gap-1.5 rounded-md select-none",
+    "transition-all duration-150 cursor-pointer",
+    "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
+    isActivity
+      ? "bg-blue-500 hover:bg-blue-600 active:bg-blue-700"
+      : status === "completed"
+        ? "bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800"
+        : "bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700",
+    compact ? "px-1.5 py-0.5" : "px-2 py-1",
+  );
+
   const href = isActivity ? `/activities` : `/activities/${taskId}`;
 
-  return (
-    <Link
-      href={href}
-      type="button"
-      title={title}
-      className={clsx(
-        "group w-full text-left flex items-center gap-1.5 rounded-md select-none",
-        "transition-all duration-150 cursor-pointer",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
-        isActivity
-          ? "bg-blue-500 hover:bg-blue-600 active:bg-blue-700"
-          : status === "done"
-            ? "bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800"
-            : "bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700",
-        compact ? "px-1.5 py-0.5" : "px-2 py-1",
-      )}
-    >
+  const content = (
+    <>
       {/* Status dot */}
       <span
         className={clsx(
@@ -51,7 +79,7 @@ const EventItem = memo(function EventItem({
           compact ? "w-1.5 h-1.5" : "w-2 h-2",
           isActivity
             ? "bg-blue-200"
-            : status === "done"
+            : status === "completed"
               ? "bg-emerald-200"
               : "bg-white/80",
         )}
@@ -62,16 +90,18 @@ const EventItem = memo(function EventItem({
           className={clsx(
             "block text-white font-medium truncate leading-tight",
             compact ? "text-xs" : "text-base",
-            !isActivity && status === "done" && "line-through opacity-80",
+            !isActivity && status === "completed" && "line-through opacity-80",
           )}
         >
           {title}
         </span>
         {isActivity && taskCount !== undefined && (
-          <span className={clsx(
-            "block text-white text-opacity-80 truncate leading-tight",
-            compact ? "text-[10px] mt-0" : "text-xs mt-0.5",
-          )}>
+          <span
+            className={clsx(
+              "block text-white text-opacity-80 truncate leading-tight",
+              compact ? "text-[10px] mt-0" : "text-xs mt-0.5",
+            )}
+          >
             ({taskCount} nhiệm vụ)
           </span>
         )}
@@ -86,7 +116,40 @@ const EventItem = memo(function EventItem({
       <span className="shrink-0 text-white/0 group-hover:text-white/80 transition-all duration-150 text-[10px]">
         →
       </span>
-    </Link>
+    </>
+  );
+
+  if (user?.role === "CHI_HUY" || user?.role === "TO_TRUONG") {
+    return (
+      <Link href={href} type="button" title={title} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        title={title}
+        className={className}
+        onClick={() => {
+          setOpenUpdateTask(true);
+        }}
+      >
+        {content}
+      </button>
+
+      <ProgressDialog
+        openUpdateTask={openUpdateTask}
+        setOpenUpdateTask={setOpenUpdateTask}
+        task={task}
+        formData={formData}
+        setFormData={setFormData}
+        loading={loading}
+        setLoading={setLoading}
+      />
+    </>
   );
 });
 

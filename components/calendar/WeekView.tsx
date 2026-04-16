@@ -36,7 +36,7 @@ const WeekView = memo(function WeekView({
     id: string | number;
     taskId?: number;
     title: string;
-    status?: "pending" | "done";
+    status?: "pending" | "completed";
     dueDate: string;
     subLabel?: string;
     taskCount?: number;
@@ -50,7 +50,7 @@ const WeekView = memo(function WeekView({
       id: string | number;
       taskId?: number;
       title: string;
-      status?: "pending" | "done";
+      status?: "pending" | "completed";
       dueDate: string;
       subLabel?: string;
       taskCount?: number;
@@ -66,7 +66,7 @@ const WeekView = memo(function WeekView({
           task_id: number;
           title: string;
           due_date: string;
-          status: "pending" | "done";
+          status: "pending" | "completed";
         }[]
       >();
 
@@ -213,8 +213,8 @@ const WeekView = memo(function WeekView({
                     <div className="flex flex-col gap-0.5">
                       {hourEvents.map((ev) => (
                         <EventItem
+                          task={ev}
                           key={ev.id}
-                          id={ev.id}
                           taskId={ev.taskId}
                           title={ev.title}
                           status={ev.status}

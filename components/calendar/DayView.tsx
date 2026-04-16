@@ -42,10 +42,10 @@ const DayView = memo(function DayView({
 
   const events = useMemo(() => {
     const result: {
-      id: string | number;
+      id: string;
       taskId?: number;
       title: string;
-      status?: "pending" | "done";
+      status?: "pending" | "completed";
       dueDate: string;
       subLabel?: string;
       taskCount?: number;
@@ -62,7 +62,7 @@ const DayView = memo(function DayView({
           task_id: number;
           title: string;
           due_date: string;
-          status: "pending" | "done";
+          status: "pending" | "completed";
         }[]
       >();
 
@@ -101,7 +101,7 @@ const DayView = memo(function DayView({
         for (const act of acts) {
           for (const t of act.tasks) {
             result.push({
-              id: t.task_id,
+              id: t.task_id.toString(),
               taskId: t.task_id,
               title: t.title,
               status: t.status,
@@ -114,7 +114,7 @@ const DayView = memo(function DayView({
       } else {
         for (const t of dayData as CalendarTaskItem[]) {
           result.push({
-            id: t.task_id,
+            id: t.task_id.toString(),
             taskId: t.task_id,
             title: t.title,
             status: t.status,
@@ -233,8 +233,8 @@ const DayView = memo(function DayView({
                   <div className="flex flex-col gap-1.5">
                     {hourEvents.map((ev) => (
                       <EventItem
+                        task={ev}
                         key={ev.id}
-                        id={ev.id}
                         taskId={ev.taskId}
                         title={ev.title}
                         status={ev.status}

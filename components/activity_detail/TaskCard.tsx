@@ -5,7 +5,6 @@ import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import {
   activityAPI,
-  ActivityInterface,
   TaskInterface,
   TaskStatus,
 } from "@/services/api/activity";
@@ -19,31 +18,15 @@ import ReportDialog from "./ReportDialog";
 import ProgressDialog from "./ProgressDialog";
 import { handleGetDepartment } from "@/utils/activity";
 import MobilizeDialog from "./MobilizeDialog";
+import { useActivity } from "@/context/ActivityContext";
 
-export default function TaskCard({
-  task,
-  activity,
-  fetchActivityDetail,
-}: {
-  task: TaskInterface;
-  activity: ActivityInterface;
-  fetchActivityDetail: () => Promise<void>;
-}) {
+export default function TaskCard({ task }: { task: TaskInterface }) {
+  const { setOpenUpdateTask, fetchActivityDetail, activity } = useActivity();
+
   const [formData, setFormData] = useState<TaskInterface>(task);
   const [loading, setLoading] = useState(false);
   const [openReportModal, setOpenReportModal] = useState(false);
-  const [openProgressModal, setOpenProgressModal] = useState(false);
   const [openMobilizeModal, setOpenMobilizeModal] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<TaskStatus>(
-    (task.status as TaskStatus) || "pending",
-  );
-
-  // Sync formData and selectedStatus whenever the task prop is refreshed
-  // (e.g. after fetchActivityDetail() resolves following a report submission)
-  useEffect(() => {
-    setFormData(task);
-    setSelectedStatus((task.status as TaskStatus) || "pending");
-  }, [task]);
 
   // Compute field validation
   const hasEmptyFields = useMemo(() => {
@@ -54,15 +37,6 @@ export default function TaskCard({
       (field) => !field.value || field.value.trim() === "",
     );
   }, [formData.report_fields]);
-
-  const isAllFieldsFilled = () => {
-    if (!task.report_fields || task.report_fields.length === 0) {
-      return true;
-    }
-    return task.report_fields.every(
-      (field) => field.value && field.value.trim() !== "",
-    );
-  };
 
   // Handlers for report fields
   const handleReportFieldChange = (index: number, value: string) => {
@@ -87,7 +61,7 @@ export default function TaskCard({
 
       toast.success("Cập nhật báo cáo thành công");
       setOpenReportModal(false);
-      await fetchActivityDetail();
+      await fetchActivityDetail(activity.id);
     } catch (err) {
       const errorMessage =
         err instanceof axios.AxiosError
@@ -101,35 +75,6 @@ export default function TaskCard({
   };
 
   // Submit status update
-  const handleSubmitStatus = async () => {
-    try {
-      setLoading(true);
-
-      // Validate completed status
-      if (selectedStatus === "completed" && !isAllFieldsFilled()) {
-        toast.error("Vui lòng điền đầy đủ báo cáo trước khi hoàn thành");
-        return;
-      }
-
-      const response = await activityAPI.updateTaskStatus(
-        task.id,
-        selectedStatus,
-      );
-
-      toast.success("Cập nhật trạng thái thành công");
-      setOpenProgressModal(false);
-      await fetchActivityDetail();
-    } catch (err) {
-      const errorMessage =
-        err instanceof axios.AxiosError
-          ? err.response?.data?.message || err.message
-          : "Cập nhật trạng thái thất bại";
-
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="w-full bg-white rounded-xl border border-gray-200 shadow p-4 h-fit">
@@ -231,7 +176,7 @@ export default function TaskCard({
               </Button>
             )}
             <Button
-              onClick={() => setOpenProgressModal(true)}
+              onClick={() => setOpenUpdateTask(true)}
               disabled={loading}
               variant="default"
               className="flex-1"
@@ -263,14 +208,11 @@ export default function TaskCard({
 
           {/* ===== PROGRESS MODAL ===== */}
           <ProgressDialog
+            task={task}
             formData={formData}
-            handleSubmitStatus={handleSubmitStatus}
-            isAllFieldsFilled={isAllFieldsFilled()}
+            setFormData={setFormData}
             loading={loading}
-            openProgressModal={openProgressModal}
-            selectedStatus={selectedStatus}
-            setOpenProgressModal={setOpenProgressModal}
-            setSelectedStatus={setSelectedStatus}
+            setLoading={setLoading}
           />
 
           <MobilizeDialog

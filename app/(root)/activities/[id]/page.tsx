@@ -11,30 +11,19 @@ import { activityAPI, TaskInterface } from "@/services/api/activity";
 import Information from "@/components/activity_detail/Information";
 import TaskCard from "@/components/activity_detail/TaskCard";
 import { handleGetDepartment, handleGetWorkType } from "@/utils/activity";
+import { useActivity } from "@/context/ActivityContext";
 
 export default function ActivityDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [activity, setActivity] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchActivityDetail = async () => {
-    try {
-      const res = await activityAPI.getActivityDetail(id);
-      setActivity(res);
-    } catch (error) {
-      console.error("Fetch activity error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { fetchActivityDetail, activity, loadingDetail } = useActivity();
 
   useEffect(() => {
-    if (id) fetchActivityDetail();
+    if (id) fetchActivityDetail(id);
   }, [id]);
 
-  if (loading) {
+  if (loadingDetail) {
     return <div className="p-6">Loading...</div>;
   }
 
@@ -83,12 +72,7 @@ export default function ActivityDetailPage() {
           {activity?.tasks?.length > 0 && (
             <div className="w-full lg:flex-1 space-y-4 sm:space-y-6">
               {activity.tasks.map((task: TaskInterface) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  activity={activity}
-                  fetchActivityDetail={fetchActivityDetail}
-                />
+                <TaskCard key={task.id} task={task} />
               ))}
             </div>
           )}

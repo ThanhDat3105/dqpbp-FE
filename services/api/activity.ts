@@ -234,7 +234,7 @@ export interface CreateActivityInterface {
 }
 
 export interface TaskInterface {
-  id: string;
+  id: number;
   activity_id: string;
   title: string;
   team: string[];
@@ -295,7 +295,7 @@ const updateReportFields = async (
   }
 };
 
-const updateTaskStatus = async (task_id: string, status: TaskStatus) => {
+const updateTaskStatus = async (task_id: number, status: TaskStatus) => {
   try {
     const res = await axiosInstance.put(`/api/activities-task/${task_id}`, {
       status,
