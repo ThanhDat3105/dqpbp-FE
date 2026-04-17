@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { calendarDQTTAPI } from "@/services/api/calendar-dqtt";
+import { usersAPI } from "@/services/api/user";
 import {
   Dialog,
   DialogContent,
@@ -13,15 +14,22 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { MultiSelect } from "@/components/ui/multi-select";
 import { ScheduleRow, OfficeColumn } from "./schedule-data";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ScheduleFormModalProps {
   isOpen: boolean;
@@ -32,39 +40,81 @@ interface ScheduleFormModalProps {
   onSave: (row: ScheduleRow) => void;
 }
 
-// Temporary mock data — replace with real API
-const MOCK_USERS = [
-  "Nguyễn Văn A",
-  "Trần Thị B",
-  "Lê Văn C",
-  "Phạm Văn D",
-  "Hoàng Thị E",
-  "Đặng Văn F",
-  "Vũ Thị G",
-  "Võ Văn H",
-];
-const USER_OPTIONS = MOCK_USERS.map((name) => ({ label: name, value: name }));
+interface SelectOption {
+  label: string;
+  value: string;
+}
+
+// Mã tiểu đội DQCĐ: a1 – a24 (tĩnh, không cần API)
+const PATROL_OPTIONS: SelectOption[] = Array.from({ length: 24 }, (_, i) => ({
+  label: `A${i + 1}`,
+  value: `a${i + 1}`,
+}));
 
 const UserSelect = ({
   value,
   onChange,
+  options,
+  disabled,
 }: {
   value: string;
   onChange: (v: string) => void;
-}) => (
-  <Select value={value} onValueChange={onChange}>
-    <SelectTrigger>
-      <SelectValue placeholder="Chọn người trực..." />
-    </SelectTrigger>
-    <SelectContent>
-      {USER_OPTIONS.map((opt) => (
-        <SelectItem key={opt.value} value={opt.value}>
-          {opt.label}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-);
+  options: SelectOption[];
+  disabled?: boolean;
+}) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          disabled={disabled}
+          className="w-full justify-between font-normal"
+        >
+          {disabled
+            ? "Đang tải..."
+            : value
+              ? (options.find((o) => o.value === value)?.label ?? value)
+              : "Chọn người trực..."}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[--radix-popover-trigger-width] p-0"
+        align="start"
+      >
+        <Command>
+          <CommandInput placeholder="Tìm tên..." />
+          <CommandList>
+            <CommandEmpty>Không tìm thấy.</CommandEmpty>
+            <CommandGroup>
+              {options.map((opt) => (
+                <CommandItem
+                  key={opt.value}
+                  value={opt.label}
+                  onSelect={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === opt.value ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {opt.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 export default function ScheduleFormModal({
   isOpen,
@@ -77,10 +127,35 @@ export default function ScheduleFormModal({
   const [formData, setFormData] = useState<ScheduleRow>(row);
   const [isSaving, setIsSaving] = useState(false);
 
+  // ─── User lists from API ────────────────────────────────────────────────
+  const [dutyOptions, setDutyOptions] = useState<SelectOption[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
   useEffect(() => {
     if (isOpen) setFormData(row);
   }, [row, isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        const dutyUsers = await usersAPI.getDutyUsers();
+        setDutyOptions(
+          dutyUsers.map((u) => ({ label: u.name, value: u.name })),
+        );
+      } catch {
+        toast.error("Không thể tải danh sách người dùng");
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    fetchUsers();
+  }, [isOpen]);
+
+  // ─── Form handlers ──────────────────────────────────────────────────────
   const handleChange = (field: keyof ScheduleRow, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -123,6 +198,8 @@ export default function ScheduleFormModal({
               <UserSelect
                 value={formData.commander}
                 onChange={(v) => handleChange("commander", v)}
+                options={dutyOptions}
+                disabled={loadingUsers}
               />
             </div>
             <div className="space-y-1.5">
@@ -130,6 +207,8 @@ export default function ScheduleFormModal({
               <UserSelect
                 value={formData.duty_officer}
                 onChange={(v) => handleChange("duty_officer", v)}
+                options={dutyOptions}
+                disabled={loadingUsers}
               />
             </div>
             <div className="space-y-1.5">
@@ -137,6 +216,8 @@ export default function ScheduleFormModal({
               <UserSelect
                 value={formData.document_officer}
                 onChange={(v) => handleChange("document_officer", v)}
+                options={dutyOptions}
+                disabled={loadingUsers}
               />
             </div>
             <div className="space-y-1.5">
@@ -144,6 +225,8 @@ export default function ScheduleFormModal({
               <UserSelect
                 value={formData.internal_affairs}
                 onChange={(v) => handleChange("internal_affairs", v)}
+                options={dutyOptions}
+                disabled={loadingUsers}
               />
             </div>
             <div className="space-y-1.5">
@@ -151,6 +234,8 @@ export default function ScheduleFormModal({
               <UserSelect
                 value={formData.meal_duty}
                 onChange={(v) => handleChange("meal_duty", v)}
+                options={dutyOptions}
+                disabled={loadingUsers}
               />
             </div>
             <div className="space-y-1.5">
@@ -158,19 +243,24 @@ export default function ScheduleFormModal({
               <UserSelect
                 value={formData.dqtt_leader}
                 onChange={(v) => handleChange("dqtt_leader", v)}
+                options={dutyOptions}
+                disabled={loadingUsers}
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
             <Label>DQCD trực – Tuần tra</Label>
-            <MultiSelect
-              options={USER_OPTIONS}
+            <UserSelect
               value={
-                Array.isArray(formData.dqcd_patrol) ? formData.dqcd_patrol : []
+                Array.isArray(formData.dqcd_patrol) &&
+                formData.dqcd_patrol.length > 0
+                  ? formData.dqcd_patrol[0]
+                  : ""
               }
-              onValueChange={(v) => handleChange("dqcd_patrol", v)}
-              placeholder="Chọn người đi tuần tra..."
+              onChange={(v) => handleChange("dqcd_patrol", [v])}
+              options={PATROL_OPTIONS}
+              disabled={false}
             />
           </div>
 
@@ -186,6 +276,8 @@ export default function ScheduleFormModal({
                     <UserSelect
                       value={formData.office_duties?.[col.code] || ""}
                       onChange={(v) => handleOfficeChange(col.code, v)}
+                      options={dutyOptions}
+                      disabled={loadingUsers}
                     />
                   </div>
                 ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { X, ChevronDown } from "lucide-react";
+import { X, ChevronDown, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface MultiSelectOption {
@@ -14,6 +14,7 @@ interface MultiSelectProps extends React.InputHTMLAttributes<HTMLDivElement> {
   value?: string[];
   onValueChange?: (values: string[]) => void;
   placeholder?: string;
+  searchPlaceholder?: string;
   disabled?: boolean;
 }
 
@@ -24,6 +25,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       value = [],
       onValueChange,
       placeholder = "Select items...",
+      searchPlaceholder = "Tìm kiếm...",
       className,
       disabled,
       ...props
@@ -31,7 +33,9 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     ref,
   ) => {
     const [isOpen, setIsOpen] = React.useState(false);
+    const [search, setSearch] = React.useState("");
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const searchRef = React.useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -40,6 +44,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
           !containerRef.current.contains(event.target as Node)
         ) {
           setIsOpen(false);
+          setSearch("");
         }
       };
 
@@ -47,6 +52,23 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       return () =>
         document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    // Focus search input when dropdown opens
+    React.useEffect(() => {
+      if (isOpen) {
+        setTimeout(() => searchRef.current?.focus(), 50);
+      } else {
+        setSearch("");
+      }
+    }, [isOpen]);
+
+    const filteredOptions = React.useMemo(
+      () =>
+        options.filter((opt) =>
+          opt.label.toLowerCase().includes(search.toLowerCase()),
+        ),
+      [options, search],
+    );
 
     const selectedLabels = options
       .filter((opt) => value.includes(opt.value))
@@ -106,9 +128,35 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
 
         {isOpen && (
           <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950">
+            {/* Search input */}
+            <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2 dark:border-slate-800">
+              <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={searchPlaceholder}
+                onClick={(e) => e.stopPropagation()}
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSearch("");
+                  }}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+
             <div className="max-h-48 overflow-y-auto p-1">
-              {options.length > 0 ? (
-                options.map((option) => (
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((option) => (
                   <button
                     key={option.value}
                     onClick={() => handleToggle(option.value)}
@@ -146,8 +194,8 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                   </button>
                 ))
               ) : (
-                <div className="px-3 py-2 text-sm text-slate-500">
-                  No options available
+                <div className="px-3 py-4 text-center text-sm text-slate-500">
+                  Không tìm thấy kết quả.
                 </div>
               )}
             </div>
