@@ -81,7 +81,7 @@ export default function WeeklySchedulePage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Lịch có thể công tác trong tuần của DQCĐ
+              Đổi lại tên thành "Lịch làm việc của DQCĐ
             </h1>
             <p className="text-sm text-gray-600 mt-1">
               Quản lý và xem lịch công tác của các thành viên DQCĐ trong tuần

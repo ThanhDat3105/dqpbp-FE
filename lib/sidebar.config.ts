@@ -31,12 +31,6 @@ export const menuConfig: MenuItem[] = [
         icon: Assessment,
       },
       {
-        id: "dashboard-facebook",
-        label: "Facebook",
-        href: "/dashboard/facebook",
-        icon: Assessment,
-      },
-      {
         id: "dashboard-warehouse",
         label: "Kho",
         href: "/dashboard/kho",

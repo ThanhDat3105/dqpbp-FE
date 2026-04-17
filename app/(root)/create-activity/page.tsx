@@ -387,7 +387,7 @@ export default function CreateActivityPage() {
 
             {/* Location + Date */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <FormField label="Địa Điểm" required error={errors.location}>
+              <FormField label="Địa Điểm" error={errors.location}>
                 <Input
                   name="location"
                   value={formData.location}

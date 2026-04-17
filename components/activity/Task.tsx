@@ -144,12 +144,6 @@ export default function Task({
         <FormField
           label="Thời Hạn Hoàn Thành"
           error={errors[`tasks.${taskIndex}.due_date`]}
-          hint={
-            <div className="flex items-center gap-1 text-yellow-600">
-              <AlertTriangle className="h-3 w-3" />
-              Khi quá hạn, hệ thống sẽ gửi email cảnh báo
-            </div>
-          }
         >
           <Input
             type="datetime-local"

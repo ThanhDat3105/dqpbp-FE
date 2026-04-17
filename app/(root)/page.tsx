@@ -56,7 +56,7 @@ export default function HomePage() {
           </Link>
 
           <Link href="/activities" className="px-4 py-2 bg-gray-100 rounded-lg">
-            Danh sách kế hoạch
+            Danh sách Công tác
           </Link>
 
           <Link href="/lich" className="px-4 py-2 bg-gray-100 rounded-lg">
@@ -119,7 +119,7 @@ export default function HomePage() {
         <h2 className="text-2xl font-bold mt-12 mb-6">Quản lý hoạt động</h2>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Danh sách kế hoạch */}
+          {/* Danh sách Công tác */}
           <Link
             href="/activities"
             className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
@@ -127,7 +127,7 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
               <AssignmentIcon className="text-olive" />
               <span className="font-semibold text-gray-800">
-                Danh sách kế hoạch
+                Danh sách Công tác
               </span>
             </div>
           </Link>
@@ -143,14 +143,14 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Tạo kế hoạch */}
+          {/* Tạo công tác */}
           <Link
             href="/create-activity"
             className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
           >
             <div className="flex items-center gap-3">
               <AddCircleIcon className="text-olive" />
-              <span className="font-semibold text-gray-800">Tạo kế hoạch</span>
+              <span className="font-semibold text-gray-800">Tạo công tác</span>
             </div>
           </Link>
 
