@@ -92,6 +92,7 @@ const updateMobilizeCount = async (payload: UpdateMobilizePayload) => {
 
 const registerSchedule = async (payload: RegisterSchedule) => {
   const res = await axiosInstance.post(`/api/schedule/register`, payload);
+
   return res.data;
 };
 

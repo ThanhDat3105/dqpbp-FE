@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select"; // <-- Import Select của shadcn
 import { useAuth } from "@/context/AuthContext";
 import { scheduleAPI } from "@/services/api/schedule";
+import { toast } from "sonner";
+import { getNextWeekMonday } from "@/utils/formatDate";
 // import { useToast } from "@/components/ui/use-toast";
 
 const DAYS = [
@@ -131,15 +133,19 @@ export default function DialogRegisterSchedule() {
 
     const payload = {
       user_id: user?.id || 1,
-      week_start: new Date().toISOString().split("T")[0],
+      week_start: getNextWeekMonday(),
       schedules: schedulesArray,
     };
 
     try {
       const res = await scheduleAPI.registerSchedule(payload);
+
+      toast.success(res.message);
+
       setOpen(false);
       setSelectedSchedules({});
     } catch (error) {
+      toast.error("Đã có lỗi xảy ra");
       console.error(error);
     } finally {
       setIsLoading(false);
