@@ -14,16 +14,14 @@ import { calendarDQTTAPI } from "@/services/api/calendar-dqtt";
 export default function CalendarQdttPage() {
   const [schedule, setSchedule] = useState<WeekSchedule | null>(null);
   const [loading, setLoading] = useState(true);
+  const [referenceDate, setReferenceDate] = useState<Date>(new Date());
 
-  const fetchSchedule = useCallback(async () => {
+  const fetchSchedule = useCallback(async (refDate: Date) => {
     setLoading(true);
     setSchedule(null);
     try {
-      const weekStart = toIsoDate(new Date());
-      const data = await calendarDQTTAPI.getSchedule(weekStart);
-
+      const data = await calendarDQTTAPI.getSchedule(toIsoDate(refDate));
       const monDate = new Date(data.weekStart + "T00:00:00");
-
       setSchedule({
         ...data,
         weekNumber: getIsoWeek(monDate),
@@ -31,7 +29,7 @@ export default function CalendarQdttPage() {
         officeColumns: data.officeColumns ?? [],
       });
     } catch (err) {
-      toast.error("Failed to load schedule. Please try again.");
+      toast.error("Không thể tải lịch trực. Vui lòng thử lại.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -39,8 +37,29 @@ export default function CalendarQdttPage() {
   }, []);
 
   useEffect(() => {
-    fetchSchedule();
-  }, [fetchSchedule]);
+    fetchSchedule(referenceDate);
+  }, [fetchSchedule, referenceDate]);
+
+  // ─── Week navigation ──────────────────────────────────────────────────────
+  const handlePrevWeek = () => {
+    setReferenceDate((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() - 7);
+      return d;
+    });
+  };
+
+  const handleNextWeek = () => {
+    setReferenceDate((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() + 7);
+      return d;
+    });
+  };
+
+  const handleToday = () => {
+    setReferenceDate(new Date());
+  };
 
   const handleExport = () => {
     toast.info("Đang xuất file Excel...");
@@ -57,7 +76,12 @@ export default function CalendarQdttPage() {
             rows: [],
           }
         }
+        referenceDate={referenceDate}
+        onPrevWeek={handlePrevWeek}
+        onNextWeek={handleNextWeek}
+        onToday={handleToday}
         onExport={handleExport}
+        onCreated={() => fetchSchedule(referenceDate)}
       />
 
       <main className="flex-1">
@@ -68,7 +92,7 @@ export default function CalendarQdttPage() {
             setSchedule((prev) => {
               if (!prev) return prev;
               const newRows = prev.rows.map((r) =>
-                r.date === updatedRow.date ? updatedRow : r,
+                r.date === updatedRow.date ? updatedRow : r
               );
               return { ...prev, rows: newRows };
             });

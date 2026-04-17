@@ -54,7 +54,7 @@ function EmptyState({ colCount }: { colCount: number }) {
             />
           </svg>
           <p className="text-sm font-medium">Chưa có lịch trực</p>
-          <p className="text-xs">Nhấn "Lưu lịch" để tạo lịch mới</p>
+          <p className="text-xs">Tuần này chưa có lịch trực. Nhấn &quot;Tạo lịch tuần&quot; để khởi tạo.</p>
         </div>
       </td>
     </tr>

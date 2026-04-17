@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import { calendarDQTTAPI } from "@/services/api/calendar-dqtt";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +75,7 @@ export default function ScheduleFormModal({
   onSave,
 }: ScheduleFormModalProps) {
   const [formData, setFormData] = useState<ScheduleRow>(row);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen) setFormData(row);
@@ -88,10 +92,21 @@ export default function ScheduleFormModal({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-    onClose();
+    setIsSaving(true);
+    try {
+      const result = await calendarDQTTAPI.updateDay(formData.date, formData);
+      toast.success(`Đã cập nhật lịch ngày ${dayLabel} thành công.`);
+      onSave(result.row);
+      onClose();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Có lỗi xảy ra khi lưu.";
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -179,10 +194,24 @@ export default function ScheduleFormModal({
           )}
 
           <DialogFooter className="pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isSaving}
+            >
               Hủy
             </Button>
-            <Button type="submit">Lưu thay đổi</Button>
+            <Button type="submit" disabled={isSaving} className="gap-1.5">
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang lưu...
+                </>
+              ) : (
+                "Lưu thay đổi"
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
