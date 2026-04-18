@@ -33,7 +33,7 @@ export const menuConfig: MenuItem[] = [
       {
         id: "dashboard-warehouse",
         label: "Kho",
-        href: "/dashboard/kho",
+        href: "/dashboard/warehouse",
         icon: Assessment,
       },
       {
