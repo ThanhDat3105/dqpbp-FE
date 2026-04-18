@@ -18,7 +18,7 @@ export interface User {
   id: number;
   name: string;
   role: "DQTT" | "CHI_HUY" | "TO_TRUONG" | "DQCD";
-  team: string;
+  department: string;
 }
 
 const login = async (

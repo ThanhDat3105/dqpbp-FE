@@ -188,7 +188,9 @@ export default function Sidebar({
                     : "bg-blue-100 text-blue-700",
                 )}
               >
-                {user?.role === "CHI_HUY" ? "Chỉ huy" : user?.team || "DQTT"}
+                {user?.role === "CHI_HUY"
+                  ? "Chỉ huy"
+                  : user?.department || "DQTT"}
               </span>
             </div>
           )}

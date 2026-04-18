@@ -4,14 +4,14 @@ export interface User {
   id: number;
   name: string;
   role: "DQTT" | "CHI_HUY";
-  team: string;
+  department: string;
 }
 
 export interface UserOption {
   id: number;
   name: string;
   role: string;
-  team: string | null;
+  department: string | null;
 }
 
 const getMe = async (): Promise<User> => {

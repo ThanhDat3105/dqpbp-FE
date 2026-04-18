@@ -55,22 +55,6 @@ export default function SidebarItem({
       onToggle?.();
       return;
     }
-
-    if (!isActivities) {
-      e.preventDefault();
-      toast("Coming soon...");
-    }
-  };
-
-  // 🔥 Handle click child
-  const handleChildClick = (href?: string) => (e: React.MouseEvent) => {
-    const isChildActivities =
-      href?.includes("/activities") || href?.includes("/calendar");
-
-    if (!isChildActivities) {
-      e.preventDefault();
-      toast("Coming soon...");
-    }
   };
 
   // ─── ITEM KHÔNG CÓ CHILD ─────────────────────────
@@ -163,7 +147,6 @@ export default function SidebarItem({
             <Link
               key={child.id}
               href={child.href || "#"}
-              onClick={handleChildClick(child.href)}
               className={clsx(
                 "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200",
                 "hover:bg-gray-100 active:bg-gray-200",
