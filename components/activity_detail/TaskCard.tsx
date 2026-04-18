@@ -226,7 +226,7 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
           />
         </>
       ) : (
-        task.report_fields.map((field) => (
+        task?.report_fields?.map((field) => (
           <div key={field.name} className="mt-4 flex gap-2">
             <h3 className="text-sm">{field.name}:</h3>
             <p className="font-bold">{field.value}</p>

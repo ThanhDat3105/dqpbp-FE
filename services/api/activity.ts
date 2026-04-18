@@ -103,7 +103,7 @@ export const departments: Department[] = [
     ]
   },
   {
-    value: "planning",
+    value: "advise",
     label: "Tổ tham mưu",
     teams: [
       {
@@ -213,6 +213,7 @@ export interface ActivityInterface {
   status: "pending" | "in_progress" | "completed" | "cancelled" | string;
   attached_files: string[];
   created_by: string;
+  completed_at: Date | null;
   created_at: Date;
   updated_at: Date;
   tasks: TaskInterface[];

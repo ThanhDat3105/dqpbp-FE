@@ -32,6 +32,7 @@ const ActivityContext = createContext<ActivityContextType>({
     created_at: new Date(),
     updated_at: new Date(),
     tasks: [],
+    completed_at: new Date(),
   },
   loadingDetail: false,
 });
@@ -58,6 +59,7 @@ export function ActivityProvider({ children }: ActivityProviderProps) {
     created_at: new Date(),
     updated_at: new Date(),
     tasks: [],
+    completed_at: new Date(),
   });
   const [loadingDetail, setLoadingDetail] = useState(false);
 
