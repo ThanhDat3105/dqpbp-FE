@@ -57,7 +57,11 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
         (field) => field.value && field.value.trim() !== "",
       );
 
-      await activityAPI.updateReportFields(activity.id, task.id, data);
+      await activityAPI.updateReportFields(
+        activity.id,
+        task.id.toString(),
+        data,
+      );
 
       toast.success("Cập nhật báo cáo thành công");
       setOpenReportModal(false);
