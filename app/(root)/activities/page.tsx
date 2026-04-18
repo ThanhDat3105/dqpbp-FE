@@ -451,7 +451,7 @@ export default function ActivityListPage() {
       <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <SheetContent
           side="right"
-          className="w-[480px] sm:w-[600px] overflow-y-auto px-4 py-4"
+          className="w-[480px] sm:w-[600px] overflow-y-auto px-4 py-4 border-none"
         >
           <ActivityCreateSheet
             onCancel={() => setIsCreateOpen(false)}

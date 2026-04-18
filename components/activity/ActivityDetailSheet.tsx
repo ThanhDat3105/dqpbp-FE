@@ -31,8 +31,6 @@ export default function ActivityDetailSheet({
   if (String(activity.id) !== String(activityId)) {
     return <div className="p-6">Đang tải...</div>;
   }
-  console.log(activity.tasks);
-
   return (
     <div className="flex flex-col">
       <header className="bg-white flex flex-col gap-2 pt-2 pb-4">
