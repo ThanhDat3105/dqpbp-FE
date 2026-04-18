@@ -83,19 +83,25 @@ export const menuConfig: MenuItem[] = [
       {
         id: "personnel-age17",
         label: "Tuổi 17",
-        href: "/nhansu/17tuoi",
+        href: "/personnel/17tuoi",
         icon: Group,
       },
       {
         id: "personnel-source",
         label: "Nguồn",
-        href: "/nhansu/nguon",
+        href: "/personnel/nguon",
         icon: Group,
       },
       {
         id: "personnel-reserve",
         label: "Quân nhân dự bị",
-        href: "/nhansu/Quannhandubi",
+        href: "/personnel/Quannhandubi",
+        icon: Group,
+      },
+      {
+        id: "DQTT",
+        label: "DQTT",
+        href: "/personnel/dqtt",
         icon: Group,
       },
     ],
