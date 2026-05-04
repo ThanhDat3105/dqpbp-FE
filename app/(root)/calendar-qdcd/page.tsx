@@ -81,7 +81,7 @@ export default function WeeklySchedulePage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Đổi lại tên thành "Lịch làm việc của DQCĐ
+              Lịch làm việc của DQCĐ
             </h1>
             <p className="text-sm text-gray-600 mt-1">
               Quản lý và xem lịch công tác của các thành viên DQCĐ trong tuần
@@ -97,7 +97,7 @@ export default function WeeklySchedulePage() {
                 placeholder="Tìm kiếm theo tên..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[200px]"
+                className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-50"
               />
             </div>
 
@@ -105,7 +105,7 @@ export default function WeeklySchedulePage() {
 
             {user?.role === "CHI_HUY" && (
               <Select value={unitFilter} onValueChange={setUnitFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-45">
                   <SelectValue placeholder="Tất cả đơn vị" />
                 </SelectTrigger>
 

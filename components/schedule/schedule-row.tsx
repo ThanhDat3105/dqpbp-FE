@@ -72,7 +72,7 @@ export default function ScheduleRow({
             {patrolCodes.map((code) => (
               <span
                 key={code}
-                className="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#6B8E23]/10 text-[#4a6318] border border-[#6B8E23]/20"
+                className="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#556B2F]/10 text-[#4a6318] border border-[#6B8E23]/20"
               >
                 {code}
               </span>

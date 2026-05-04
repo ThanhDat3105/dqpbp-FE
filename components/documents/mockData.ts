@@ -1,0 +1,58 @@
+import { Document } from './types';
+
+export const mockDocuments: Document[] = [
+    {
+        id: '1',
+        name: 'Kế hoạch Hành quân rèn luyện tháng 02 năm 2026',
+        type: 'Kế hoạch',
+        category: 'Huấn luyện',
+        createdAt: '15/01/2026',
+        createdBy: 'Nguyễn Thanh Nhân',
+        fileCount: 6,
+    },
+    {
+        id: '2',
+        name: 'Giáo án huấn luyện. Bài: Chào, chào báo cáo',
+        type: 'Giáo án',
+        category: 'Huấn luyện',
+        createdAt: '20/01/2026',
+        createdBy: 'Nguyễn Thanh Nhân',
+        fileCount: 3,
+    },
+    {
+        id: '3',
+        name: 'Giáo án huấn luyện. Bài: Động tác trao, nhận thưởng',
+        type: 'Giáo án',
+        category: 'Huấn luyện',
+        createdAt: '21/01/2026',
+        createdBy: 'Nguyễn Thanh Nhân',
+        fileCount: 8,
+    },
+    {
+        id: '4',
+        name: 'Biên bản họp',
+        type: 'Biên bản',
+        category: 'Hành chính',
+        createdAt: '22/01/2026',
+        createdBy: 'Thái Thanh Phong',
+        fileCount: 2,
+    },
+    {
+        id: '5',
+        name: 'Báo cáo hoạt động tháng 01 năm 2026',
+        type: 'Báo cáo',
+        category: 'Báo cáo hoạt động',
+        createdAt: '31/01/2026',
+        createdBy: 'Nguyễn Thanh Nhân',
+        fileCount: 1,
+    },
+    {
+        id: '6',
+        name: 'Quyết định bổ nhiệm Tổ trưởng Tổ 1',
+        type: 'Quyết định',
+        category: 'Văn bản hành chính',
+        createdAt: '05/01/2026',
+        createdBy: 'Thái Thanh Phong',
+        fileCount: 1,
+    },
+];

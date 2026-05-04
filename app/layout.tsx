@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "sonner";
 import { ActivityProvider } from "@/context/ActivityContext";
+import { NotificationProvider } from "@/context/NotificationContext";
+import './globals.css';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,7 +34,9 @@ export default function RootLayout({
         {/* <Navbar /> */}
         {/* <ProgressBar /> */}
         <AuthProvider>
-          <ActivityProvider>{children}</ActivityProvider>
+          <NotificationProvider>
+            <ActivityProvider>{children}</ActivityProvider>
+          </NotificationProvider>
         </AuthProvider>
         <Toaster position="top-right" richColors />
       </body>

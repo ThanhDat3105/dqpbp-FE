@@ -26,7 +26,7 @@ export const departments: Department[] = [
         lat: 10.7531,
         lng: 106.6272,
         phone: "0901234001",
-        cccd: "079201001001"
+        cccd: "079201001001",
       },
       {
         id: "u2",
@@ -35,7 +35,7 @@ export const departments: Department[] = [
         lat: 10.7537,
         lng: 106.6265,
         phone: "0901234002",
-        cccd: "079201001002"
+        cccd: "079201001002",
       },
       {
         id: "u3",
@@ -44,7 +44,7 @@ export const departments: Department[] = [
         lat: 10.7525,
         lng: 106.6281,
         phone: "0901234003",
-        cccd: "079201001003"
+        cccd: "079201001003",
       },
       {
         id: "u4",
@@ -53,7 +53,7 @@ export const departments: Department[] = [
         lat: 10.7542,
         lng: 106.6258,
         phone: "0901234004",
-        cccd: "079201001004"
+        cccd: "079201001004",
       },
       {
         id: "u5",
@@ -62,7 +62,7 @@ export const departments: Department[] = [
         lat: 10.7495,
         lng: 106.6325,
         phone: "0901234023",
-        cccd: "079201001023"
+        cccd: "079201001023",
       },
       {
         id: "u6",
@@ -71,7 +71,7 @@ export const departments: Department[] = [
         lat: 10.7565,
         lng: 106.623,
         phone: "0901234024",
-        cccd: "079201001024"
+        cccd: "079201001024",
       },
       {
         id: "u7",
@@ -80,7 +80,7 @@ export const departments: Department[] = [
         lat: 10.7508,
         lng: 106.6308,
         phone: "0901234025",
-        cccd: "079201001025"
+        cccd: "079201001025",
       },
       {
         id: "u8",
@@ -89,7 +89,7 @@ export const departments: Department[] = [
         lat: 10.755,
         lng: 106.6248,
         phone: "0901234026",
-        cccd: "079201001026"
+        cccd: "079201001026",
       },
       {
         id: "u9",
@@ -98,9 +98,9 @@ export const departments: Department[] = [
         lat: 10.7538,
         lng: 106.627,
         phone: "0901234027",
-        cccd: "079201001027"
-      }
-    ]
+        cccd: "079201001027",
+      },
+    ],
   },
   {
     value: "advise",
@@ -113,7 +113,7 @@ export const departments: Department[] = [
         lat: 10.7518,
         lng: 106.6293,
         phone: "0901234005",
-        cccd: "079201001005"
+        cccd: "079201001005",
       },
       {
         id: "u11",
@@ -122,7 +122,7 @@ export const departments: Department[] = [
         lat: 10.7512,
         lng: 106.6301,
         phone: "0901234006",
-        cccd: "079201001006"
+        cccd: "079201001006",
       },
       {
         id: "u12",
@@ -131,7 +131,7 @@ export const departments: Department[] = [
         lat: 10.7548,
         lng: 106.6245,
         phone: "0901234007",
-        cccd: "079201001007"
+        cccd: "079201001007",
       },
       {
         id: "u13",
@@ -140,7 +140,7 @@ export const departments: Department[] = [
         lat: 10.7505,
         lng: 106.6312,
         phone: "0901234008",
-        cccd: "079201001008"
+        cccd: "079201001008",
       },
       {
         id: "u14",
@@ -149,25 +149,24 @@ export const departments: Department[] = [
         lat: 10.7522,
         lng: 106.6288,
         phone: "0901234009",
-        cccd: "079201001009"
-      }
+        cccd: "079201001009",
+      },
     ],
   },
   {
     value: "political_affairs",
     label: "Tổ Chính trị",
-    teams:
-      [
-        {
-          id: "u15",
-          name: "Phan Phong Phú",
-          address: "15 Đường Lê Tấn Kế, KP.5",
-          lat: 10.7555,
-          lng: 106.6238,
-          phone: "0901234010",
-          cccd: "079201001010"
-        }
-      ],
+    teams: [
+      {
+        id: "u15",
+        name: "Phan Phong Phú",
+        address: "15 Đường Lê Tấn Kế, KP.5",
+        lat: 10.7555,
+        lng: 106.6238,
+        phone: "0901234010",
+        cccd: "079201001010",
+      },
+    ],
   },
   {
     value: "logistics",
@@ -180,8 +179,8 @@ export const departments: Department[] = [
         lat: 10.7515,
         lng: 106.6298,
         phone: "0901234015",
-        cccd: "079201001015"
-      }
+        cccd: "079201001015",
+      },
     ],
   },
   {
@@ -195,10 +194,10 @@ export const departments: Department[] = [
         lat: 10.7502,
         lng: 106.6322,
         phone: "0901234019",
-        cccd: "079201001019"
-      }
-    ]
-  }
+        cccd: "079201001019",
+      },
+    ],
+  },
 ];
 
 export interface ActivityInterface {
@@ -228,7 +227,20 @@ export interface CreateActivityInterface {
   location: string;
   document_number: string;
   attached_files: string[];
-  tasks: Omit<TaskInterface, "id" | "activity_id">[];
+  tasks: {
+    title: string;
+    team: string[];
+    assignees: string[];
+    start_date: string;
+    due_date: string;
+    notes: string;
+    report_fields: { name: string; value: string }[];
+    accepted_at: string | null;
+    created_at: string;
+    updated_at: string;
+    status: "pending" | "in_progress" | "completed" | "cancelled" | string;
+    requires_dqcd: boolean;
+  }[];
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -239,7 +251,8 @@ export interface TaskInterface {
   activity_id: string;
   title: string;
   team: string[];
-  assignees: string[];
+  assignees: { id: string; name: string; department: string }[];
+  start_date: string;
   due_date: string;
   notes: string;
   report_fields: { name: string; value: string }[];
@@ -252,16 +265,36 @@ export interface TaskInterface {
 
 export type TaskStatus = "pending" | "in_progress" | "completed";
 
+export interface PaginatedActivities {
+  results: ActivityInterface[];
+  page: number;
+  limit: number;
+  totalPages: number;
+  total: number;
+}
+
 const getActivities = async ({
+  status,
   month,
   year,
+  page,
+  limit,
 }: {
+  status: string;
   month: number;
   year: number;
-}) => {
+  page?: number;
+  limit?: number;
+}): Promise<PaginatedActivities> => {
   try {
     const res = await axiosInstance.get("/api/activities", {
-      params: { month, year },
+      params: {
+        month,
+        year,
+        page,
+        limit,
+        status: status === "all" ? undefined : status,
+      },
     });
     return res.data.metaData;
   } catch (error) {
@@ -312,7 +345,7 @@ const createActivity = async (payload: CreateActivityInterface) => {
   try {
     const res = await axiosInstance.post(`/api/activities`, payload);
 
-    console.log(res)
+    console.log(res);
 
     return res.data;
   } catch (error) {

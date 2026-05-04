@@ -2,6 +2,7 @@
 
 import { activityAPI, ActivityInterface } from "@/services/api/activity";
 import { createContext, useContext, useState, ReactNode, useMemo } from "react";
+import { toast } from "sonner";
 
 // ------------------- TYPES -------------------
 interface ActivityContextType {
@@ -68,7 +69,8 @@ export function ActivityProvider({ children }: ActivityProviderProps) {
       setLoadingDetail(true);
       const res = await activityAPI.getActivityDetail(id);
       setActivity(res);
-    } catch (error) {
+    } catch (error: any) {
+      toast.error(error.message || "Lỗi khi tải chi tiết hoạt động");
       console.error("Fetch activity error:", error);
     } finally {
       setLoadingDetail(false);

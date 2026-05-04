@@ -48,13 +48,14 @@ const MonthView = memo(function MonthView({
               i === 6 ? "text-red-500" : "text-gray-500",
             )}
           >
-            {day}
+            <span className="sm:hidden">{day.replace("T", "")}</span>
+            <span className="hidden sm:inline">{day}</span>
           </div>
         ))}
       </div>
 
       {/* Grid */}
-      <div className="flex-1 grid grid-rows-6 min-h-0 overflow-auto">
+      <div className="flex-1 grid grid-rows-[repeat(6,auto)] overflow-auto">
         {weeks.map((week, wi) => (
           <div
             key={wi}
@@ -68,7 +69,7 @@ const MonthView = memo(function MonthView({
                 <div
                   key={key}
                   className={clsx(
-                    "border-r border-gray-200 last:border-r-0 p-1.5 min-h-25",
+                    "border-r border-gray-200 last:border-r-0 p-0.5 sm:p-1.5 min-h-15 sm:min-h-25",
                     "hover:bg-gray-50/80 transition-colors duration-100",
                     isToday && "bg-emerald-50/60",
                   )}
@@ -80,7 +81,7 @@ const MonthView = memo(function MonthView({
                     isToday={isToday}
                     isCurrentMonth={isCurrentMonth}
                     compact={true}
-                    maxVisible={3}
+                    maxVisible={2}
                   />
                 </div>
               );

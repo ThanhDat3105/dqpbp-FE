@@ -29,12 +29,13 @@ const CalendarHeader = memo(function CalendarHeader({
   onViewChange,
 }: CalendarHeaderProps) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 shrink-0 flex-wrap">
+    <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 shrink-0">
       {/* Today button */}
       <button
         type="button"
         onClick={onToday}
         className={clsx(
+          "order-3 sm:order-1",
           "px-3 py-1.5 text-sm font-medium rounded-lg border transition-all duration-150",
           "border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
@@ -44,7 +45,7 @@ const CalendarHeader = memo(function CalendarHeader({
       </button>
 
       {/* Prev / Next */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 order-1 sm:order-2">
         <button
           type="button"
           onClick={onPrev}
@@ -99,21 +100,23 @@ const CalendarHeader = memo(function CalendarHeader({
       </div>
 
       {/* Date label */}
-      <h2 className="flex-1 text-lg font-semibold text-gray-800 tracking-tight select-none">
+      <h2 className="flex-1 order-2 sm:order-3 text-base sm:text-lg font-semibold text-gray-800 tracking-tight select-none truncate text-center sm:text-left">
         {label}
       </h2>
 
-      <Notification />
+      <div className="hidden sm:flex order-4">
+        <Notification />
+      </div>
 
       {/* View selector */}
-      <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
+      <div className="order-5 w-full sm:w-auto flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5 mt-2 sm:mt-0">
         {VIEW_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             type="button"
             onClick={() => onViewChange(opt.value)}
             className={clsx(
-              "px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-150",
+              "flex-1 sm:flex-none px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-150",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
               viewMode === opt.value
                 ? "bg-white text-emerald-700 shadow-sm"

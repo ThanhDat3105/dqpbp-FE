@@ -30,6 +30,7 @@ interface FormData {
     title: string;
     team: string[];
     assignees: string[];
+    start_date: string;
     due_date: string;
     notes: string;
     report_fields: Array<{ id: number; name: string; value: string }>;
@@ -218,6 +219,7 @@ export default function CreateActivityPage() {
           title: "",
           team: [],
           assignees: [],
+          start_date: "",
           due_date: "",
           notes: "",
           report_fields: [],
@@ -467,7 +469,7 @@ export default function CreateActivityPage() {
             ) : (
               <div className="space-y-4">
                 {formData.tasks.map((task, index) => (
-                  <div key={index} className="border rounded-xl p-4 bg-gray-50">
+                  <div key={index} className="rounded-xl bg-gray-50">
                     <Task
                       task={task}
                       taskIndex={index}

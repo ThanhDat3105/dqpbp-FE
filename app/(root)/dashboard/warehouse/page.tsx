@@ -305,7 +305,7 @@ export default function WarehouseDashboardPage() {
             {/* Stats Row */}
             <section
               id="stats-row"
-              className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+              className="grid grid-cols-2 lg:grid-cols-4 md:gap-4 gap-2"
             >
               {STATS.map((stat) => (
                 <StatCard key={stat.id} stat={stat} />
@@ -315,21 +315,23 @@ export default function WarehouseDashboardPage() {
             {/* Alert Banner */}
             <section
               id="alert-banner"
-              className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3"
+              className="bg-red-50 border border-red-200 rounded-xl p-4"
             >
-              <WarningAmberRounded className="text-red-500 shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-red-800 text-sm">
-                  Cảnh báo: 3 loại vật phẩm dưới mức an toàn nghiêm trọng
-                </p>
-                <p className="text-red-600 text-xs mt-1">
-                  Áo phao cứu sinh &middot; Đèn pin chuyên dụng &middot; Bộ đàm
-                  Motorola
-                </p>
+              <div className="flex items-start gap-3">
+                <WarningAmberRounded className="text-red-500 shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-red-800 text-sm">
+                    Cảnh báo: 3 loại vật phẩm dưới mức an toàn nghiêm trọng
+                  </p>
+                  <p className="text-red-600 text-xs mt-1">
+                    Áo phao cứu sinh &middot; Đèn pin chuyên dụng &middot; Bộ
+                    đàm Motorola
+                  </p>
+                </div>
               </div>
               <a
                 href="#"
-                className="shrink-0 text-xs font-semibold text-red-700 hover:text-red-900 underline underline-offset-2 whitespace-nowrap transition-colors"
+                className="flex justify-end shrink-0 text-xs font-semibold text-red-700 hover:text-red-900 underline underline-offset-2 whitespace-nowrap transition-colors"
               >
                 Xem chi tiết →
               </a>
@@ -407,7 +409,7 @@ export default function WarehouseDashboardPage() {
                           <button
                             id={`btn-nhap-them-${item.id}`}
                             onClick={() => setNhapThemItem(item)}
-                            className="px-3 py-1.5 rounded-lg border border-[#6B8E23] text-[#6B8E23] text-xs font-semibold hover:bg-[#6B8E23] hover:text-white transition-all duration-150 cursor-pointer"
+                            className="px-3 py-1.5 rounded-lg border border-[#6B8E23] text-[#6B8E23] text-xs font-semibold hover:bg-[#556B2F] hover:text-white transition-all duration-150 cursor-pointer"
                           >
                             Nhập thêm
                           </button>

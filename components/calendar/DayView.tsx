@@ -166,7 +166,7 @@ const DayView = memo(function DayView({
       {/* Header */}
       <div
         className={clsx(
-          "flex items-center gap-3 px-6 py-3 border-b shrink-0",
+          "flex items-center gap-3 px-3 py-2 sm:px-6 sm:py-3 border-b shrink-0",
           isToday
             ? "border-emerald-200 bg-emerald-50"
             : "border-gray-200 bg-gray-50",
@@ -178,7 +178,7 @@ const DayView = memo(function DayView({
           </span>
           <span
             className={clsx(
-              "flex items-center justify-center w-10 h-10 rounded-full text-2xl font-bold",
+              "flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-xl sm:text-2xl font-bold",
               isToday ? "bg-emerald-600 text-white" : "text-gray-800",
             )}
           >
@@ -215,7 +215,7 @@ const DayView = memo(function DayView({
               style={isCurrentHour ? { position: "relative" } : undefined}
             >
               {/* Time label */}
-              <div className="w-16 shrink-0 flex items-start justify-end pr-3 pt-1 border-r border-gray-100">
+              <div className="w-12 sm:w-16 shrink-0 flex items-start justify-end pr-3 pt-1 border-r border-gray-100">
                 <span className="text-xs text-gray-400 font-medium">
                   {hour === 0 ? "" : `${String(hour).padStart(2, "0")}:00`}
                 </span>
@@ -224,7 +224,7 @@ const DayView = memo(function DayView({
               {/* Content */}
               <div
                 className={clsx(
-                  "flex-1 p-1.5 transition-colors duration-100",
+                  "flex-1 p-1 sm:p-1.5 transition-colors duration-100",
                   "hover:bg-gray-50/70",
                   isToday && "bg-emerald-50/20",
                 )}
@@ -250,7 +250,7 @@ const DayView = memo(function DayView({
 
               {isCurrentHour && (
                 <div
-                  className="absolute left-16 right-0 flex items-center pointer-events-none z-10"
+                  className="absolute left-12 sm:left-16 right-0 flex items-center pointer-events-none z-10"
                   style={{ top: `${topPercent}%` }}
                 >
                   <div className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0 -ml-1.5" />

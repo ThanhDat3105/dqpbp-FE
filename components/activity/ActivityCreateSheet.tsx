@@ -1,19 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 import { Plus, Info, ListTodo, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  activityAPI,
-  CreateActivityInterface,
-  departments,
-} from "@/services/api/activity";
+import { activityAPI, CreateActivityInterface } from "@/services/api/activity";
 import Task from "@/components/activity/Task";
 import { createActivitySchema } from "@/lib/validations";
 import { toast } from "sonner";
+import { departmentAPI } from "@/services/api/department";
+import { handleGetDepartment } from "@/utils/activity";
 
 interface FormData {
   name: string;
@@ -29,6 +27,7 @@ interface FormData {
     title: string;
     team: string[];
     assignees: string[];
+    start_date: string;
     due_date: string;
     notes: string;
     report_fields: Array<{ id: number; name: string; value: string }>;
@@ -68,6 +67,7 @@ export default function ActivityCreateSheet({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateErrors, setDateErrors] = useState<Record<string, string>>({});
+  const [department, setDepartment] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const validateDateRange = (
@@ -82,16 +82,34 @@ export default function ActivityCreateSheet({
         "Ngày bắt đầu không được lớn hơn ngày kết thúc";
     }
 
+    // Thêm T23:59 để đảm bảo due_date (datetime-local) có thể chọn vào ngày cuối cùng
+    const endOfDay = end ? `${end}T23:59` : "";
+
     tasks.forEach((task, index) => {
-      if (!task.due_date) return;
-      if (start && task.due_date < start) {
-        const display = new Date(start).toLocaleDateString("vi-VN");
-        newDateErrors[`tasks.${index}.due_date`] =
-          `Thời hạn hoàn thành phải từ ngày bắt đầu kế hoạch (${display}) trở đi`;
-      } else if (end && task.due_date > end) {
-        const display = new Date(end).toLocaleDateString("vi-VN");
-        newDateErrors[`tasks.${index}.due_date`] =
-          `Thời hạn hoàn thành phải trước hoặc bằng ngày kết thúc kế hoạch (${display})`;
+      const displayStart = new Date(start).toLocaleDateString("vi-VN");
+      const displayEnd = new Date(end).toLocaleDateString("vi-VN");
+
+      // Validate Task Start Date
+      if (task.start_date) {
+        if (start && task.start_date < start) {
+          newDateErrors[`tasks.${index}.start_date`] =
+            `Thời gian bắt đầu nhiệm vụ phải từ ngày bắt đầu kế hoạch (${displayStart}) trở đi`;
+        }
+        if (task.due_date && task.start_date > task.due_date) {
+          newDateErrors[`tasks.${index}.start_date`] =
+            `Thời gian bắt đầu không được trễ hơn thời hạn hoàn thành`;
+        }
+      }
+
+      // Validate Task Due Date
+      if (task.due_date) {
+        if (start && task.due_date < start) {
+          newDateErrors[`tasks.${index}.due_date`] =
+            `Thời hạn hoàn thành phải từ ngày bắt đầu kế hoạch (${displayStart}) trở đi`;
+        } else if (endOfDay && task.due_date > endOfDay) {
+          newDateErrors[`tasks.${index}.due_date`] =
+            `Thời hạn hoàn thành phải trước hoặc bằng kết thúc kế hoạch (${displayEnd})`;
+        }
       }
     });
 
@@ -224,6 +242,7 @@ export default function ActivityCreateSheet({
           title: "",
           team: [],
           assignees: [],
+          start_date: "", // Khởi tạo trường start_date
           due_date: "",
           notes: "",
           report_fields: [],
@@ -256,7 +275,8 @@ export default function ActivityCreateSheet({
         [field]: value,
       };
 
-      if (field === "due_date") {
+      // Trigger validate lại khi thay đổi ngày của task
+      if (field === "start_date" || field === "due_date") {
         validateDateRange(prev.start_date, prev.end_date, updatedTasks);
       }
 
@@ -315,6 +335,25 @@ export default function ActivityCreateSheet({
     });
   };
 
+  const handleGetDepartments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await departmentAPI.getAllDepartment();
+
+      const department = res.map((de) => de.code);
+
+      setDepartment(department);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    handleGetDepartments();
+  }, [handleGetDepartments]);
+
   return (
     <div className="flex flex-col">
       <div className="pb-4">
@@ -368,9 +407,9 @@ export default function ActivityCreateSheet({
               }`}
             >
               <option value="">-- Chọn tổ công tác --</option>
-              {departments.map((dept) => (
-                <option key={dept.value} value={dept.value}>
-                  {dept.label}
+              {department.map((dept) => (
+                <option key={dept} value={dept}>
+                  {handleGetDepartment(dept)}
                 </option>
               ))}
             </select>

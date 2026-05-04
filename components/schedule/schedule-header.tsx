@@ -1,9 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Download, CalendarPlus } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  CalendarPlus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { WeekSchedule, formatDayMonth, formatFullDate, getMonday } from "./schedule-data";
+import {
+  WeekSchedule,
+  formatDayMonth,
+  formatFullDate,
+  getMonday,
+} from "./schedule-data";
 import Notification from "@/components/notification/Notification";
 import ScheduleCreateModal from "./schedule-create-modal";
 
@@ -27,10 +37,14 @@ function getWeekLabel(referenceDate: Date): {
   sunday.setDate(monday.getDate() + 6);
 
   // ISO week number
-  const d = new Date(Date.UTC(monday.getFullYear(), monday.getMonth(), monday.getDate()));
+  const d = new Date(
+    Date.UTC(monday.getFullYear(), monday.getMonth(), monday.getDate()),
+  );
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNumber = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  const weekNumber = Math.ceil(
+    ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+  );
 
   const label = `Tuần ${weekNumber}: ${formatDayMonth(monday)} – ${formatFullDate(sunday)}`;
 
@@ -71,7 +85,7 @@ export default function ScheduleHeader({
           </div>
 
           {/* Week navigation */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center justify-center w-full sm:w-auto gap-1 bg-gray-100 rounded-lg p-1">
             <Button
               id="prev-week-btn"
               variant="ghost"
@@ -83,7 +97,7 @@ export default function ScheduleHeader({
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <span className="px-3 py-1 text-sm font-medium text-gray-700 select-none min-w-[220px] text-center">
+            <span className="flex-1 text-center whitespace-normal text-xs sm:text-sm sm:flex-none sm:whitespace-nowrap sm:min-w-[220px] px-3 py-1 font-medium text-gray-700 select-none">
               {label}
             </span>
 
@@ -100,26 +114,28 @@ export default function ScheduleHeader({
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:w-auto">
             <Button
               id="today-btn"
               variant="outline"
               size="sm"
               onClick={onToday}
               disabled={isCurrentWeek}
-              className="text-sm"
+              className="text-sm w-full sm:w-auto justify-center"
             >
               Hôm nay
             </Button>
 
-            <Notification />
+            <div className="flex items-center justify-center w-full h-9 border border-gray-200 rounded-md sm:w-auto sm:border-0 sm:h-auto sm:rounded-none">
+              <Notification />
+            </div>
 
             <Button
               id="create-week-btn"
               variant="outline"
               size="sm"
               onClick={() => setCreateOpen(true)}
-              className="gap-1.5 text-blue-700 border-blue-300 hover:bg-blue-50"
+              className="gap-1.5 text-blue-700 border-blue-300 hover:bg-blue-50 w-full sm:w-auto justify-center"
             >
               <CalendarPlus className="h-4 w-4" />
               Tạo lịch tuần
@@ -129,7 +145,7 @@ export default function ScheduleHeader({
               id="export-excel-btn"
               size="sm"
               onClick={onExport}
-              className="gap-1.5 bg-[#217346] hover:bg-[#1a5c38] text-white border-0"
+              className="gap-1.5 bg-[#217346] hover:bg-[#1a5c38] text-white border-0 w-full sm:w-auto justify-center"
             >
               <Download className="h-4 w-4" />
               Xuất Excel

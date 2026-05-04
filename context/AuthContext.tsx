@@ -107,6 +107,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       toast.success(data.message ? data.message : "Đăng nhập thành công");
 
+      const response = await userApi.getMe();
+
+      if (response) {
+        setUser(response);
+      }
+
       return !!data;
     } catch (error: any) {
       toast.error(

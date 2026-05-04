@@ -66,39 +66,41 @@ export default function CalendarQdttPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen space-y-6">
-      <ScheduleHeader
-        schedule={
-          schedule ?? {
-            weekId: "",
-            weekNumber: 0,
-            officeColumns: [],
-            rows: [],
+    <div className="flex flex-col h-full">
+      <div className="flex flex-col min-h-0 space-y-4 sm:space-y-6">
+        <ScheduleHeader
+          schedule={
+            schedule ?? {
+              weekId: "",
+              weekNumber: 0,
+              officeColumns: [],
+              rows: [],
+            }
           }
-        }
-        referenceDate={referenceDate}
-        onPrevWeek={handlePrevWeek}
-        onNextWeek={handleNextWeek}
-        onToday={handleToday}
-        onExport={handleExport}
-        onCreated={() => fetchSchedule(referenceDate)}
-      />
-
-      <main className="flex-1">
-        <ScheduleTable
-          schedule={loading ? null : schedule}
-          loading={loading}
-          onUpdateRow={(updatedRow) => {
-            setSchedule((prev) => {
-              if (!prev) return prev;
-              const newRows = prev.rows.map((r) =>
-                r.date === updatedRow.date ? updatedRow : r
-              );
-              return { ...prev, rows: newRows };
-            });
-          }}
+          referenceDate={referenceDate}
+          onPrevWeek={handlePrevWeek}
+          onNextWeek={handleNextWeek}
+          onToday={handleToday}
+          onExport={handleExport}
+          onCreated={() => fetchSchedule(referenceDate)}
         />
-      </main>
+
+        <main className="flex-1">
+          <ScheduleTable
+            schedule={loading ? null : schedule}
+            loading={loading}
+            onUpdateRow={(updatedRow) => {
+              setSchedule((prev) => {
+                if (!prev) return prev;
+                const newRows = prev.rows.map((r) =>
+                  r.date === updatedRow.date ? updatedRow : r,
+                );
+                return { ...prev, rows: newRows };
+              });
+            }}
+          />
+        </main>
+      </div>
     </div>
   );
 }

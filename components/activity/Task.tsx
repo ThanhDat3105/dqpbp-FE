@@ -1,16 +1,19 @@
-import { Trash2, Lightbulb, AlertTriangle, Plus } from "lucide-react";
-import { departments } from "@/services/api/activity";
+import { Trash2, Lightbulb, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiSelect } from "../ui/multi-select";
 import { Label } from "@/components/ui/label";
 import { Switch } from "../ui/switch";
+import { UserOption, usersAPI } from "@/services/api/user";
+import { departmentAPI, DepartmentInterface } from "@/services/api/department";
+import { useCallback, useEffect, useState } from "react";
 
 interface TaskData {
   id: number;
   title: string;
   team: string[];
   assignees: string[];
+  start_date: string;
   due_date: string;
   notes: string;
   report_fields: Array<{ id: number; name: string; value: string }>;
@@ -51,18 +54,41 @@ export default function Task({
   onRemoveReportField,
   onChangeReportField,
 }: Props) {
-  const getUserOptions = (teams: string[]) => {
-    if (teams.length === 0) {
-      return departments
-        .flatMap((d) => d.teams || [])
-        .map((u) => ({ value: u.id, label: u.name }));
-    }
+  const [departments, setDepartment] = useState<DepartmentInterface[]>([]);
+  const [users, setUsers] = useState<UserOption[]>([]);
 
-    return departments
-      .filter((d) => teams.includes(d.value))
-      .flatMap((d) => d.teams || [])
-      .map((u) => ({ value: u.id, label: u.name }));
+  const handleGetUser = async (teams: string[]) => {
+    try {
+      const data = await usersAPI.getAllUser({
+        departmentCode: teams,
+        role: "DQTT",
+      });
+
+      setUsers(data);
+    } catch (error) {
+      console.log(error);
+    }
   };
+
+  const handleGetDepartment = useCallback(async () => {
+    try {
+      const data = await departmentAPI.getAllDepartment();
+
+      setDepartment(data);
+    } catch (error) {
+      console.log(error);
+    }
+  }, []);
+
+  useEffect(() => {
+    handleGetDepartment();
+  }, [handleGetDepartment]);
+
+  useEffect(() => {
+    if (task.team.length > 0) {
+      handleGetUser(task.team);
+    }
+  }, [task.team]);
 
   return (
     <div className="border border-gray-200 rounded-lg p-5 bg-gray-50">
@@ -109,12 +135,12 @@ export default function Task({
         >
           <MultiSelect
             options={departments.map((dept) => ({
-              value: dept.value,
-              label: dept.label,
+              value: dept.code,
+              label: dept.name,
             }))}
             value={task.team}
             onValueChange={(value) => {
-              onChangeField("assignees", []);
+              // onChangeField("assignees", []);
               onChangeField("team", value);
             }}
             placeholder="Chọn tổ phụ trách..."
@@ -129,15 +155,31 @@ export default function Task({
         >
           <MultiSelect
             disabled={task.team.length === 0}
-            options={getUserOptions(task.team)}
+            options={users.map((user) => ({
+              value: String(user.id),
+              label: user.name,
+            }))}
             value={task.assignees}
             onValueChange={(value) => onChangeField("assignees", value)}
             placeholder="Chọn người thực hiện..."
           />
+        </FormField>
 
-          <p className="text-xs text-gray-500 mt-1">
-            💡 Bạn có thể chọn nhiều người
-          </p>
+        {/* Start Date */}
+        <FormField
+          label="Thời Gian Bắt Đầu"
+          error={errors[`tasks.${taskIndex}.start_date`]}
+        >
+          <Input
+            type="datetime-local"
+            value={task.start_date}
+            min={activityStartDate ? `${activityStartDate}T00:00` : undefined}
+            max={
+              task.due_date ||
+              (activityEndDate ? `${activityEndDate}T23:59` : undefined)
+            }
+            onChange={(e) => onChangeField("start_date", e.target.value)}
+          />
         </FormField>
 
         {/* Due Date */}
@@ -148,20 +190,25 @@ export default function Task({
           <Input
             type="datetime-local"
             value={task.due_date}
-            min={activityStartDate || undefined}
-            max={activityEndDate || undefined}
+            min={
+              task.start_date ||
+              (activityStartDate ? `${activityStartDate}T00:00` : undefined)
+            }
+            max={activityEndDate ? `${activityEndDate}T23:59` : undefined}
             onChange={(e) => onChangeField("due_date", e.target.value)}
           />
         </FormField>
 
         {/* Due Date */}
+
         <div className="flex items-center space-x-2">
           <Switch
             id="requires_dqcd"
             checked={task.requires_dqcd}
             onCheckedChange={(value) => onChangeField("requires_dqcd", value)}
           />
-          <Label htmlFor="requires_dqcd">
+
+          <Label className="leading-5" htmlFor="requires_dqcd">
             Loại nhiệm vụ cần điều động DQCĐ
           </Label>
         </div>

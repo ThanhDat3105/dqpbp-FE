@@ -8,7 +8,6 @@ export interface DepartmentInterface {
     updated_at: string
 }
 
-
 const getAllDepartment = async (): Promise<DepartmentInterface[]> => {
     const res = await axiosInstance.get("/api/department");
 

@@ -19,6 +19,7 @@ export interface User {
   name: string;
   role: "DQTT" | "CHI_HUY" | "TO_TRUONG" | "DQCD";
   department: string;
+  military_rank: string
 }
 
 const login = async (

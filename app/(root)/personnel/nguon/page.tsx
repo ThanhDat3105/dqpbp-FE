@@ -1,7 +1,10 @@
-import React from "react";
+import YouthPersonnelTable from "@/components/youth/YouthPersonnelTable";
 
-const page = () => {
-  return <div>page</div>;
-};
-
-export default page;
+export default function Page() {
+  return (
+    <>
+      <h1 className="text-2xl font-bold text-gray-900">Danh sách nguồn</h1>
+      <YouthPersonnelTable />
+    </>
+  );
+}

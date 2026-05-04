@@ -13,6 +13,7 @@ import clsx from "clsx";
 import SidebarItem from "./SidebarItem";
 import { menuConfig } from "@/lib/sidebar.config";
 import { useAuth } from "@/context/AuthContext";
+import { handleGetDepartment } from "@/utils/activity";
 
 interface SidebarProps {
   onLogout: () => void;
@@ -180,18 +181,25 @@ export default function Sidebar({
               <p className="text-sm font-semibold truncate">
                 {user?.name || "Khách"}
               </p>
-              <span
-                className={clsx(
-                  "inline-block text-xs px-2 py-0.5 rounded-full mt-1",
-                  user?.role === "CHI_HUY"
-                    ? "bg-orange-100 text-orange-700"
-                    : "bg-blue-100 text-blue-700",
-                )}
-              >
-                {user?.role === "CHI_HUY"
-                  ? "Chỉ huy"
-                  : user?.department || "DQTT"}
-              </span>
+              {user && (
+                <span
+                  className={clsx(
+                    "inline-block text-xs px-2 py-0.5 rounded-full mt-1",
+                    user?.role === "CHI_HUY"
+                      ? "bg-orange-100 text-orange-700"
+                      : "bg-blue-100 text-blue-700",
+                  )}
+                >
+                  {user.military_rank} - {""}
+                  {user?.role === "CHI_HUY"
+                    ? "Chỉ huy"
+                    : user.role === "TO_TRUONG"
+                      ? "Tổ trưởng"
+                      : user.role === "DQCD"
+                        ? user.role
+                        : `${user.role} - ${handleGetDepartment(user?.department)}`}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -211,7 +219,9 @@ export default function Sidebar({
       </nav>
 
       {/* Logout Button */}
-      <div className={clsx("shrink-0 border-t border-gray-200 p-4")}>
+      <div
+        className={clsx("shrink-0 border-t border-gray-200 p-4 md:pb-5 pb-20")}
+      >
         <button
           onClick={handleLogout}
           className={clsx(
@@ -236,8 +246,7 @@ export default function Sidebar({
       {/* Desktop Sidebar */}
       <aside
         className={clsx(
-          "hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 h-screen sticky top-0",
-          "fixed left-0 top-16 bottom-0 overflow-hidden",
+          "hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 h-screen shrink-0",
           collapsed ? "w-20" : "w-64",
         )}
       >
@@ -254,7 +263,7 @@ export default function Sidebar({
 
       {/* Mobile Drawer */}
       <aside
-        className={`fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-gray-200 z-40 md:hidden flex flex-col transition-transform duration-300 ease-in-out ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`z-1000 fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-gray-200 md:hidden flex flex-col transition-transform duration-300 ease-in-out ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         {sidebarContent}
       </aside>

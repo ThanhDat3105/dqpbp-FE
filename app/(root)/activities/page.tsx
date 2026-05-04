@@ -5,8 +5,6 @@ import AddIcon from "@mui/icons-material/Add";
 import ArrowLeftIcon from "@mui/icons-material/ArrowLeft";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
 import { formatMonth } from "@/utils/formatDate";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { activityAPI, ActivityInterface } from "@/services/api/activity";
 import {
   handleGetDepartment,
@@ -27,6 +25,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { departmentAPI } from "@/services/api/department";
+import ActivityCard from "@/components/ActivityCard";
+import { LayoutGrid, List } from "lucide-react";
+import AppPagination from "@/components/ui/AppPagination";
+import { useAuth } from "@/context/AuthContext";
 
 // ─── Status helpers ────────────────────────────────────────────────────────────
 
@@ -35,7 +37,6 @@ const STATUS_OPTIONS = [
   { value: "pending", label: "Chưa bắt đầu" },
   { value: "in_progress", label: "Đang thực hiện" },
   { value: "completed", label: "Hoàn thành" },
-  { value: "cancelled", label: "Hủy bỏ" },
   { value: "overdue", label: "Quá hạn" },
 ];
 
@@ -97,10 +98,10 @@ function ProgressCell({ tasks }: { tasks: ActivityInterface["tasks"] }) {
   }, [tasks]);
 
   return (
-    <div className="flex items-center gap-2 min-w-[100px]">
+    <div className="flex items-center gap-2 min-w-25">
       <div className="flex-1 bg-gray-200 rounded-full h-1.5">
         <div
-          className={`h-1.5 rounded-full transition-all ${progress === 100 ? "bg-green-500" : "bg-[#6B8E23]"}`}
+          className={`h-1.5 rounded-full transition-all ${progress === 100 ? "bg-green-500" : "bg-[#556B2F]"}`}
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -114,29 +115,44 @@ function ProgressCell({ tasks }: { tasks: ActivityInterface["tasks"] }) {
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ActivityListPage() {
-  const router = useRouter();
+  const { user } = useAuth();
   const [activities, setActivities] = useState<ActivityInterface[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState<boolean>(true);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [params, setParams] = useState<{
+    page: number;
+    limit: number;
+    currentDate: Date;
+    status: string;
+  }>({
+    page: 1,
+    limit: 10,
+    currentDate: new Date(),
+    status: "all",
+  });
   const [department, setDepartment] = useState<string[]>([]);
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
-
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [view, setView] = useState<"list" | "card">("list");
 
-  const debouncedCurrentDate = useDebounce(currentDate, 300);
+  const debouncedParams = useDebounce(params, 300);
+
+  const btnBase =
+    "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer";
+  const btnActive = "bg-[#556B2F] text-white shadow";
+  const btnInactive = "bg-white text-gray-700 hover:bg-gray-100 shadow-sm";
 
   // ── Month navigation ──
   const handlePrevMonth = () => {
-    const d = new Date(currentDate);
+    const d = new Date(params.currentDate);
     d.setMonth(d.getMonth() - 1);
-    setCurrentDate(d);
+    setParams((prev) => ({ ...prev, currentDate: d }));
   };
   const handleNextMonth = () => {
-    const d = new Date(currentDate);
+    const d = new Date(params.currentDate);
     d.setMonth(d.getMonth() + 1);
-    setCurrentDate(d);
+    setParams((prev) => ({ ...prev, currentDate: d }));
   };
 
   // ── Fetch ──
@@ -144,16 +160,21 @@ export default function ActivityListPage() {
     setLoading(true);
     try {
       const res = await activityAPI.getActivities({
-        month: debouncedCurrentDate.getMonth() + 1,
-        year: debouncedCurrentDate.getFullYear(),
+        status: params.status,
+        month: params.currentDate.getMonth() + 1,
+        year: params.currentDate.getFullYear(),
+        page: params.page,
+        limit: params.limit,
       });
+
       setActivities(res.results);
+      setTotalCount(res.total);
     } catch (error) {
       console.error("Error fetching activities:", error);
     } finally {
       setLoading(false);
     }
-  }, [debouncedCurrentDate]);
+  }, [debouncedParams]);
 
   const handleGetDepartments = useCallback(async () => {
     setLoading(true);
@@ -172,52 +193,40 @@ export default function ActivityListPage() {
 
   useEffect(() => {
     handleGetActivities();
-    handleGetDepartments();
   }, [handleGetActivities]);
 
-  const dataFiltered = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  useEffect(() => {
+    handleGetDepartments();
+  }, [handleGetDepartments]);
 
-    return activities.filter((a) => {
-      const matchDept =
-        departmentFilter === "all" || a.department === departmentFilter;
-
-      let matchStatus: boolean;
-      if (statusFilter === "overdue") {
-        const end = new Date(a.end_date);
-        end.setHours(0, 0, 0, 0);
-        matchStatus = end < today && a.status !== "cancelled";
-      } else {
-        matchStatus = statusFilter === "all" || a.status === statusFilter;
-      }
-
-      return matchStatus && matchDept;
-    });
-  }, [activities, statusFilter, departmentFilter]);
+  const handlePageChange = (newPage: number) => {
+    setParams((prev) => ({ ...prev, page: newPage }));
+  };
 
   return (
     <>
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col">
         {/* ── Header ── */}
         <header>
-          <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-3">
             {/* LEFT */}
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Danh sách Công tác
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Quản lý và theo dõi các công tác hoạt động
-              </p>
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Danh sách Công tác
+                </h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  Quản lý và theo dõi các công tác hoạt động
+                </p>
+              </div>
+              <div className="sm:hidden mt-1">
+                <Notification />
+              </div>
             </div>
 
-            {/* RIGHT */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <Notification />
-
-              {/* Month navigator */}
-              <div className="flex items-center gap-1">
+            {/* Month navigator */}
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-1 w-full sm:w-auto">
+              <div className="flex items-center gap-1 justify-center">
                 <button
                   className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer"
                   onClick={handlePrevMonth}
@@ -225,8 +234,8 @@ export default function ActivityListPage() {
                 >
                   <ArrowLeftIcon className="text-gray-600" />
                 </button>
-                <span className="text-sm font-medium text-gray-700 min-w-[110px] text-center">
-                  {formatMonth(currentDate)}
+                <span className="text-sm font-medium text-gray-700 min-w-27.5 text-center">
+                  {formatMonth(params.currentDate)}
                 </span>
                 <button
                   className="p-1.5 rounded-md hover:bg-gray-100 cursor-pointer"
@@ -235,22 +244,51 @@ export default function ActivityListPage() {
                 >
                   <ArrowRightIcon className="text-gray-600" />
                 </button>
-                <button
-                  onClick={() => setCurrentDate(new Date())}
-                  className="ml-1 px-3 py-1.5 bg-[#6B8E23] text-white text-sm rounded-md hover:opacity-90 font-bold cursor-pointer"
-                >
-                  Tháng này
-                </button>
               </div>
+              <button
+                onClick={() =>
+                  setParams((prev) => ({ ...prev, currentDate: new Date() }))
+                }
+                className="w-full sm:w-auto sm:ml-1 px-3 py-1.5 bg-[#556B2F] text-white text-sm rounded-md hover:opacity-90 font-bold cursor-pointer mt-1 sm:mt-0"
+              >
+                Tháng này
+              </button>
+            </div>
+
+            {/* RIGHT */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+              <div className="hidden sm:block">
+                <Notification />
+              </div>
+              {/* Create button */}
+              {user?.role === "CHI_HUY" && (
+                <button
+                  onClick={() => setIsCreateOpen(true)}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-[#556B2F] cursor-pointer text-white rounded-lg shadow hover:opacity-90 transition w-full sm:w-auto mt-2 sm:mt-0 sm:ml-auto"
+                >
+                  <AddIcon fontSize="small" />
+                  <span className="font-bold text-sm">Tạo công tác</span>
+                </button>
+              )}
+
+              {user?.role === "TO_TRUONG" && (
+                <button
+                  onClick={() => setIsCreateOpen(true)}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-[#556B2F] cursor-pointer text-white rounded-lg shadow hover:opacity-90 transition w-full sm:w-auto mt-2 sm:mt-0 sm:ml-auto"
+                >
+                  <AddIcon fontSize="small" />
+                  <span className="font-bold text-sm">Tạo công tác</span>
+                </button>
+              )}
             </div>
           </div>
         </header>
 
         <div className="pt-4 flex-1 flex flex-col overflow-hidden">
           {/* ── Filter bar ── */}
-          <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 mb-4 flex items-center gap-3 flex-wrap">
+          <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
             {/* Status dropdown */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
               <label
                 htmlFor="status-filter"
                 className="text-sm font-semibold text-gray-700 whitespace-nowrap"
@@ -259,9 +297,15 @@ export default function ActivityListPage() {
               </label>
               <select
                 id="status-filter"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#6B8E23] cursor-pointer"
+                value={params.status}
+                onChange={(e) => {
+                  setParams((prev) => ({
+                    ...prev,
+                    page: 1,
+                    status: e.target.value,
+                  }));
+                }}
+                className="w-full sm:w-auto text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#6B8E23] cursor-pointer"
               >
                 {STATUS_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -272,124 +316,100 @@ export default function ActivityListPage() {
             </div>
 
             {/* Department dropdown */}
-            <div className="flex items-center gap-2">
-              <label
-                htmlFor="dept-filter"
-                className="text-sm font-semibold text-gray-700 whitespace-nowrap"
-              >
-                Bộ phận
-              </label>
-              <select
-                id="dept-filter"
-                value={departmentFilter}
-                onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#6B8E23] cursor-pointer"
-              >
-                <option value="all">Tất cả</option>
-                {department.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {handleGetDepartment(dept)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {user?.role === "CHI_HUY" ||
+              (user?.role === "TO_TRUONG" && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                  <label
+                    htmlFor="dept-filter"
+                    className="text-sm font-semibold text-gray-700 whitespace-nowrap"
+                  >
+                    Bộ phận
+                  </label>
+                  <select
+                    id="dept-filter"
+                    value={departmentFilter}
+                    onChange={(e) => {
+                      setDepartmentFilter(e.target.value);
+                      setParams((prev) => ({ ...prev, page: 1 }));
+                    }}
+                    className="w-full sm:w-auto text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#6B8E23] cursor-pointer"
+                  >
+                    <option value="all">Tất cả</option>
+                    {department.map((dept) => (
+                      <option key={dept} value={dept}>
+                        {handleGetDepartment(dept)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
 
-            {/* Create button */}
-            <button
-              onClick={() => setIsCreateOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#6B8E23] cursor-pointer text-white rounded-lg shadow hover:opacity-90 transition ml-auto"
-            >
-              <AddIcon fontSize="small" />
-              <span className="font-bold text-sm">Tạo công tác</span>
-            </button>
+            <div className="flex justify-end flex-1">
+              <div className="flex gap-1 bg-white/90 rounded-xl p-1 shadow-lg w-fit my-2">
+                {(
+                  [
+                    { key: "list", icon: List },
+                    { key: "card", icon: LayoutGrid },
+                  ] as const
+                ).map(({ key, icon: Icon }) => (
+                  <button
+                    key={key}
+                    onClick={() => setView(key)}
+                    className={`${btnBase} ${view === key ? btnActive : btnInactive}`}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* ── Table ── */}
-          {loading ? (
-            <div className="flex-1 flex items-center justify-center">
-              <Loading />
-            </div>
-          ) : dataFiltered.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center text-gray-500">
-              Không có công tác nào phù hợp.
-            </div>
-          ) : (
-            <div className="flex-1 overflow-auto rounded-lg border border-gray-200 bg-white">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600 w-10">
-                      #
-                    </th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600 min-w-[200px]">
-                      Tên công tác
-                    </th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">
-                      Loại
-                    </th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">
-                      Bộ phận
-                    </th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600 min-w-[160px]">
-                      Thời gian
-                    </th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600 min-w-[130px]">
-                      Tiến độ
-                    </th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">
-                      Trạng thái
-                    </th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">
-                      Nhiệm vụ
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dataFiltered.map((activity, idx) => (
-                    <tr
+          {view === "list" ? (
+            loading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <Loading />
+              </div>
+            ) : activities.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-gray-500">
+                Không có công tác nào phù hợp.
+              </div>
+            ) : (
+              <>
+                {/* Mobile Card List */}
+                <div className="flex-1 overflow-auto sm:hidden space-y-3 px-1 pb-4">
+                  {activities.map((activity) => (
+                    <div
                       key={activity.id}
                       onClick={() => setSelectedId(activity.id)}
-                      className={`border-b border-gray-100 cursor-pointer transition-colors hover:bg-[#6B8E23]/5 ${
-                        idx % 2 === 0 ? "bg-white" : "bg-gray-50/60"
-                      }`}
+                      className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm cursor-pointer hover:border-[#6B8E23] transition-colors"
                     >
-                      {/* # */}
-                      <td className="px-4 py-3 text-gray-400 font-medium">
-                        {idx + 1}
-                      </td>
-
-                      {/* Tên công tác */}
-                      <td className="px-4 py-3 max-w-[260px]">
-                        <TooltipProvider delayDuration={100}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="font-semibold text-gray-900 truncate block max-w-[240px]">
-                                {activity.name}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{activity.name}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </td>
-
-                      {/* Loại */}
-                      <td className="px-4 py-3">
-                        <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-semibold whitespace-nowrap">
+                      <div className="flex justify-between items-start mb-2">
+                        <StatusBadge status={activity.status} />
+                        <span className="text-xs font-semibold text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                          {activity.tasks.length} nhiệm vụ
+                        </span>
+                      </div>
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <h3 className="font-semibold text-gray-900 text-sm mb-2 line-clamp-2">
+                              {activity.name}
+                            </h3>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{activity.name}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <div className="flex gap-2 mb-3 flex-wrap">
+                        <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-semibold">
                           {handleGetWorkType(activity.work_type)}
                         </span>
-                      </td>
-
-                      {/* Bộ phận */}
-                      <td className="px-4 py-3">
-                        <span className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-full font-semibold whitespace-nowrap">
+                        <span className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-full font-semibold">
                           {handleGetDepartment(activity.department)}
                         </span>
-                      </td>
-
-                      {/* Thời gian */}
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">
+                      </div>
+                      <div className="text-xs text-gray-600 mb-3">
                         <div>
                           {format(activity.start_date, "dd/MM/yyyy")}
                           <span className="text-gray-400 mx-1">→</span>
@@ -402,32 +422,149 @@ export default function ActivityListPage() {
                           );
                           return (
                             <div
-                              className={`mt-0.5 font-medium ${deadline.className}`}
+                              className={`mt-1 font-medium ${deadline.className}`}
                             >
                               {deadline.text}
                             </div>
                           );
                         })()}
-                      </td>
-
-                      {/* Tiến độ */}
-                      <td className="px-4 py-3">
+                      </div>
+                      <div className="w-full">
                         <ProgressCell tasks={activity.tasks} />
-                      </td>
-
-                      {/* Trạng thái */}
-                      <td className="px-4 py-3">
-                        <StatusBadge status={activity.status} />
-                      </td>
-
-                      {/* Nhiệm vụ */}
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs font-medium">
-                        {activity.tasks.length} nhiệm vụ
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+
+                {/* Desktop/Tablet Table */}
+                <div className="hidden sm:block flex-1 overflow-auto rounded-lg border border-gray-200 bg-white">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600 w-10">
+                          #
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600 min-w-min-w-50">
+                          Tên công tác
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                          Loại
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600 hidden md:table-cell">
+                          Bộ phận
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600 min-w-40">
+                          Thời gian
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600 min-w-32.5">
+                          Tiến độ
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                          Trạng thái
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600 hidden md:table-cell">
+                          Nhiệm vụ
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activities.map((activity, idx) => (
+                        <tr
+                          key={activity.id}
+                          onClick={() => setSelectedId(activity.id)}
+                          className={`border-b border-gray-100 cursor-pointer transition-colors hover:bg-[#556B2F]/5 ${
+                            idx % 2 === 0 ? "bg-white" : "bg-gray-50/60"
+                          }`}
+                        >
+                          <td className="px-4 py-3 text-gray-400 font-medium">
+                            {(params.page - 1) * params.limit + idx + 1}
+                          </td>
+                          <td className="px-4 py-3 max-w-65">
+                            <TooltipProvider delayDuration={100}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="font-semibold text-gray-900 truncate block max-w-60">
+                                    {activity.name}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{activity.name}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-semibold whitespace-nowrap">
+                              {handleGetWorkType(activity.work_type)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 hidden md:table-cell">
+                            <span className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-full font-semibold whitespace-nowrap">
+                              {handleGetDepartment(activity.department)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">
+                            <div>
+                              {format(
+                                new Date(activity.start_date),
+                                "dd/MM/yyyy",
+                              )}
+                              <span className="text-gray-400 mx-1">→</span>
+                              {format(
+                                new Date(activity.end_date),
+                                "dd/MM/yyyy",
+                              )}
+                            </div>
+                            {(() => {
+                              const deadline = getDeadlineDisplay(
+                                activity.end_date,
+                                activity.completed_at,
+                              );
+                              return (
+                                <div
+                                  className={`mt-0.5 font-medium ${deadline.className}`}
+                                >
+                                  {deadline.text}
+                                </div>
+                              );
+                            })()}
+                          </td>
+                          <td className="px-4 py-3">
+                            <ProgressCell tasks={activity.tasks} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusBadge status={activity.status} />
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs font-medium hidden md:table-cell">
+                            {activity.tasks.length} nhiệm vụ
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <AppPagination
+                  page={params.page}
+                  limit={params.limit}
+                  total={totalCount}
+                  onPageChange={handlePageChange}
+                />
+              </>
+            )
+          ) : loading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <Loading />
+            </div>
+          ) : activities.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center text-gray-500">
+              Không có kế hoạch nào trong tháng này.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {activities.map((activity) => (
+                <ActivityCard key={activity.id} activity={activity} />
+              ))}
             </div>
           )}
         </div>
@@ -440,7 +577,7 @@ export default function ActivityListPage() {
       >
         <SheetContent
           side="right"
-          className="w-[480px] sm:w-[600px] overflow-y-auto px-4 py-4 border-none"
+          className="w-120 sm:w-150 overflow-y-auto px-4 py-4 border-none pb-20"
         >
           {selectedId !== null && (
             <ActivityDetailSheet activityId={selectedId} />
@@ -451,7 +588,7 @@ export default function ActivityListPage() {
       <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <SheetContent
           side="right"
-          className="w-[480px] sm:w-[600px] overflow-y-auto px-4 py-4 border-none"
+          className="w-120 sm:w-150 overflow-y-auto px-4 py-4 border-none pb-20"
         >
           <ActivityCreateSheet
             onCancel={() => setIsCreateOpen(false)}

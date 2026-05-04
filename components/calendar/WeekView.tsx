@@ -149,88 +149,93 @@ const WeekView = memo(function WeekView({
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      {/* Sticky day header row */}
-      <div className="grid grid-cols-[56px_repeat(7,1fr)] border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 shadow-sm">
-        <div className="border-r border-gray-200" /> {/* time gutter */}
-        {days.map((day, i) => {
-          const isToday = day.isSame(today, "day");
-          return (
-            <div
-              key={day.format("YYYY-MM-DD")}
-              className={clsx("py-2 text-center", i === 6 && "text-red-500")}
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                {WEEKDAYS_SHORT[i]}
-              </p>
-              <span
+    <div className="flex-1 flex flex-col min-h-0 overflow-x-auto">
+      <div className="min-w-[560px] flex flex-col flex-1 min-h-0">
+        {/* Sticky day header row */}
+        <div className="grid grid-cols-[40px_repeat(7,1fr)] sm:grid-cols-[56px_repeat(7,1fr)] border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 shadow-sm">
+          <div className="border-r border-gray-200" /> {/* time gutter */}
+          {days.map((day, i) => {
+            const isToday = day.isSame(today, "day");
+            return (
+              <div
+                key={day.format("YYYY-MM-DD")}
                 className={clsx(
-                  "inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold mt-0.5 transition-all",
-                  isToday
-                    ? "bg-emerald-600 text-white shadow"
-                    : "text-gray-800 hover:bg-gray-100",
+                  "py-1 sm:py-2 text-center",
+                  i === 6 && "text-red-500",
                 )}
               >
-                {day.date()}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Scrollable time grid */}
-      <div className="flex-1 overflow-y-auto">
-        {HOURS.map((hour) => (
-          <div
-            key={hour}
-            className="grid grid-cols-[56px_repeat(7,1fr)] border-b border-gray-200 min-h-14"
-          >
-            {/* Hour label */}
-            <div className="flex items-start justify-end pr-2 pt-1 border-r border-gray-200 shrink-0">
-              <span className="text-xs text-gray-400 font-medium">
-                {hour === 0 ? "" : `${hour}:00`}
-              </span>
-            </div>
-
-            {/* Day columns */}
-            {days.map((day, di) => {
-              const isToday = day.isSame(today, "day");
-              const events = getDayEvents(day);
-              const eventsByHour = groupEventsByHour(events);
-              const hourEvents = eventsByHour[hour];
-
-              return (
-                <div
-                  key={day.format("YYYY-MM-DD")}
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  {WEEKDAYS_SHORT[i]}
+                </p>
+                <span
                   className={clsx(
-                    "border-r border-gray-200 last:border-r-0 p-0.5",
-                    "hover:bg-gray-50/60 transition-colors duration-100",
-                    isToday && "bg-emerald-50/30",
-                    di === 6 && "bg-red-50/10",
+                    "inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm font-bold mt-0.5 transition-all",
+                    isToday
+                      ? "bg-emerald-600 text-white shadow"
+                      : "text-gray-800 hover:bg-gray-100",
                   )}
                 >
-                  {hourEvents.length > 0 && (
-                    <div className="flex flex-col gap-0.5">
-                      {hourEvents.map((ev) => (
-                        <EventItem
-                          task={ev}
-                          key={ev.id}
-                          taskId={ev.taskId}
-                          title={ev.title}
-                          status={ev.status}
-                          subLabel={ev.subLabel}
-                          taskCount={ev.taskCount}
-                          isActivity={ev.isActivity}
-                          compact={true}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+                  {day.date()}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Scrollable time grid */}
+        <div className="flex-1 overflow-y-auto">
+          {HOURS.map((hour) => (
+            <div
+              key={hour}
+              className="grid grid-cols-[40px_repeat(7,1fr)] sm:grid-cols-[56px_repeat(7,1fr)] border-b border-gray-200 min-h-14"
+            >
+              {/* Hour label */}
+              <div className="flex items-start justify-end pr-2 pt-1 border-r border-gray-200 shrink-0">
+                <span className="text-xs text-gray-400 font-medium">
+                  {hour === 0 ? "" : `${hour}:00`}
+                </span>
+              </div>
+
+              {/* Day columns */}
+              {days.map((day, di) => {
+                const isToday = day.isSame(today, "day");
+                const events = getDayEvents(day);
+                const eventsByHour = groupEventsByHour(events);
+                const hourEvents = eventsByHour[hour];
+
+                return (
+                  <div
+                    key={day.format("YYYY-MM-DD")}
+                    className={clsx(
+                      "border-r border-gray-200 last:border-r-0 p-0.5",
+                      "hover:bg-gray-50/60 transition-colors duration-100",
+                      isToday && "bg-emerald-50/30",
+                      di === 6 && "bg-red-50/10",
+                    )}
+                  >
+                    {hourEvents.length > 0 && (
+                      <div className="flex flex-col gap-0.5">
+                        {hourEvents.map((ev) => (
+                          <EventItem
+                            task={ev}
+                            key={ev.id}
+                            taskId={ev.taskId}
+                            title={ev.title}
+                            status={ev.status}
+                            subLabel={ev.subLabel}
+                            taskCount={ev.taskCount}
+                            isActivity={ev.isActivity}
+                            compact={true}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { memo, useState } from "react";
 import clsx from "clsx";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import ProgressDialog from "./ProgressDialog";
+// import ProgressDialog from "./ProgressDialog";
 
 interface EventItemProps {
   task: {
@@ -15,6 +15,7 @@ interface EventItemProps {
     subLabel?: string | undefined;
     taskCount?: number | undefined;
     isActivity?: boolean | undefined;
+    activity_id?: number;
   };
   taskId?: number;
   title: string;
@@ -35,26 +36,24 @@ const EventItem = memo(function EventItem({
   isActivity = false,
   compact = false,
 }: EventItemProps) {
-  const { user } = useAuth();
-  const [formData, setFormData] = useState<{
-    id: string;
-    taskId?: number | undefined;
-    title: string;
-    status?: "pending" | "completed" | undefined;
-    subLabel?: string | undefined;
-    taskCount?: number | undefined;
-    isActivity?: boolean | undefined;
-  }>({
-    id: task.id,
-    taskId: task.taskId,
-    title: task.title,
-    status: task.status,
-    subLabel: task.subLabel,
-    taskCount: task.taskCount,
-    isActivity: task.isActivity,
-  });
-  const [loading, setLoading] = useState(false);
-  const [openUpdateTask, setOpenUpdateTask] = useState(false);
+  // const { user } = useAuth();
+  // const [formData, setFormData] = useState<{
+  //   id: string;
+  //   taskId?: number | undefined;
+  //   title: string;
+  //   status?: "pending" | "completed" | undefined;
+  //   subLabel?: string | undefined;
+  //   taskCount?: number | undefined;
+  //   isActivity?: boolean | undefined;
+  // }>({
+  //   id: task.id,
+  //   taskId: task.taskId,
+  //   title: task.title,
+  //   status: task.status,
+  //   subLabel: task.subLabel,
+  //   taskCount: task.taskCount,
+  //   isActivity: task.isActivity,
+  // });
 
   const className = clsx(
     "group w-full text-left flex items-center gap-1.5 rounded-md select-none",
@@ -68,11 +67,13 @@ const EventItem = memo(function EventItem({
     compact ? "px-1.5 py-0.5" : "px-2 py-1",
   );
 
-  const href = isActivity ? `/activities` : `/activities/${taskId}`;
-
-  const content = (
-    <>
-      {/* Status dot */}
+  return (
+    <Link
+      href={`/activities/${task.activity_id}`}
+      type="button"
+      title={title}
+      className={className}
+    >
       <span
         className={clsx(
           "shrink-0 rounded-full",
@@ -116,40 +117,7 @@ const EventItem = memo(function EventItem({
       <span className="shrink-0 text-white/0 group-hover:text-white/80 transition-all duration-150 text-[10px]">
         →
       </span>
-    </>
-  );
-
-  if (user?.role === "CHI_HUY" || user?.role === "TO_TRUONG") {
-    return (
-      <Link href={href} type="button" title={title} className={className}>
-        {content}
-      </Link>
-    );
-  }
-
-  return (
-    <>
-      <button
-        type="button"
-        title={title}
-        className={className}
-        onClick={() => {
-          setOpenUpdateTask(true);
-        }}
-      >
-        {content}
-      </button>
-
-      <ProgressDialog
-        openUpdateTask={openUpdateTask}
-        setOpenUpdateTask={setOpenUpdateTask}
-        task={task}
-        formData={formData}
-        setFormData={setFormData}
-        loading={loading}
-        setLoading={setLoading}
-      />
-    </>
+    </Link>
   );
 });
 

@@ -45,10 +45,12 @@ export default function ActivityDetailSheet({
             <PeopleOutlinedIcon fontSize="small" />
             <span>{handleGetDepartment(activity.department)}</span>
           </span>
-          <span className="px-2 py-1 bg-purple-100 text-purple-700 flex items-center text-xs rounded-full font-bold gap-1">
-            <LocationOnOutlinedIcon fontSize="small" />
-            <span>{activity.location}</span>
-          </span>
+          {activity.location && (
+            <span className="px-2 py-1 bg-purple-100 text-purple-700 flex items-center text-xs rounded-full font-bold gap-1">
+              <LocationOnOutlinedIcon fontSize="small" />
+              <span>{activity.location}</span>
+            </span>
+          )}
         </div>
       </header>
 

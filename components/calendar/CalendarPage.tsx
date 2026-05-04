@@ -152,7 +152,7 @@ export default function CalendarPage() {
   );
 
   return (
-    <div className="relative flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="relative flex flex-col h-full bg-white rounded-none sm:rounded-xl shadow-none sm:shadow-sm border border-gray-200 overflow-hidden">
       {/* Header */}
       <CalendarHeader
         viewMode={viewMode}

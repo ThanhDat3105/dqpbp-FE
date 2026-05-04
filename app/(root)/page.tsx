@@ -11,7 +11,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 export default function HomePage() {
   return (
-    <div className="bg-gray-50 min-h-screen flex flex-col">
+    <div className="bg-gray-50 flex-1 flex flex-col">
       {/* HERO */}
       <header className="bg-linear-to-br from-[#556B2F] via-[#6B8E23] to-[#8B4513] text-white">
         <div className="max-w-7xl mx-auto px-6 py-12">

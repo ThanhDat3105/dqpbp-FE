@@ -39,30 +39,30 @@ export default function RootLayout({
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* Header */}
-      <div className="md:hidden flex">
-        <Header
-          onMobileMenuOpen={() => setMobileMenuOpen(!mobileMenuOpen)}
-          mobileMenuOpen={mobileMenuOpen}
-        />
-      </div>
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      {/* Sidebar — full height, scrolls independently */}
+      <Sidebar
+        onLogout={() => {
+          setMobileMenuOpen(false);
+        }}
+        mobileOpen={mobileMenuOpen}
+        onMobileOpen={setMobileMenuOpen}
+      />
 
-      {/* Main Content Area */}
-      <div className="flex flex-1">
-        {/* Sidebar */}
-        <Sidebar
-          onLogout={() => {
-            setMobileMenuOpen(false);
-          }}
-          mobileOpen={mobileMenuOpen}
-          onMobileOpen={setMobileMenuOpen}
-        />
-
-        {/* Main Content */}
-        <div className="p-4 md:p-6 h-screen overflow-auto flex-1">
-          {children}
+      {/* Main content area — scrolls independently */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Mobile top header */}
+        <div className="md:hidden shrink-0">
+          <Header
+            onMobileMenuOpen={() => setMobileMenuOpen(!mobileMenuOpen)}
+            mobileMenuOpen={mobileMenuOpen}
+          />
         </div>
+
+        {/* Page content — only this scrolls */}
+        <main className="flex-1 overflow-y-auto bg-gray-50 flex flex-col md:p-6 p-2 md:pb-6 pb-24">
+          {children}
+        </main>
 
         <BottomNav />
       </div>

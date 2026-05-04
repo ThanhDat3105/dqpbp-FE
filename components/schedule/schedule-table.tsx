@@ -26,7 +26,7 @@ function SkeletonRow({ index, colCount }: { index: number; colCount: number }) {
   return (
     <tr className={index % 2 === 0 ? "bg-gray-50/70" : "bg-white"}>
       {Array.from({ length: colCount }).map((_, i) => (
-        <td key={i} className="px-3 py-4">
+        <td key={i} className="px-2 py-3 sm:px-3 sm:py-4">
           <div className="h-4 bg-gray-200 rounded animate-pulse" />
         </td>
       ))}
@@ -54,7 +54,10 @@ function EmptyState({ colCount }: { colCount: number }) {
             />
           </svg>
           <p className="text-sm font-medium">Chưa có lịch trực</p>
-          <p className="text-xs">Tuần này chưa có lịch trực. Nhấn &quot;Tạo lịch tuần&quot; để khởi tạo.</p>
+          <p className="text-xs">
+            Tuần này chưa có lịch trực. Nhấn &quot;Tạo lịch tuần&quot; để khởi
+            tạo.
+          </p>
         </div>
       </td>
     </tr>
@@ -99,48 +102,53 @@ export default function ScheduleTable({
   return (
     <>
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                {COLUMNS.map((col) => (
-                  <th
-                    key={col.key}
-                    className={`${col.minW} px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wide`}
-                  >
-                    {col.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
+        <div className="relative">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  {COLUMNS.map((col) => (
+                    <th
+                      key={col.key}
+                      className={`${col.minW} px-2 py-2 sm:px-3 sm:py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wide`}
+                    >
+                      {col.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
 
-            <tbody>
-              {loading ? (
-                Array.from({ length: 7 }, (_, i) => (
-                  <SkeletonRow key={i} index={i} colCount={colCount} />
-                ))
-              ) : !schedule || schedule.rows.length === 0 ? (
-                <EmptyState colCount={colCount} />
-              ) : (
-                schedule.rows.map((row, i) => (
-                  <ScheduleRow
-                    key={i}
-                    row={row}
-                    dayLabel={DAY_LABELS[i]}
-                    officeColumns={schedule.officeColumns}
-                    onEdit={(r) => {
-                      setEditingRow(r);
-                      setEditingIndex(i);
-                    }}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
+              <tbody>
+                {loading ? (
+                  Array.from({ length: 7 }, (_, i) => (
+                    <SkeletonRow key={i} index={i} colCount={colCount} />
+                  ))
+                ) : !schedule || schedule.rows.length === 0 ? (
+                  <EmptyState colCount={colCount} />
+                ) : (
+                  schedule.rows.map((row, i) => (
+                    <ScheduleRow
+                      key={i}
+                      row={row}
+                      dayLabel={DAY_LABELS[i]}
+                      officeColumns={schedule.officeColumns}
+                      onEdit={(r) => {
+                        setEditingRow(r);
+                        setEditingIndex(i);
+                      }}
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* Right fade hint — hidden once scrolled fully, CSS-only */}
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent sm:hidden" />
         </div>
 
         {schedule && !loading && (
-          <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/50 flex items-center justify-end text-xs text-gray-400">
+          <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between sm:justify-end text-xs text-gray-400">
+            <span className="sm:hidden">{schedule.rows.length} ngày</span>
             <span>Cập nhật lần cuối: {new Date().toLocaleString("vi-VN")}</span>
           </div>
         )}

@@ -1,5 +1,6 @@
 // sidebar.config.ts
-import { Home, Assessment, Event, Group } from "@mui/icons-material";
+import { Assessment, Event, Group, Map, Article, Warehouse, } from "@mui/icons-material";
+import { LayoutList } from "lucide-react";
 import type { ElementType } from "react";
 
 export interface MenuItem {
@@ -12,24 +13,24 @@ export interface MenuItem {
 }
 
 export const menuConfig: MenuItem[] = [
-  {
-    id: "home",
-    label: "Trang chủ",
-    href: "/",
-    icon: Home,
-  },
+  // {
+  //   id: "home",
+  //   label: "Trang chủ",
+  //   href: "/",
+  //   icon: Home,
+  // },
   {
     id: "dashboard",
     label: "Dashboard",
     icon: Assessment,
     role: "CHI_HUY",
     children: [
-      {
-        id: "dashboard-summary",
-        label: "Tổng hợp",
-        href: "/dashboard/tong-hop",
-        icon: Assessment,
-      },
+      // {
+      //   id: "dashboard-summary",
+      //   label: "Tổng hợp",
+      //   href: "/dashboard/tong-hop",
+      //   icon: Assessment,
+      // },
       {
         id: "dashboard-warehouse",
         label: "Kho",
@@ -78,6 +79,7 @@ export const menuConfig: MenuItem[] = [
   {
     id: "personnel",
     label: "Nhân sự",
+    role: "CHI_HUY",
     icon: Group,
     children: [
       {
@@ -105,5 +107,84 @@ export const menuConfig: MenuItem[] = [
         icon: Group,
       },
     ],
+  },
+  {
+    id: "ban-do",
+    label: "Bản đồ",
+    href: "/ban-do",
+    icon: Map,
+    role: "CHI_HUY",
+  },
+  {
+    id: "document",
+    label: "Tài liệu",
+    href: "/document",
+    icon: Article,
+    role: "CHI_HUY",
+  },
+  {
+    id: "warehouse",
+    label: "Kho",
+    href: "/warehouse",
+    icon: Warehouse,
+    role: "CHI_HUY",
+  },
+];
+
+export const menuConfigMobile: MenuItem[] = [
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: Assessment,
+    href: "/dashboard/force",
+    role: "CHI_HUY",
+
+  },
+  {
+    id: "activities",
+    label: "Hoạt động",
+    href: "/activities",
+    icon: Event,
+  },
+  {
+    id: "ban-do",
+    label: "Bản đồ",
+    href: "/ban-do",
+    icon: Map,
+    role: "CHI_HUY",
+  },
+  {
+    id: "document",
+    label: "Tài liệu",
+    href: "/document",
+    icon: Article,
+    role: "CHI_HUY",
+  },
+];
+
+export const menuConfigMobileUser: MenuItem[] = [
+  {
+    id: "activities-list",
+    label: "Danh sách",
+    href: "/activities",
+    icon: LayoutList,
+  },
+  {
+    id: "activities-calendar",
+    label: "Lịch",
+    href: "/calendar",
+    icon: Event,
+  },
+  {
+    id: "activities-qdtt",
+    label: "Lịch Trực DQTT",
+    href: "/calendar-qdtt",
+    icon: Event,
+  },
+  {
+    id: "activities-qdcd",
+    label: "Lịch Trực DQCĐ",
+    href: "/calendar-qdcd",
+    icon: Event,
   },
 ];

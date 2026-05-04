@@ -1,6 +1,6 @@
 export type UserStatus = 'on_duty' | 'training' | 'on_leave' | 'other';
 
-export interface User {
+export interface UserDetailInterface {
     id: number;
     name: string;
     address: string | null;
@@ -24,7 +24,7 @@ export const DEPARTMENT_MAP: Record<number, string> = {
     4: "Ban Chỉ huy Quân sự Phường",
 };
 
-export const MOCK_USERS: User[] = [
+export const MOCK_USERS: UserDetailInterface[] = [
     {
         id: 1,
         name: "Nguyễn Văn A",

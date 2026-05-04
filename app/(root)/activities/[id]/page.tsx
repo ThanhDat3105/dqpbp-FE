@@ -27,30 +27,30 @@ export default function ActivityDetailPage() {
     return <div className="p-6">Loading...</div>;
   }
 
-  if (!activity) {
+  if (!activity.name) {
     return <div className="p-6 text-red-500">Không tìm thấy dữ liệu</div>;
   }
 
   return (
     <div className="flex bg-gray-50">
       <main className="flex-1 flex flex-col">
-        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
-          <div className="flex flex-col gap-2 flex-1">
+        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="flex flex-col gap-2 flex-1 order-2 sm:order-1">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
               {activity.name}
             </h1>
 
-            <div className="flex gap-2 mb-3 flex-wrap">
-              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded-full font-bold flex gap-1 items-center">
+            <div className="flex gap-2 mb-1 sm:mb-3 flex-wrap">
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded-full font-bold flex gap-1 items-center shrink-0">
                 <span>{handleGetWorkType(activity.work_type)}</span>
               </span>
 
-              <span className="px-2 py-1 bg-orange-100 text-orange-700 flex items-center text-sm rounded-full font-bold gap-1">
+              <span className="px-2 py-1 bg-orange-100 text-orange-700 flex items-center text-sm rounded-full font-bold gap-1 shrink-0">
                 <PeopleOutlinedIcon fontSize="small" />
                 <span>{handleGetDepartment(activity.department)}</span>
               </span>
 
-              <span className="px-2 py-1 bg-purple-100 text-purple-700 flex items-center text-sm rounded-full font-bold">
+              <span className="px-2 py-1 bg-purple-100 text-purple-700 flex items-center text-sm rounded-full font-bold shrink-0">
                 <LocationOnOutlinedIcon fontSize="small" />
                 <span>{activity.location}</span>
               </span>
@@ -59,7 +59,7 @@ export default function ActivityDetailPage() {
 
           <Link
             href="/activities"
-            className="px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm sm:text-base"
+            className="order-1 sm:order-2 w-full sm:w-auto px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center sm:justify-start gap-2 text-sm sm:text-base"
           >
             <ArrowBackIcon fontSize="small" />
             <span className="font-bold">Quay lại</span>

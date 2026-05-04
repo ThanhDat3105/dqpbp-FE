@@ -1,65 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, MapPin, Clock, ClipboardList, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNotifications } from "@/context/NotificationContext";
+import type { DigestTask } from "@/services/api/notification";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface TaskNotification {
-  id: string;
-  title: string;
-  location: string;
-  due_date: string;
-  is_read: boolean;
-}
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const INITIAL_NOTIFICATIONS: TaskNotification[] = [
-  {
-    id: "n1",
-    title: "Tuần tra khu vực chợ",
-    location: "Chợ Phường 10",
-    due_date: "24/01/2026",
-    is_read: false,
-  },
-  {
-    id: "n2",
-    title: "Trực bảo vệ trụ sở UBND",
-    location: "UBND Phường Bình Phú",
-    due_date: "25/01/2026",
-    is_read: false,
-  },
-  {
-    id: "n3",
-    title: "Huấn luyện sử dụng vũ khí",
-    location: "Sân tập P10",
-    due_date: "28/01/2026",
-    is_read: false,
-  },
-  {
-    id: "n4",
-    title: "Kiểm tra quân số định kỳ",
-    location: "Trụ sở BCH Quân sự",
-    due_date: "30/01/2026",
-    is_read: true,
-  },
-  {
-    id: "n5",
-    title: "Tuần tra đêm khu vực KP.11",
-    location: "Khu phố 11",
-    due_date: "01/02/2026",
-    is_read: true,
-  },
-];
 
 // ─── Notification Item ────────────────────────────────────────────────────────
 
 interface NotificationItemProps {
-  notif: TaskNotification;
-  onMarkRead: (id: string) => void;
-  onView: (id: string) => void;
+  notif: DigestTask;
+  onMarkRead: (taskId: number) => void;
+  onView: (activityId: number) => void;
 }
 
 function NotificationItem({
@@ -67,6 +22,10 @@ function NotificationItem({
   onMarkRead,
   onView,
 }: NotificationItemProps) {
+  const formattedDate = notif.due_date
+    ? notif.due_date.split("-").reverse().join("/")
+    : "";
+
   return (
     <div
       className={cn(
@@ -108,21 +67,21 @@ function NotificationItem({
           </div>
           <div className="flex items-center gap-1 text-xs text-gray-400">
             <Clock className="h-3 w-3 shrink-0" />
-            <span>Thời hạn: {notif.due_date}</span>
+            <span>Thời hạn: {formattedDate}</span>
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-3 mt-2">
           <button
-            onClick={() => onView(notif.id)}
+            onClick={() => onView(notif.activity_id)}
             className="text-xs text-gray-400 hover:text-gray-700 hover:underline transition-colors"
           >
             Xem chi tiết
           </button>
           {!notif.is_read && (
             <button
-              onClick={() => onMarkRead(notif.id)}
+              onClick={() => onMarkRead(notif.task_id)}
               className="text-xs text-blue-600 font-medium hover:text-blue-800 transition-colors"
             >
               Xác nhận đã đọc
@@ -137,13 +96,11 @@ function NotificationItem({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Notification() {
-  const [notifications, setNotifications] = useState<TaskNotification[]>(
-    INITIAL_NOTIFICATIONS,
-  );
+  const router = useRouter();
+  const { tasks, unreadCount, loading, handleMarkTaskRead, handleMarkAllRead } =
+    useNotifications();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   // Close on outside click
   useEffect(() => {
@@ -159,19 +116,9 @@ export default function Notification() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleMarkRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
-    );
-  };
-
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-  };
-
-  const handleView = (id: string) => {
-    // In real app: navigate to task detail
-    handleMarkRead(id);
+  const handleView = (activityId: number) => {
+    router.push(`/activities/${activityId}`);
+    setOpen(false);
   };
 
   return (
@@ -217,18 +164,31 @@ export default function Notification() {
 
         {/* Body – scrollable if many items */}
         <div className="divide-y divide-gray-100 max-h-[360px] overflow-y-auto">
-          {notifications.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col gap-0">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex gap-3 px-4 py-3">
+                  <div className="w-10 h-10 rounded-lg bg-gray-100 animate-pulse shrink-0" />
+                  <div className="flex-1 space-y-2 py-1">
+                    <div className="h-3 bg-gray-100 rounded animate-pulse w-3/4" />
+                    <div className="h-3 bg-gray-100 rounded animate-pulse w-1/2" />
+                    <div className="h-3 bg-gray-100 rounded animate-pulse w-1/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : tasks.length === 0 ? (
             /* Empty state */
             <div className="flex flex-col items-center justify-center py-10 text-gray-400 gap-2">
               <Bell className="h-8 w-8 opacity-30" />
               <p className="text-sm">Không có thông báo</p>
             </div>
           ) : (
-            notifications.map((notif) => (
+            tasks.map((notif) => (
               <NotificationItem
-                key={notif.id}
+                key={notif.task_id}
                 notif={notif}
-                onMarkRead={handleMarkRead}
+                onMarkRead={handleMarkTaskRead}
                 onView={handleView}
               />
             ))
@@ -236,7 +196,7 @@ export default function Notification() {
         </div>
 
         {/* Footer */}
-        {notifications.length > 0 && (
+        {tasks.length > 0 && (
           <div className="border-t border-gray-100">
             <button
               onClick={handleMarkAllRead}

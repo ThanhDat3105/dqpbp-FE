@@ -68,13 +68,26 @@ export default function DialogNhapThem({ open, onClose, item }: Props) {
 
   const pct = Math.round((item.current / item.max) * 100);
   const barColor =
-    pct <= 10 ? "bg-red-500" : pct <= 25 ? "bg-orange-500" : pct <= 40 ? "bg-yellow-500" : "bg-green-500";
+    pct <= 10
+      ? "bg-red-500"
+      : pct <= 25
+        ? "bg-orange-500"
+        : pct <= 40
+          ? "bg-yellow-500"
+          : "bg-green-500";
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) handleClose();
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold">📦 Nhập thêm hàng</DialogTitle>
+          <DialogTitle className="text-lg font-bold">
+            📦 Nhập thêm hàng
+          </DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-2">
@@ -83,7 +96,9 @@ export default function DialogNhapThem({ open, onClose, item }: Props) {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="text-xs text-gray-500 font-medium">Vật phẩm</p>
-                <p className="font-bold text-gray-900 text-sm mt-0.5">{item.name}</p>
+                <p className="font-bold text-gray-900 text-sm mt-0.5">
+                  {item.name}
+                </p>
               </div>
               <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full font-semibold shrink-0">
                 {item.category}
@@ -163,7 +178,7 @@ export default function DialogNhapThem({ open, onClose, item }: Props) {
             id="nhap-them-xacnhan"
             disabled={!valid}
             onClick={handleSubmit}
-            className="px-4 py-2 rounded-lg bg-[#6B8E23] text-white text-sm font-semibold hover:bg-[#556b2f] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            className="px-4 py-2 rounded-lg bg-[#556B2F] text-white text-sm font-semibold hover:bg-[#556b2f] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             Nhập thêm
           </button>
@@ -173,7 +188,13 @@ export default function DialogNhapThem({ open, onClose, item }: Props) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-1">
       <label className="text-xs font-semibold text-gray-600">{label}</label>
