@@ -3,12 +3,15 @@ import { Assessment, Event, Group, Map, Article, Warehouse, } from "@mui/icons-m
 import { LayoutList } from "lucide-react";
 import type { ElementType } from "react";
 
+export type MenuRole = "DQTT" | "CHI_HUY" | "DQCD" | "TO_TRUONG";
+
 export interface MenuItem {
   id: string;
   label: string;
   href?: string;
   icon: ElementType;
-  role?: "DQTT" | "CHI_HUY";
+  role?: MenuRole;
+  hiddenForRoles?: MenuRole[];
   children?: MenuItem[];
 }
 
@@ -55,6 +58,7 @@ export const menuConfig: MenuItem[] = [
         label: "Danh sách",
         href: "/activities",
         icon: Event,
+        hiddenForRoles: ["DQCD"],
       },
       {
         id: "activities-calendar",

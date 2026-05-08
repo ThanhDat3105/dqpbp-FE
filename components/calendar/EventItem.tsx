@@ -67,6 +67,8 @@ const EventItem = memo(function EventItem({
     compact ? "px-1.5 py-0.5" : "px-2 py-1",
   );
 
+  console.log(task, "task in EventItem");
+
   return (
     <Link
       href={`/activities/${task.activity_id}`}

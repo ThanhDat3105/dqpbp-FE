@@ -95,10 +95,23 @@ export default function Sidebar({
   };
 
   // Filter menu items based on user role
-  const visibleMenuItems = menuConfig.filter((item) => {
-    if (!item.role) return true;
-    return item.role === user?.role;
-  });
+  const userRole = user?.role || "DQCD";
+  const visibleMenuItems = menuConfig
+    .filter((item) => {
+      if (item.role && item.role !== userRole) return false;
+      if (item.hiddenForRoles?.includes(userRole)) return false;
+      return true;
+    })
+    .map((item) => {
+      if (!item.children) return item;
+      const children = item.children.filter((child) => {
+        if (child.role && child.role !== userRole) return false;
+        if (child.hiddenForRoles?.includes(userRole)) return false;
+        return true;
+      });
+      return { ...item, children };
+    })
+    .filter((item) => !item.children || item.children.length > 0);
 
   if (!mounted) return null;
 

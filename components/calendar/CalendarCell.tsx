@@ -21,6 +21,7 @@ interface CalendarCellProps {
 type ItemShape = {
   id: string;
   taskId?: number;
+  activity_id?: number;
   title: string;
   status?: "pending" | "completed";
   subLabel?: string;
@@ -191,26 +192,38 @@ const CalendarCell = memo(function CalendarCell({
     if (role === "CHI_HUY" && isActivityList(dayData)) {
       const activityMap = new Map<
         string,
-        { task_id: number; title: string; status: "pending" | "completed" }[]
+        {
+          activity_id: number;
+          tasks: { task_id: number; title: string; status: "pending" | "completed" }[];
+        }
       >();
       for (const act of dayData as CalendarActivity[]) {
-        const existing = activityMap.get(act.activity_name) || [];
-        activityMap.set(act.activity_name, [
-          ...existing,
-          ...act.tasks.map((t) => ({
-            task_id: t.task_id,
-            title: t.title,
-            status: t.status,
-          })),
-        ]);
+        const existing = activityMap.get(act.activity_name);
+        const newTasks = act.tasks.map((t) => ({
+          task_id: t.task_id,
+          title: t.title,
+          status: t.status,
+        }));
+        if (existing) {
+          activityMap.set(act.activity_name, {
+            activity_id: existing.activity_id ?? act.activity_id,
+            tasks: [...existing.tasks, ...newTasks],
+          });
+        } else {
+          activityMap.set(act.activity_name, {
+            activity_id: act.activity_id,
+            tasks: newTasks,
+          });
+        }
       }
-      for (const [activityName, tasks] of activityMap.entries()) {
-        if (tasks.length > 0)
+      for (const [activityName, entry] of activityMap.entries()) {
+        if (entry.tasks.length > 0)
           items.push({
             id: activityName,
             title: activityName,
-            taskCount: tasks.length,
+            taskCount: entry.tasks.length,
             isActivity: true,
+            activity_id: entry.activity_id,
           });
       }
     } else if (isActivityList(dayData)) {
@@ -223,6 +236,7 @@ const CalendarCell = memo(function CalendarCell({
             status: task.status,
             subLabel: act.activity_name,
             isActivity: false,
+            activity_id: act.activity_id,
           });
         }
       }
@@ -234,6 +248,7 @@ const CalendarCell = memo(function CalendarCell({
           title: t.title,
           status: t.status,
           isActivity: false,
+          activity_id: t.activity_id,
         });
       }
     }
