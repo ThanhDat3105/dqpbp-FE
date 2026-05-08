@@ -1,6 +1,11 @@
 import { axiosInstance } from "@/lib/axios.config";
 
-export interface DigestTask {
+export type NotificationType =
+  | "daily_digest"
+  | "deadline_warning"
+  | "deadline_critical";
+
+export interface NotificationTask {
   task_id: number;
   title: string;
   activity_id: number;
@@ -8,36 +13,63 @@ export interface DigestTask {
   location: string;
   due_date: string;
   status: "pending" | "in_progress";
+}
+
+export interface NotificationMetadata {
+  task_id?: number;
+  activity_id?: number;
+  activity_name?: string;
+  due_date?: string;
+  location?: string;
+  assignee_id?: number;
+  assignee_name?: string;
+  tasks?: NotificationTask[];
+}
+
+export interface NotificationItem {
+  id: number;
+  type: NotificationType;
+  title: string;
+  body?: string | null;
+  metadata: NotificationMetadata;
   is_read: boolean;
+  created_at: string;
 }
 
-export interface DigestResponse {
-  digest_date: string;
+export interface NotificationsResponse {
+  data: NotificationItem[];
   unread_count: number;
-  tasks: DigestTask[];
+  total: number;
 }
 
-const unwrapDigest = (data: any): DigestResponse => data?.metaData ?? data;
+export interface MarkReadResponse {
+  message: string;
+  data: {
+    id: number;
+    is_read: boolean;
+    updated_at: string;
+  };
+}
 
-const getTodayDigest = async (): Promise<DigestResponse> => {
-  const res = await axiosInstance.get("/api/notifications/digest");
-  return unwrapDigest(res.data);
+const getNotifications = async (params?: {
+  is_read?: boolean;
+  limit?: number;
+  offset?: number;
+}): Promise<NotificationsResponse> => {
+  const res = await axiosInstance.get("/api/notifications", { params });
+  return res.data;
 };
 
-const markTaskAsRead = async (taskId: number): Promise<DigestResponse> => {
+const markNotificationRead = async (
+  notificationId: number,
+): Promise<MarkReadResponse> => {
   const res = await axiosInstance.patch(
-    `/api/notifications/digest/task/${taskId}/read`,
+    `/api/notifications/${notificationId}/read`,
   );
-  return unwrapDigest(res.data);
-};
-
-const markAllAsRead = async (): Promise<DigestResponse> => {
-  const res = await axiosInstance.patch("/api/notifications/digest/read");
-  return unwrapDigest(res.data);
+  return res.data;
 };
 
 export const notificationService = {
-  getTodayDigest,
-  markTaskAsRead,
-  markAllAsRead,
+  getNotifications,
+  markNotificationRead,
 };

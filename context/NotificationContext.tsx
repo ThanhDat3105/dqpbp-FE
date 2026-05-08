@@ -12,39 +12,39 @@ import {
 import { toast } from "sonner";
 import {
   notificationService,
-  DigestTask,
+  NotificationItem,
 } from "@/services/api/notification";
 
 // ------------------- TYPES -------------------
 interface NotificationContextType {
-  tasks: DigestTask[];
+  notifications: NotificationItem[];
   unreadCount: number;
   loading: boolean;
-  fetchDigest: () => Promise<void>;
-  handleMarkTaskRead: (taskId: number) => Promise<void>;
+  fetchNotifications: () => Promise<void>;
+  handleMarkNotificationRead: (notificationId: number) => Promise<void>;
   handleMarkAllRead: () => Promise<void>;
 }
 
 // ------------------- CONTEXT -------------------
 const NotificationContext = createContext<NotificationContextType>({
-  tasks: [],
+  notifications: [],
   unreadCount: 0,
   loading: false,
-  fetchDigest: () => Promise.resolve(),
-  handleMarkTaskRead: () => Promise.resolve(),
+  fetchNotifications: () => Promise.resolve(),
+  handleMarkNotificationRead: () => Promise.resolve(),
   handleMarkAllRead: () => Promise.resolve(),
 });
 
 // ------------------- PROVIDER -------------------
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const [tasks, setTasks] = useState<DigestTask[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const fetchDigest = useCallback(async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
-      const data = await notificationService.getTodayDigest();
-      setTasks(data.tasks);
+      const data = await notificationService.getNotifications();
+      setNotifications(data.data);
       setUnreadCount(data.unread_count);
     } catch {
       // Silent fail - khong toast khi background fetch
@@ -55,78 +55,87 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   // Fetch once on mount - khong refetch khi navigate
   useEffect(() => {
-    fetchDigest();
-  }, [fetchDigest]);
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   // Auto-refetch moi 5 phut
   useEffect(() => {
-    const interval = setInterval(fetchDigest, 5 * 60 * 1000);
+    const interval = setInterval(fetchNotifications, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [fetchDigest]);
+  }, [fetchNotifications]);
 
-  const handleMarkTaskRead = useCallback(
-    async (taskId: number) => {
-      const prevTasks = tasks;
+  const handleMarkNotificationRead = useCallback(
+    async (notificationId: number) => {
+      const prevNotifications = notifications;
       const prevCount = unreadCount;
 
       // Optimistic update
-      setTasks((prev) =>
-        prev.map((t) => (t.task_id === taskId ? { ...t, is_read: true } : t)),
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item.id === notificationId ? { ...item, is_read: true } : item,
+        ),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
 
       try {
-        const data = await notificationService.markTaskAsRead(taskId);
-        setTasks(data.tasks);
-        setUnreadCount(data.unread_count);
+        await notificationService.markNotificationRead(notificationId);
       } catch {
         // Rollback
-        setTasks(prevTasks);
+        setNotifications(prevNotifications);
         setUnreadCount(prevCount);
         toast.error("Không thể xác nhận đã đọc. Vui lòng thử lại.");
       }
     },
-    [tasks, unreadCount],
+    [notifications, unreadCount],
   );
 
   const handleMarkAllRead = useCallback(
     async () => {
-      const prevTasks = tasks;
+      const prevNotifications = notifications;
       const prevCount = unreadCount;
+      const unreadIds = notifications
+        .filter((item) => !item.is_read)
+        .map((item) => item.id);
+
+      if (unreadIds.length === 0) {
+        return;
+      }
 
       // Optimistic update
-      setTasks((prev) => prev.map((t) => ({ ...t, is_read: true })));
+      setNotifications((prev) =>
+        prev.map((item) => ({ ...item, is_read: true })),
+      );
       setUnreadCount(0);
 
       try {
-        const data = await notificationService.markAllAsRead();
-        setTasks(data.tasks);
-        setUnreadCount(data.unread_count);
+        await Promise.all(
+          unreadIds.map((id) => notificationService.markNotificationRead(id)),
+        );
       } catch {
         // Rollback
-        setTasks(prevTasks);
+        setNotifications(prevNotifications);
         setUnreadCount(prevCount);
         toast.error("Không thể đánh dấu tất cả đã đọc. Vui lòng thử lại.");
       }
     },
-    [tasks, unreadCount],
+    [notifications, unreadCount],
   );
 
   const value = useMemo(
     () => ({
-      tasks,
+      notifications,
       unreadCount,
       loading,
-      fetchDigest,
-      handleMarkTaskRead,
+      fetchNotifications,
+      handleMarkNotificationRead,
       handleMarkAllRead,
     }),
     [
-      tasks,
+      notifications,
       unreadCount,
       loading,
-      fetchDigest,
-      handleMarkTaskRead,
+      fetchNotifications,
+      handleMarkNotificationRead,
       handleMarkAllRead,
     ],
   );

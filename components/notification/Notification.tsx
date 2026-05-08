@@ -1,30 +1,55 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, MapPin, Clock, ClipboardList, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/context/NotificationContext";
-import type { DigestTask } from "@/services/api/notification";
+import type { NotificationItem } from "@/services/api/notification";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 // ─── Notification Item ────────────────────────────────────────────────────────
 
 interface NotificationItemProps {
-  notif: DigestTask;
-  onMarkRead: (taskId: number) => void;
+  notif: NotificationItem;
+  onMarkRead: (notificationId: number) => void;
   onView: (activityId: number) => void;
 }
+
+const typeConfig: Record<
+  NotificationItem["type"],
+  { icon: ReactNode; bg: string }
+> = {
+  daily_digest: {
+    icon: <ClipboardList className="h-5 w-5 text-blue-600" />,
+    bg: "bg-blue-100",
+  },
+  deadline_warning: {
+    icon: <Clock className="h-5 w-5 text-yellow-600" />,
+    bg: "bg-yellow-100",
+  },
+  deadline_critical: {
+    icon: <Clock className="h-5 w-5 text-red-600" />,
+    bg: "bg-red-100",
+  },
+};
 
 function NotificationItem({
   notif,
   onMarkRead,
   onView,
 }: NotificationItemProps) {
-  const formattedDate = notif.due_date
-    ? notif.due_date.split("-").reverse().join("/")
+  const isDigest = notif.type === "daily_digest";
+  const isCritical = notif.type === "deadline_critical";
+  const config = typeConfig[notif.type] ?? typeConfig.daily_digest;
+  const dueDate = notif.metadata?.due_date;
+  const formattedDate = dueDate
+    ? dueDate.split("T")[0].split("-").reverse().join("/")
     : "";
+  const location = notif.metadata?.location;
+  const activityId = notif.metadata?.activity_id;
+  const digestTasks = notif.metadata?.tasks ?? [];
 
   return (
     <div
@@ -41,8 +66,13 @@ function NotificationItem({
       )}
 
       {/* Icon */}
-      <div className="shrink-0 w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center mt-0.5">
-        <ClipboardList className="h-5 w-5 text-yellow-600" />
+      <div
+        className={cn(
+          "shrink-0 w-10 h-10 rounded-lg flex items-center justify-center mt-0.5",
+          config.bg,
+        )}
+      >
+        {config.icon}
       </div>
 
       {/* Content */}
@@ -53,35 +83,63 @@ function NotificationItem({
             "text-sm leading-snug truncate pr-5",
             notif.is_read
               ? "text-gray-600 font-normal"
-              : "text-gray-900 font-semibold",
+              : isCritical
+                ? "text-red-700 font-semibold"
+                : "text-gray-900 font-semibold",
           )}
         >
           {notif.title}
         </p>
 
+        {notif.body && (
+          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+            {notif.body}
+          </p>
+        )}
+
         {/* Meta */}
-        <div className="mt-1 space-y-0.5">
-          <div className="flex items-center gap-1 text-xs text-gray-400">
-            <MapPin className="h-3 w-3 shrink-0" />
-            <span className="truncate">{notif.location}</span>
+        {isDigest ? (
+          <ul className="mt-1.5 space-y-1">
+            {digestTasks.map((task) => (
+              <li
+                key={task.task_id}
+                onClick={() => onView(task.activity_id)}
+                className="text-xs text-gray-500 hover:text-blue-600 hover:underline cursor-pointer truncate"
+              >
+                • {task.title}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-1 space-y-0.5">
+            {location && (
+              <div className="flex items-center gap-1 text-xs text-gray-400">
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate">{location}</span>
+              </div>
+            )}
+            {formattedDate && (
+              <div className="flex items-center gap-1 text-xs text-gray-400">
+                <Clock className="h-3 w-3 shrink-0" />
+                <span>Thời hạn: {formattedDate}</span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-1 text-xs text-gray-400">
-            <Clock className="h-3 w-3 shrink-0" />
-            <span>Thời hạn: {formattedDate}</span>
-          </div>
-        </div>
+        )}
 
         {/* Actions */}
         <div className="flex items-center gap-3 mt-2">
-          <button
-            onClick={() => onView(notif.activity_id)}
-            className="text-xs text-gray-400 hover:text-gray-700 hover:underline transition-colors"
-          >
-            Xem chi tiết
-          </button>
+          {!isDigest && activityId && (
+            <button
+              onClick={() => onView(activityId)}
+              className="text-xs text-gray-400 hover:text-gray-700 hover:underline transition-colors"
+            >
+              Xem chi tiết
+            </button>
+          )}
           {!notif.is_read && (
             <button
-              onClick={() => onMarkRead(notif.task_id)}
+              onClick={() => onMarkRead(notif.id)}
               className="text-xs text-blue-600 font-medium hover:text-blue-800 transition-colors"
             >
               Xác nhận đã đọc
@@ -97,8 +155,13 @@ function NotificationItem({
 
 export default function Notification() {
   const router = useRouter();
-  const { tasks, unreadCount, loading, handleMarkTaskRead, handleMarkAllRead } =
-    useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    handleMarkNotificationRead,
+    handleMarkAllRead,
+  } = useNotifications();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -134,7 +197,7 @@ export default function Notification() {
         <Bell className="h-5 w-5 text-gray-600" />
 
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold bg-red-500 text-white rounded-full ring-2 ring-white leading-none">
+          <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 px-1 flex items-center justify-center text-[10px] font-bold bg-red-500 text-white rounded-full ring-2 ring-white leading-none">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -163,7 +226,7 @@ export default function Notification() {
         </div>
 
         {/* Body – scrollable if many items */}
-        <div className="divide-y divide-gray-100 max-h-[360px] overflow-y-auto">
+        <div className="divide-y divide-gray-100 max-h-90 overflow-y-auto">
           {loading ? (
             <div className="flex flex-col gap-0">
               {[1, 2, 3].map((i) => (
@@ -177,18 +240,18 @@ export default function Notification() {
                 </div>
               ))}
             </div>
-          ) : tasks.length === 0 ? (
+          ) : notifications.length === 0 ? (
             /* Empty state */
             <div className="flex flex-col items-center justify-center py-10 text-gray-400 gap-2">
               <Bell className="h-8 w-8 opacity-30" />
               <p className="text-sm">Không có thông báo</p>
             </div>
           ) : (
-            tasks.map((notif) => (
+            notifications.map((notif) => (
               <NotificationItem
-                key={notif.task_id}
+                key={notif.id}
                 notif={notif}
-                onMarkRead={handleMarkTaskRead}
+                onMarkRead={handleMarkNotificationRead}
                 onView={handleView}
               />
             ))
@@ -196,7 +259,7 @@ export default function Notification() {
         </div>
 
         {/* Footer */}
-        {tasks.length > 0 && (
+        {notifications.length > 0 && (
           <div className="border-t border-gray-100">
             <button
               onClick={handleMarkAllRead}
