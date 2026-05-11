@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 
 interface Props {
+  openUpdateTask: boolean;
+  setOpenUpdateTask: React.Dispatch<React.SetStateAction<boolean>>;
   task: TaskInterface;
   formData: TaskInterface;
   loading: boolean;
@@ -33,14 +35,15 @@ interface Props {
 }
 
 export default function ProgressDialog({
+  openUpdateTask,
+  setOpenUpdateTask,
   task,
   formData,
   loading,
   setFormData,
   setLoading,
 }: Props) {
-  const { openUpdateTask, setOpenUpdateTask, fetchActivityDetail, activity } =
-    useActivity();
+  const { fetchActivityDetail, activity } = useActivity();
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus>(
     (task.status as TaskStatus) || "pending",
   );

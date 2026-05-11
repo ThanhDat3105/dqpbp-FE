@@ -30,8 +30,9 @@ import { useAuth } from "@/context/AuthContext";
 export default function TaskCard({ task }: { task: TaskInterface }) {
   const { user } = useAuth();
 
-  const { setOpenUpdateTask, fetchActivityDetail, activity } = useActivity();
+  const { fetchActivityDetail, activity } = useActivity();
   const [formData, setFormData] = useState<TaskInterface>(task);
+  const [openUpdateTask, setOpenUpdateTask] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [openReportModal, setOpenReportModal] = useState(false);
   const [openMobilizeModal, setOpenMobilizeModal] = useState(false);
@@ -238,6 +239,8 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
 
           {/* ===== PROGRESS MODAL ===== */}
           <ProgressDialog
+            openUpdateTask={openUpdateTask}
+            setOpenUpdateTask={setOpenUpdateTask}
             task={task}
             formData={formData}
             setFormData={setFormData}

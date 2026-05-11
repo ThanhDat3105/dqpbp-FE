@@ -6,8 +6,6 @@ import { toast } from "sonner";
 
 // ------------------- TYPES -------------------
 interface ActivityContextType {
-  openUpdateTask: boolean;
-  setOpenUpdateTask: (value: boolean) => void;
   fetchActivityDetail: (id: string) => Promise<void>;
   activity: ActivityInterface;
   loadingDetail: boolean;
@@ -15,8 +13,6 @@ interface ActivityContextType {
 
 // ------------------- CONTEXT -------------------
 const ActivityContext = createContext<ActivityContextType>({
-  openUpdateTask: false,
-  setOpenUpdateTask: () => {},
   fetchActivityDetail: () => Promise.resolve(),
   activity: {
     id: "",
@@ -44,7 +40,6 @@ interface ActivityProviderProps {
 
 // ------------------- PROVIDER -------------------
 export function ActivityProvider({ children }: ActivityProviderProps) {
-  const [openUpdateTask, setOpenUpdateTask] = useState(false);
   const [activity, setActivity] = useState<ActivityInterface>({
     id: "",
     name: "",
@@ -80,19 +75,11 @@ export function ActivityProvider({ children }: ActivityProviderProps) {
   // ------------------- MEMOIZED CONTEXT VALUE -------------------
   const value = useMemo(
     () => ({
-      openUpdateTask,
       activity,
       loadingDetail,
       fetchActivityDetail,
-      setOpenUpdateTask,
     }),
-    [
-      openUpdateTask,
-      activity,
-      loadingDetail,
-      fetchActivityDetail,
-      setOpenUpdateTask,
-    ],
+    [activity, loadingDetail, fetchActivityDetail],
   );
 
   return (
