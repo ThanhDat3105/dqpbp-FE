@@ -6,6 +6,7 @@ export interface CalendarTask {
   task_id: number;
   title: string;
   due_date: string;
+  start_date?: string;
   status: "pending" | "completed";
   team: string;
 }
@@ -21,6 +22,7 @@ export interface CalendarTaskItem {
   task_id: number;
   title: string;
   due_date: string;
+  start_date?: string;
   status: "pending" | "completed";
   activity_id: number;
 }

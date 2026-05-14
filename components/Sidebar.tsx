@@ -14,6 +14,13 @@ import SidebarItem from "./SidebarItem";
 import { menuConfig } from "@/lib/sidebar.config";
 import { useAuth } from "@/context/AuthContext";
 import { handleGetDepartment } from "@/utils/activity";
+import { getKpiSummary } from "@/services/api/kpi";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SidebarProps {
   onLogout: () => void;
@@ -34,6 +41,7 @@ export default function Sidebar({
   const [openMenus, setOpenMenus] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [completeLate, setCompleteLate] = useState(0);
 
   // Hydrate collapsed state from localStorage
   useEffect(() => {
@@ -62,6 +70,38 @@ export default function Sidebar({
       setOpenMenus((prev) => [...prev, activeMenu.id]);
     }
   }, [pathname, openMenus]);
+
+  useEffect(() => {
+    if (!user || (user.role !== "DQTT" && user.role !== "DQCD")) {
+      setCompleteLate(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchSummary = async () => {
+      try {
+        const response = await getKpiSummary({
+          period: "month",
+          role: user.role,
+        });
+
+        if (!cancelled) {
+          setCompleteLate(Number(response.summary?.completed_late) || 0);
+        }
+      } catch {
+        if (!cancelled) {
+          setCompleteLate(0);
+        }
+      }
+    };
+
+    fetchSummary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const handleCollapse = () => {
     const newCollapsed = !collapsed;
@@ -114,6 +154,13 @@ export default function Sidebar({
     .filter((item) => !item.children || item.children.length > 0);
 
   if (!mounted) return null;
+
+  const badgeValue = completeLate > 3 ? 4 : completeLate;
+  const showBadge = completeLate >= 2;
+  const badgeClass =
+    completeLate >= 3
+      ? "bg-red-500 text-white"
+      : "bg-yellow-400 text-slate-900";
 
   const sidebarContent = (
     <>
@@ -188,6 +235,25 @@ export default function Sidebar({
           <div className="relative shrink-0">
             <AccountCircle className="text-gray-500" sx={{ fontSize: 40 }} />
             <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+            {showBadge && (
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <h3
+                      className={clsx(
+                        "absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold",
+                        badgeClass,
+                      )}
+                    >
+                      {badgeValue}
+                    </h3>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{`Trễ hẹn ${badgeValue}`}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
           {!collapsed && (
             <div className="min-w-0">

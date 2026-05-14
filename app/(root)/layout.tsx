@@ -5,7 +5,6 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export default function RootLayout({
@@ -23,7 +22,6 @@ export default function RootLayout({
     if (isLoadingFetchUser) return;
 
     if (!user) {
-      toast.error("Bạn cần đăng nhập để truy cập.");
       router.push("/login");
     } else {
       setHasChecked(true);

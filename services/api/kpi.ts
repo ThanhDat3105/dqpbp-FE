@@ -10,6 +10,16 @@ interface ApiEnvelope {
   };
 }
 
+interface KpiSummaryEnvelope {
+  metaData?: {
+    period?: {
+      from: string;
+      to: string;
+    };
+    summary?: KpiSummary;
+  };
+}
+
 export type KpiRole = "DQTT" | "DQCD";
 
 export interface KpiUser {
@@ -44,6 +54,24 @@ export interface KpiRecentTask {
   status: "pending" | "in_progress" | "completed" | "cancelled";
 }
 
+export interface KpiSummary {
+  total_assigned: number;
+  completed: number;
+  completed_on_time: number;
+  completed_late: number;
+  not_completed: number;
+  overdue: number;
+  cancelled: number;
+}
+
+export interface KpiSummaryResponse {
+  period: {
+    from: string;
+    to: string;
+  };
+  summary: KpiSummary;
+}
+
 const normalizeKpiResponse = (payload: ApiEnvelope): KpiResponse => {
   return {
     period: {
@@ -51,6 +79,26 @@ const normalizeKpiResponse = (payload: ApiEnvelope): KpiResponse => {
       to: payload.metaData?.period?.to ?? "",
     },
     data: payload.metaData?.data ?? [],
+  };
+};
+
+const normalizeKpiSummaryResponse = (
+  payload: KpiSummaryEnvelope,
+): KpiSummaryResponse => {
+  return {
+    period: {
+      from: payload.metaData?.period?.from ?? "",
+      to: payload.metaData?.period?.to ?? "",
+    },
+    summary: payload.metaData?.summary ?? {
+      total_assigned: 0,
+      completed: 0,
+      completed_on_time: 0,
+      completed_late: 0,
+      not_completed: 0,
+      overdue: 0,
+      cancelled: 0,
+    },
   };
 };
 
@@ -116,6 +164,18 @@ export async function getRecentTasks(params: {
   } catch {
     return [];
   }
+}
+
+export async function getKpiSummary(params: {
+  period: string;
+  role?: string;
+  user_id?: number;
+}): Promise<KpiSummaryResponse> {
+  const res = await axiosInstance.get("/api/kpi/summary", {
+    params,
+  });
+
+  return normalizeKpiSummaryResponse(res.data);
 }
 
 export async function getUserIdsByDepartment(

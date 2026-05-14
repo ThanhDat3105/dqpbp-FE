@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState, useEffect, useCallback, useRef } from "react";
 import dayjs, { type Dayjs } from "dayjs";
 import clsx from "clsx";
 import type {
@@ -32,15 +32,45 @@ const WeekView = memo(function WeekView({
     startOfWeek.add(i, "day"),
   );
 
+  const getNow = useCallback(() => {
+    const now = dayjs();
+    return { hour: now.hour(), minute: now.minute() };
+  }, []);
+
+  const [currentTime, setCurrentTime] = useState(getNow);
+  const currentHourRef = useRef<HTMLDivElement>(null);
+  const isToday = currentDate.isSame(today, "day");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(getNow());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [getNow]);
+
+  useEffect(() => {
+    if (isToday && currentHourRef.current) {
+      currentHourRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, []);
+
+  const { hour: currentHour, minute: currentMinute } = currentTime;
+  const todayIsInWeek = days.some((day) => day.isSame(today, "day"));
+
   function getDayEvents(day: Dayjs): {
     id: string | number;
     taskId?: number;
     title: string;
     status?: "pending" | "completed";
     dueDate: string;
+    startDate?: string;
     subLabel?: string;
     taskCount?: number;
     isActivity?: boolean;
+    activity_id?: number;
   }[] {
     const key = day.format("YYYY-MM-DD");
     const dayData = data[key];
@@ -52,9 +82,11 @@ const WeekView = memo(function WeekView({
       title: string;
       status?: "pending" | "completed";
       dueDate: string;
+      startDate?: string;
       subLabel?: string;
       taskCount?: number;
       isActivity?: boolean;
+      activity_id?: number;
     }[] = [];
 
     if (role === "CHI_HUY" && isActivityList(dayData)) {
@@ -63,38 +95,60 @@ const WeekView = memo(function WeekView({
       const activityMap = new Map<
         string,
         {
-          task_id: number;
-          title: string;
-          due_date: string;
-          status: "pending" | "completed";
-        }[]
+          activityId: number;
+          tasks: {
+            task_id: number;
+            title: string;
+            due_date: string;
+            status: "pending" | "completed";
+            start_date?: string;
+          }[];
+        }
       >();
 
       // Merge activities with same name
       for (const act of acts) {
-        const existing = activityMap.get(act.activity_name) || [];
+        const existing = activityMap.get(act.activity_name);
         const newTasks = act.tasks.map((t) => ({
           task_id: t.task_id,
           title: t.title,
           due_date: t.due_date,
           status: t.status,
+          start_date: t.start_date,
         }));
-        activityMap.set(act.activity_name, [...existing, ...newTasks]);
+        if (existing) {
+          existing.tasks.push(...newTasks);
+        } else {
+          activityMap.set(act.activity_name, {
+            activityId: act.activity_id,
+            tasks: newTasks,
+          });
+        }
       }
 
       // Create one item per activity
-      for (const [activityName, tasks] of activityMap.entries()) {
-        if (tasks.length > 0) {
-          const earliestDate = tasks.reduce((min, t) => {
+      for (const [activityName, entry] of activityMap.entries()) {
+        if (entry.tasks.length > 0) {
+          const earliestDate = entry.tasks.reduce((min, t) => {
             return new Date(t.due_date) < new Date(min.due_date) ? t : min;
           }).due_date;
+          const startDates = entry.tasks
+            .map((t) => t.start_date)
+            .filter((date): date is string => Boolean(date));
+          const earliestStartDate = startDates.length
+            ? startDates.reduce((min, date) =>
+                new Date(date) < new Date(min) ? date : min,
+              )
+            : undefined;
 
           result.push({
             id: activityName,
             title: activityName,
-            taskCount: tasks.length,
+            taskCount: entry.tasks.length,
             dueDate: earliestDate,
+            startDate: earliestStartDate,
             isActivity: true,
+            activity_id: entry.activityId,
           });
         }
       }
@@ -111,8 +165,10 @@ const WeekView = memo(function WeekView({
               title: t.title,
               status: t.status,
               dueDate: t.due_date,
+              startDate: t.start_date,
               subLabel: act.activity_name,
               isActivity: false,
+              activity_id: act.activity_id,
             })),
           ),
         );
@@ -124,7 +180,9 @@ const WeekView = memo(function WeekView({
             title: t.title,
             status: t.status,
             dueDate: t.due_date,
+            startDate: t.start_date,
             isActivity: false,
+            activity_id: t.activity_id,
           })),
         );
       }
@@ -150,44 +208,49 @@ const WeekView = memo(function WeekView({
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-x-auto">
-      <div className="min-w-[560px] flex flex-col flex-1 min-h-0">
-        {/* Sticky day header row */}
-        <div className="grid grid-cols-[40px_repeat(7,1fr)] sm:grid-cols-[56px_repeat(7,1fr)] border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 shadow-sm">
-          <div className="border-r border-gray-200" /> {/* time gutter */}
-          {days.map((day, i) => {
-            const isToday = day.isSame(today, "day");
-            return (
-              <div
-                key={day.format("YYYY-MM-DD")}
+      {/* Header */}
+      <div className="grid grid-cols-[40px_repeat(7,1fr)] sm:grid-cols-[56px_repeat(7,1fr)] border-b border-gray-200 bg-white shrink-0 sticky top-0 z-10 shadow-sm">
+        <div className="border-r border-gray-200" /> {/* time gutter */}
+        {days.map((day, i) => {
+          const isToday = day.isSame(today, "day");
+          return (
+            <div
+              key={day.format("YYYY-MM-DD")}
+              className={clsx(
+                "py-1 sm:py-2 text-center",
+                i === 6 && "text-red-500",
+              )}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                {WEEKDAYS_SHORT[i]}
+              </p>
+              <span
                 className={clsx(
-                  "py-1 sm:py-2 text-center",
-                  i === 6 && "text-red-500",
+                  "inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm font-bold mt-0.5 transition-all",
+                  isToday
+                    ? "bg-emerald-600 text-white shadow"
+                    : "text-gray-800 hover:bg-gray-100",
                 )}
               >
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  {WEEKDAYS_SHORT[i]}
-                </p>
-                <span
-                  className={clsx(
-                    "inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm font-bold mt-0.5 transition-all",
-                    isToday
-                      ? "bg-emerald-600 text-white shadow"
-                      : "text-gray-800 hover:bg-gray-100",
-                  )}
-                >
-                  {day.date()}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+                {day.date()}
+              </span>
+            </div>
+          );
+        })}
+      </div>
 
-        {/* Scrollable time grid */}
-        <div className="flex-1 overflow-y-auto">
-          {HOURS.map((hour) => (
+      {/* Timeline */}
+      <div className="flex-1 overflow-y-auto">
+        {HOURS.map((hour) => {
+          const isCurrentHour = todayIsInWeek && hour === currentHour;
+          const topPercent = (currentMinute / 60) * 100;
+
+          return (
             <div
               key={hour}
+              ref={isCurrentHour ? currentHourRef : undefined}
               className="grid grid-cols-[40px_repeat(7,1fr)] sm:grid-cols-[56px_repeat(7,1fr)] border-b border-gray-200 min-h-14"
+              style={isCurrentHour ? { position: "relative" } : undefined}
             >
               {/* Hour label */}
               <div className="flex items-start justify-end pr-2 pt-1 border-r border-gray-200 shrink-0">
@@ -233,9 +296,19 @@ const WeekView = memo(function WeekView({
                   </div>
                 );
               })}
+
+              {isCurrentHour && (
+                <div
+                  className="absolute left-10 sm:left-14 right-0 flex items-center pointer-events-none z-10"
+                  style={{ top: `${topPercent}%` }}
+                >
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0 -ml-1.5" />
+                  <div className="flex-1 h-0.5 bg-red-500" />
+                </div>
+              )}
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
   );

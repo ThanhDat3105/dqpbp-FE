@@ -8,13 +8,15 @@ import { useAuth } from "@/context/AuthContext";
 
 interface EventItemProps {
   task: {
-    id: string;
-    taskId?: number | undefined;
+    id: string | number;
+    taskId?: number;
     title: string;
-    status?: "pending" | "completed" | undefined;
-    subLabel?: string | undefined;
-    taskCount?: number | undefined;
-    isActivity?: boolean | undefined;
+    status?: "pending" | "completed";
+    dueDate: string;
+    startDate?: string;
+    subLabel?: string;
+    taskCount?: number;
+    isActivity?: boolean;
     activity_id?: number;
   };
   taskId?: number;
@@ -67,7 +69,12 @@ const EventItem = memo(function EventItem({
     compact ? "px-1.5 py-0.5" : "px-2 py-1",
   );
 
-  console.log(task, "task in EventItem");
+  const startLabel = task.startDate
+    ? `Bắt đầu: ${new Date(task.startDate).toLocaleDateString("vi-VN")}`
+    : undefined;
+  const dueLabel = task.dueDate
+    ? `Hạn: ${new Date(task.dueDate).toLocaleDateString("vi-VN")}`
+    : undefined;
 
   return (
     <Link
@@ -111,6 +118,16 @@ const EventItem = memo(function EventItem({
         {subLabel && !compact && !isActivity && (
           <span className="block text-emerald-100 text-[10px] truncate leading-tight mt-0.5 opacity-80">
             {subLabel}
+          </span>
+        )}
+        {(startLabel || dueLabel) && (
+          <span
+            className={clsx(
+              "mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-emerald-100 leading-tight opacity-80 text-[10px]",
+            )}
+          >
+            {startLabel && <span className="whitespace-nowrap">{startLabel}</span>}
+            {dueLabel && <span className="whitespace-nowrap">{dueLabel}</span>}
           </span>
         )}
       </span>
