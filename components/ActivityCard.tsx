@@ -80,7 +80,7 @@ const ActivityCard = ({ activity }: ActivityCardProps) => {
           {activity.status === "pending" && (
             <span className="flex items-center gap-1 px-2 py-1 font-bold rounded-full text-xs bg-yellow-100 text-yellow-600 whitespace-nowrap">
               <span className="w-1.5 h-1.5 rounded-full bg-yellow-600 shrink-0"></span>
-              <span>Chưa bắt đầu</span>
+              <span>Chờ nhận</span>
             </span>
           )}
 

@@ -157,11 +157,20 @@ const getAvailableUsers = async (params: {
   return res.data.data ?? [];
 };
 
+const getUsersByRoles = async (roles: string[]): Promise<UserOption[]> => {
+  const res = await axiosInstance.get("/api/users", {
+    params: { role: roles, isActive: true },
+    paramsSerializer: (p) => qs.stringify(p, { arrayFormat: "repeat" }),
+  });
+  return res.data.data ?? [];
+};
+
 export const usersAPI = {
   getDutyUsers,
   getDQCDUsers,
   getAllUser,
   getAvailableUsers,
+  getUsersByRoles,
   assignDQCD: async (taskId: number, userIds: string[]): Promise<void> => {
     await axiosInstance.post(
       `/api/activities-task/tasks/${taskId}/assign-dqcd`,

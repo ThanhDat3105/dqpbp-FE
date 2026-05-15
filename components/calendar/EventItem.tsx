@@ -1,9 +1,7 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo } from "react";
 import clsx from "clsx";
-import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
 // import ProgressDialog from "./ProgressDialog";
 
 interface EventItemProps {
@@ -26,6 +24,7 @@ interface EventItemProps {
   taskCount?: number;
   isActivity?: boolean;
   compact?: boolean;
+  onClick?: () => void;
 }
 
 const EventItem = memo(function EventItem({
@@ -37,6 +36,7 @@ const EventItem = memo(function EventItem({
   taskCount,
   isActivity = false,
   compact = false,
+  onClick,
 }: EventItemProps) {
   // const { user } = useAuth();
   // const [formData, setFormData] = useState<{
@@ -77,11 +77,14 @@ const EventItem = memo(function EventItem({
     : undefined;
 
   return (
-    <Link
-      href={`/activities/${task.activity_id}`}
+    <button
       type="button"
       title={title}
       className={className}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.();
+      }}
     >
       <span
         className={clsx(
@@ -136,7 +139,7 @@ const EventItem = memo(function EventItem({
       <span className="shrink-0 text-white/0 group-hover:text-white/80 transition-all duration-150 text-[10px]">
         →
       </span>
-    </Link>
+    </button>
   );
 });
 

@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { WeekSchedule, ScheduleRow as ScheduleRowData } from "./schedule-data";
-import ScheduleRow from "./schedule-row";
+import { useAuth } from "@/context/AuthContext";
+import type {
+  ScheduleRow as ScheduleRowData,
+  WeekSchedule,
+} from "./schedule-data";
 import ScheduleFormModal from "./schedule-form-modal";
+import ScheduleRow from "./schedule-row";
 
 interface ScheduleTableProps {
   schedule: WeekSchedule | null;
@@ -21,6 +25,8 @@ const DAY_LABELS = [
   "Thứ 7",
   "Chủ nhật",
 ];
+
+const EDITABLE_ROLES = new Set(["CHI_HUY", "TO_TRUONG"]);
 
 function SkeletonRow({ index, colCount }: { index: number; colCount: number }) {
   return (
@@ -69,8 +75,10 @@ export default function ScheduleTable({
   loading,
   onUpdateRow,
 }: ScheduleTableProps) {
+  const { user } = useAuth();
   const [editingRow, setEditingRow] = useState<ScheduleRowData | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const canEditSchedule = EDITABLE_ROLES.has(user?.role ?? "");
 
   const fixedLeft = [
     { key: "day", label: "Thứ/Ngày", minW: "min-w-[100px]" },
@@ -132,7 +140,9 @@ export default function ScheduleTable({
                       row={row}
                       dayLabel={DAY_LABELS[i]}
                       officeColumns={schedule.officeColumns}
+                      canEdit={canEditSchedule}
                       onEdit={(r) => {
+                        if (!canEditSchedule) return;
                         setEditingRow(r);
                         setEditingIndex(i);
                       }}
@@ -143,7 +153,7 @@ export default function ScheduleTable({
             </table>
           </div>
           {/* Right fade hint — hidden once scrolled fully, CSS-only */}
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent sm:hidden" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-white to-transparent sm:hidden" />
         </div>
 
         {schedule && !loading && (

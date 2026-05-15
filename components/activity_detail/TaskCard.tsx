@@ -88,6 +88,7 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
   };
 
   const acceptMobilize = user?.role === "CHI_HUY" || user?.role === "TO_TRUONG";
+  const canOperate = user?.role !== "DQTT" && user?.role !== "DQCD";
 
   return (
     <div className="w-full bg-white rounded-xl border border-gray-200 shadow p-4 h-fit">
@@ -126,7 +127,7 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
               {task?.status === "pending" && (
                 <span className="flex items-center gap-1 px-2 py-1 font-bold rounded-full text-xs bg-yellow-100 text-yellow-600 whitespace-nowrap">
                   <span className="w-1.5 h-1.5 rounded-full bg-yellow-600 shrink-0"></span>
-                  <span>Chưa bắt đầu</span>
+                  <span>Chờ nhận</span>
                 </span>
               )}
 
@@ -192,38 +193,42 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
 
       {task?.status !== "completed" ? (
         <>
-          <div className="gap-2 mt-4 mb-2 grid grid-cols-2">
-            {formData?.report_fields?.length > 0 && (
-              <Button
-                onClick={() => setOpenReportModal(true)}
-                disabled={loading}
-                variant="outline"
-                className="flex-1"
-              >
-                Báo cáo
-              </Button>
-            )}
-            <Button
-              onClick={() => setOpenUpdateTask(true)}
-              disabled={loading}
-              variant="default"
-              className="flex-1"
-            >
-              Cập nhật tiến độ
-            </Button>
-          </div>
+          {canOperate && (
+            <>
+              <div className="gap-2 mt-4 mb-2 grid grid-cols-2">
+                {formData?.report_fields?.length > 0 && (
+                  <Button
+                    onClick={() => setOpenReportModal(true)}
+                    disabled={loading}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Báo cáo
+                  </Button>
+                )}
+                <Button
+                  onClick={() => setOpenUpdateTask(true)}
+                  disabled={loading}
+                  variant="default"
+                  className="flex-1"
+                >
+                  Cập nhật tiến độ
+                </Button>
+              </div>
 
-          {task.requires_dqcd && acceptMobilize && (
-            <div className="w-full">
-              <Button
-                onClick={() => setOpenMobilizeModal(true)}
-                disabled={loading}
-                variant="default"
-                className="w-full"
-              >
-                Điều động DQCĐ
-              </Button>
-            </div>
+              {task.requires_dqcd && acceptMobilize && (
+                <div className="w-full">
+                  <Button
+                    onClick={() => setOpenMobilizeModal(true)}
+                    disabled={loading}
+                    variant="default"
+                    className="w-full"
+                  >
+                    Điều động DQCĐ
+                  </Button>
+                </div>
+              )}
+            </>
           )}
 
           {/* ===== REPORT MODAL ===== */}

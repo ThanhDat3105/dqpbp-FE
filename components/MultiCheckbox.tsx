@@ -28,7 +28,7 @@ export default function MultiCheckbox({ setSelected, selected }: Props) {
         label={
           <span className="flex items-center gap-2 px-2 py-1 font-bold rounded-full text-sm bg-yellow-100 text-yellow-600">
             <span className="w-2 h-2 rounded-full bg-yellow-600"></span>
-            Chưa bắt đầu
+            Chờ nhận
           </span>
         }
       />

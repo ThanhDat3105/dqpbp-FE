@@ -1,10 +1,14 @@
-import { ScheduleRow as ScheduleRowData, OfficeColumn } from "./schedule-data";
 import { cn } from "@/lib/utils";
+import type {
+  OfficeColumn,
+  ScheduleRow as ScheduleRowData,
+} from "./schedule-data";
 
 interface ScheduleRowProps {
   row: ScheduleRowData;
   dayLabel: string;
   officeColumns: OfficeColumn[];
+  canEdit?: boolean;
   onEdit: (row: ScheduleRowData) => void;
 }
 
@@ -12,12 +16,13 @@ export default function ScheduleRow({
   row,
   dayLabel,
   officeColumns,
+  canEdit = true,
   onEdit,
 }: ScheduleRowProps) {
   const patrolCodes = Array.isArray(row.dqcd_patrol) ? row.dqcd_patrol : [];
 
   const cellBase =
-    "px-3 py-4 text-center text-sm align-top cursor-pointer group-hover:bg-gray-100/50 transition-colors";
+    "px-3 py-4 text-center text-sm align-top transition-colors";
   const nameCell = cn(cellBase, "text-gray-700 leading-snug");
 
   const renderValue = (val: string | undefined | null) => {
@@ -29,11 +34,16 @@ export default function ScheduleRow({
 
   return (
     <tr
-      onClick={() => onEdit(row)}
-      className="border-b border-gray-100 bg-white hover:bg-gray-50 transition-colors duration-150 group cursor-pointer"
+      onClick={() => {
+        if (canEdit) onEdit(row);
+      }}
+      className={cn(
+        "border-b border-gray-100 bg-white transition-colors duration-150 group",
+        canEdit && "hover:bg-gray-50 cursor-pointer",
+      )}
     >
       {/* ── Thứ/Ngày ── */}
-      <td className="px-4 py-4 text-center align-top sticky left-0 z-10 border-r border-gray-200 bg-gray-50 min-w-[100px]">
+      <td className="px-4 py-4 text-center align-top sticky left-0 z-10 border-r border-gray-200 bg-gray-50 min-w-25">
         <div className="font-semibold text-sm text-gray-800">{dayLabel}</div>
       </td>
 
@@ -56,7 +66,7 @@ export default function ScheduleRow({
       {officeColumns.map((col) => (
         <td
           key={col.code}
-          className={cn(nameCell, "max-w-[140px] leading-snug")}
+          className={cn(nameCell, "max-w-35 leading-snug")}
         >
           {renderValue(row.office_duties?.[col.code])}
         </td>

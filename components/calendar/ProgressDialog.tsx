@@ -128,7 +128,7 @@ export default function ProgressDialog({
               <SelectValue placeholder="Chọn trạng thái" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="pending">Chưa bắt đầu</SelectItem>
+              <SelectItem value="pending">Chờ nhận</SelectItem>
               <SelectItem value="in_progress">Đang thực hiện</SelectItem>
               <SelectItem value="completed">Hoàn thành</SelectItem>
             </SelectContent>

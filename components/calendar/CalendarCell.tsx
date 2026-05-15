@@ -7,6 +7,8 @@ import { createPortal } from "react-dom";
 import EventItem from "./EventItem";
 import type { DayData, CalendarActivity, CalendarTaskItem } from "./types";
 import { isActivityList } from "./types";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import ActivityDetailSheet from "@/components/activity/ActivityDetailSheet";
 
 interface CalendarCellProps {
   date: string;
@@ -24,6 +26,7 @@ type ItemShape = {
   activity_id?: number;
   title: string;
   status?: "pending" | "completed";
+  dueDate: string;
   subLabel?: string;
   taskCount?: number;
   isActivity?: boolean;
@@ -38,11 +41,13 @@ function CellPopover({
   anchorRect,
   date,
   onClose,
+  onItemClick,
 }: {
   items: ItemShape[];
   anchorRect: DOMRect;
   date: string;
   onClose: () => void;
+  onItemClick: (activityId: number | undefined) => void;
 }) {
   const popoverRef = useRef<HTMLDivElement>(null);
   const POPOVER_WIDTH = 260;
@@ -122,8 +127,6 @@ function CellPopover({
           {items.map((item) => (
             <div
               key={item.id}
-              // Close popover as user navigates away
-              onClick={onClose}
               onTouchStart={(e) => e.stopPropagation()}
             >
               <EventItem
@@ -135,6 +138,10 @@ function CellPopover({
                 taskCount={item.taskCount}
                 isActivity={item.isActivity}
                 compact={false}
+                onClick={() => {
+                  onClose();
+                  onItemClick(item.activity_id);
+                }}
               />
             </div>
           ))}
@@ -184,6 +191,12 @@ const CalendarCell = memo(function CalendarCell({
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [popoverItems, setPopoverItems] = useState<ItemShape[]>([]);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+  const [selectedActivityId, setSelectedActivityId] = useState<number | null>(null);
+
+  const handleItemClick = useCallback((activityId: number | undefined) => {
+    if (activityId == null) return;
+    setSelectedActivityId(activityId);
+  }, []);
 
   // ── Build items ────────────────────────────────────────────────────────────
   const items: ItemShape[] = [];
@@ -221,6 +234,7 @@ const CalendarCell = memo(function CalendarCell({
           items.push({
             id: activityName,
             title: activityName,
+            dueDate: date,
             taskCount: entry.tasks.length,
             isActivity: true,
             activity_id: entry.activity_id,
@@ -234,6 +248,7 @@ const CalendarCell = memo(function CalendarCell({
             taskId: task.task_id,
             title: task.title,
             status: task.status,
+            dueDate: date,
             subLabel: act.activity_name,
             isActivity: false,
             activity_id: act.activity_id,
@@ -247,6 +262,7 @@ const CalendarCell = memo(function CalendarCell({
           taskId: t.task_id,
           title: t.title,
           status: t.status,
+          dueDate: date,
           isActivity: false,
           activity_id: t.activity_id,
         });
@@ -346,10 +362,11 @@ const CalendarCell = memo(function CalendarCell({
                 taskCount={item.taskCount}
                 isActivity={item.isActivity}
                 compact={compact}
+                onClick={() => handleItemClick(item.activity_id)}
               />
             ))}
 
-            {items.length > 0 && (
+            {items.length > 2 && (
               <button
                 onClick={handleMoreClick}
                 className={clsx(
@@ -359,7 +376,7 @@ const CalendarCell = memo(function CalendarCell({
                   popoverOpen && "bg-emerald-50 text-emerald-900",
                 )}
               >
-                +{items.length} more
+                Xem tất cả +{items.length}
               </button>
             )}
           </div>
@@ -375,8 +392,24 @@ const CalendarCell = memo(function CalendarCell({
           anchorRect={anchorRect}
           date={date}
           onClose={() => setPopoverOpen(false)}
+          onItemClick={handleItemClick}
         />
       )}
+
+      {/* Activity detail sheet */}
+      <Sheet
+        open={selectedActivityId !== null}
+        onOpenChange={(open) => !open && setSelectedActivityId(null)}
+      >
+        <SheetContent
+          side="right"
+          className="w-120 sm:w-150 overflow-y-auto px-4 py-4 border-none pb-20"
+        >
+          {selectedActivityId !== null && (
+            <ActivityDetailSheet activityId={selectedActivityId} />
+          )}
+        </SheetContent>
+      </Sheet>
     </>
   );
 });

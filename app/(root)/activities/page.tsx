@@ -34,7 +34,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "Tất cả" },
-  { value: "pending", label: "Chưa bắt đầu" },
+  { value: "pending", label: "Chờ nhận" },
   { value: "in_progress", label: "Đang thực hiện" },
   { value: "completed", label: "Hoàn thành" },
   { value: "overdue", label: "Quá hạn" },
@@ -49,7 +49,7 @@ function StatusBadge({ status }: { status: string }) {
       bg: "bg-yellow-100",
       text: "text-yellow-700",
       dot: "bg-yellow-500",
-      label: "Chưa bắt đầu",
+      label: "Chờ nhận",
     },
     in_progress: {
       bg: "bg-blue-100",

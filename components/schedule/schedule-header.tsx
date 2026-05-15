@@ -97,7 +97,7 @@ export default function ScheduleHeader({
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <span className="flex-1 text-center whitespace-normal text-xs sm:text-sm sm:flex-none sm:whitespace-nowrap sm:min-w-[220px] px-3 py-1 font-medium text-gray-700 select-none">
+            <span className="flex-1 text-center whitespace-normal text-xs sm:text-sm sm:flex-none sm:whitespace-nowrap feat/calendar px-3 py-1 font-medium text-gray-700 select-none">
               {label}
             </span>
 

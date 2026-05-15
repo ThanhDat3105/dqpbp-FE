@@ -15,6 +15,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScheduleRow, OfficeColumn } from "./schedule-data";
+
+const FIXED_OFFICE_COLUMNS: OfficeColumn[] = [
+  { code: "hdnd_ubnd", label: "Trực HĐND – UBND" },
+  { code: "du", label: "Trực Đảng ủy" },
+  { code: "pktht", label: "Trực PKTHT" },
+];
 import {
   Popover,
   PopoverContent,
@@ -128,8 +134,16 @@ export default function ScheduleFormModal({
   const [isSaving, setIsSaving] = useState(false);
 
   // ─── User lists from API ────────────────────────────────────────────────
-  const [dutyOptions, setDutyOptions] = useState<SelectOption[]>([]);
+  const [commanderOptions, setCommanderOptions] = useState<SelectOption[]>([]);
+  const [dqttOptions, setDqttOptions] = useState<SelectOption[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // Merge 3 fixed offices + any extra dynamic offices (dedup by code)
+  const allOfficeColumns = (() => {
+    const fixedCodes = new Set(FIXED_OFFICE_COLUMNS.map((c) => c.code));
+    const extras = officeColumns.filter((c) => !fixedCodes.has(c.code));
+    return [...FIXED_OFFICE_COLUMNS, ...extras];
+  })();
 
   useEffect(() => {
     if (isOpen) setFormData(row);
@@ -141,9 +155,15 @@ export default function ScheduleFormModal({
     const fetchUsers = async () => {
       setLoadingUsers(true);
       try {
-        const dutyUsers = await usersAPI.getDutyUsers();
-        setDutyOptions(
-          dutyUsers.map((u) => ({ label: u.name, value: u.name })),
+        const [commanders, dqttUsers] = await Promise.all([
+          usersAPI.getUsersByRoles(["CHI_HUY", "TO_TRUONG"]),
+          usersAPI.getUsersByRoles(["DQTT"]),
+        ]);
+        setCommanderOptions(
+          commanders.map((u) => ({ label: u.name, value: u.name })),
+        );
+        setDqttOptions(
+          dqttUsers.map((u) => ({ label: u.name, value: u.name })),
         );
       } catch {
         toast.error("Không thể tải danh sách người dùng");
@@ -198,7 +218,7 @@ export default function ScheduleFormModal({
               <UserSelect
                 value={formData.commander}
                 onChange={(v) => handleChange("commander", v)}
-                options={dutyOptions}
+                options={commanderOptions}
                 disabled={loadingUsers}
               />
             </div>
@@ -207,7 +227,7 @@ export default function ScheduleFormModal({
               <UserSelect
                 value={formData.duty_officer}
                 onChange={(v) => handleChange("duty_officer", v)}
-                options={dutyOptions}
+                options={commanderOptions}
                 disabled={loadingUsers}
               />
             </div>
@@ -216,7 +236,7 @@ export default function ScheduleFormModal({
               <UserSelect
                 value={formData.document_officer}
                 onChange={(v) => handleChange("document_officer", v)}
-                options={dutyOptions}
+                options={dqttOptions}
                 disabled={loadingUsers}
               />
             </div>
@@ -225,7 +245,7 @@ export default function ScheduleFormModal({
               <UserSelect
                 value={formData.internal_affairs}
                 onChange={(v) => handleChange("internal_affairs", v)}
-                options={dutyOptions}
+                options={dqttOptions}
                 disabled={loadingUsers}
               />
             </div>
@@ -234,7 +254,7 @@ export default function ScheduleFormModal({
               <UserSelect
                 value={formData.meal_duty}
                 onChange={(v) => handleChange("meal_duty", v)}
-                options={dutyOptions}
+                options={dqttOptions}
                 disabled={loadingUsers}
               />
             </div>
@@ -243,7 +263,7 @@ export default function ScheduleFormModal({
               <UserSelect
                 value={formData.dqtt_leader}
                 onChange={(v) => handleChange("dqtt_leader", v)}
-                options={dutyOptions}
+                options={dqttOptions}
                 disabled={loadingUsers}
               />
             </div>
@@ -264,26 +284,24 @@ export default function ScheduleFormModal({
             />
           </div>
 
-          {officeColumns.length > 0 && (
-            <div className="pt-4 border-t border-gray-100">
-              <h4 className="text-sm font-semibold text-gray-800 mb-3">
-                Nhiệm vụ trực trụ sở
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {officeColumns.map((col) => (
-                  <div key={col.code} className="space-y-1.5">
-                    <Label>{col.label}</Label>
-                    <UserSelect
-                      value={formData.office_duties?.[col.code] || ""}
-                      onChange={(v) => handleOfficeChange(col.code, v)}
-                      options={dutyOptions}
-                      disabled={loadingUsers}
-                    />
-                  </div>
-                ))}
-              </div>
+          <div className="pt-4 border-t border-gray-100">
+            <h4 className="text-sm font-semibold text-gray-800 mb-3">
+              Nhiệm vụ trực trụ sở
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {allOfficeColumns.map((col) => (
+                <div key={col.code} className="space-y-1.5">
+                  <Label>{col.label}</Label>
+                  <UserSelect
+                    value={formData.office_duties?.[col.code] || ""}
+                    onChange={(v) => handleOfficeChange(col.code, v)}
+                    options={dqttOptions}
+                    disabled={loadingUsers}
+                  />
+                </div>
+              ))}
             </div>
-          )}
+          </div>
 
           <DialogFooter className="pt-4">
             <Button
