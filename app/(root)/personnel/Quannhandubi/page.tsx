@@ -1,4 +1,4 @@
-import YouthPersonnelTable from "@/components/youth/YouthPersonnelTable";
+import QuanNhanDuBiTable from "@/components/qndb/QuanNhanDuBiTable";
 
 export default function Page() {
   return (
@@ -6,7 +6,7 @@ export default function Page() {
       <h1 className="text-2xl font-bold text-gray-900">
         Danh sách quân nhân dự bị
       </h1>
-      <YouthPersonnelTable />
+      <QuanNhanDuBiTable />
     </>
   );
 }

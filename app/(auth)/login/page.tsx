@@ -150,7 +150,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-[#556B2F] py-2 text-white font-semibold hover:bg-[#455A1A] transition"
+            className="w-full rounded-lg bg-[#556B2F] hover:bg-[#455A1A] py-2 text-white font-semibold transition"
           >
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>

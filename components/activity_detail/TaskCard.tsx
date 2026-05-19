@@ -88,7 +88,7 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
   };
 
   const acceptMobilize = user?.role === "CHI_HUY" || user?.role === "TO_TRUONG";
-  const canOperate = user?.role !== "DQTT" && user?.role !== "DQCD";
+  const canOperate = user?.role !== "DQCD";
 
   return (
     <div className="w-full bg-white rounded-xl border border-gray-200 shadow p-4 h-fit">
@@ -206,14 +206,16 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
                     Báo cáo
                   </Button>
                 )}
-                <Button
-                  onClick={() => setOpenUpdateTask(true)}
-                  disabled={loading}
-                  variant="default"
-                  className="flex-1"
-                >
-                  Cập nhật tiến độ
-                </Button>
+                {task.status === "pending" && (
+                  <Button
+                    onClick={() => setOpenUpdateTask(true)}
+                    disabled={loading}
+                    variant="default"
+                    className="flex-1"
+                  >
+                    Cập nhật tiến độ
+                  </Button>
+                )}
               </div>
 
               {task.requires_dqcd && acceptMobilize && (
