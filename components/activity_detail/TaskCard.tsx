@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import {
@@ -89,6 +89,14 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
 
   const acceptMobilize = user?.role === "CHI_HUY" || user?.role === "TO_TRUONG";
   const canOperate = user?.role !== "DQCD";
+  const canUpdateProgress =
+    task.assignees.some(
+      (assignee) => String(assignee.id) === String(user?.id),
+    ) ||
+    user?.role === "CHI_HUY" ||
+    user?.role === "TO_TRUONG";
+
+  console.log(task, canUpdateProgress);
 
   return (
     <div className="w-full bg-white rounded-xl border border-gray-200 shadow p-4 h-fit">
@@ -206,14 +214,16 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
                     Báo cáo
                   </Button>
                 )}
-                <Button
-                  onClick={() => setOpenUpdateTask(true)}
-                  disabled={loading}
-                  variant="default"
-                  className="flex-1"
-                >
-                  Cập nhật tiến độ
-                </Button>
+                {canUpdateProgress && (
+                  <Button
+                    onClick={() => setOpenUpdateTask(true)}
+                    disabled={loading}
+                    variant="default"
+                    className="flex-1"
+                  >
+                    Cập nhật tiến độ
+                  </Button>
+                )}
               </div>
 
               {task.requires_dqcd && acceptMobilize && (
