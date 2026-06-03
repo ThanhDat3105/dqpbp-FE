@@ -52,7 +52,7 @@ export default function Sidebar({
     }
   }, []);
 
-  // Auto-expand menu when route matches
+  // Auto-expand menu only when pathname changes (not on every openMenus change)
   useEffect(() => {
     const activeMenu = menuConfig.find((item) => {
       if (item.href === pathname) return true;
@@ -62,14 +62,12 @@ export default function Sidebar({
       return false;
     });
 
-    if (
-      activeMenu &&
-      activeMenu.children &&
-      !openMenus.includes(activeMenu.id)
-    ) {
-      setOpenMenus((prev) => [...prev, activeMenu.id]);
+    if (activeMenu && activeMenu.children) {
+      setOpenMenus((prev) =>
+        prev.includes(activeMenu.id) ? prev : [...prev, activeMenu.id],
+      );
     }
-  }, [pathname, openMenus]);
+  }, [pathname]);
 
   useEffect(() => {
     if (!user || (user.role !== "DQTT" && user.role !== "DQCD")) {

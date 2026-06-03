@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowLeftIcon from "@mui/icons-material/ArrowLeft";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
@@ -135,6 +135,7 @@ export default function ActivityListPage() {
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [view, setView] = useState<"list" | "card">("list");
+  const createSheetCloseRef = useRef<(() => void) | null>(null);
 
   const debouncedParams = useDebounce(params, 300);
 
@@ -585,13 +586,23 @@ export default function ActivityListPage() {
         </SheetContent>
       </Sheet>
 
-      <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+      <Sheet
+        open={isCreateOpen}
+        onOpenChange={(open) => {
+          if (!open) createSheetCloseRef.current?.();
+        }}
+      >
         <SheetContent
           side="right"
           className="w-120 sm:w-150 overflow-y-auto px-4 py-4 border-none pb-20"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <ActivityCreateSheet
             onCancel={() => setIsCreateOpen(false)}
+            onRequestClose={(fn) => {
+              createSheetCloseRef.current = fn;
+            }}
             onSuccess={(newActivity) => {
               setIsCreateOpen(false);
               setActivities((prev) => [newActivity, ...prev]);

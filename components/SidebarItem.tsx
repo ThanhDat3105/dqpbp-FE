@@ -141,29 +141,36 @@ export default function SidebarItem({
       )}
 
       {/* CHILDREN */}
-      {!collapsed && isOpen && item.children && (
-        <div className="ml-2 border-l-2 border-gray-200 pl-3 space-y-1 mt-1">
-          {item.children.map((child) => (
-            <Link
-              key={child.id}
-              href={child.href || "#"}
-              className={clsx(
-                "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200",
-                "hover:bg-gray-100 active:bg-gray-200",
-                isActive(child.href)
-                  ? "bg-indigo-50 text-indigo-600 font-medium"
-                  : "text-gray-600 hover:text-gray-900",
-              )}
-            >
-              <span
+      {!collapsed && item.children && (
+        <div
+          className={clsx(
+            "overflow-hidden transition-all duration-300 ease-in-out",
+            isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0",
+          )}
+        >
+          <div className="ml-2 border-l-2 border-gray-200 pl-3 space-y-1 mt-1">
+            {item.children.map((child) => (
+              <Link
+                key={child.id}
+                href={child.href || "#"}
                 className={clsx(
-                  "w-1.5 h-1.5 rounded-full",
-                  isActive(child.href) ? "bg-indigo-600" : "bg-gray-400",
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                  "hover:bg-gray-100 active:bg-gray-200",
+                  isActive(child.href)
+                    ? "bg-indigo-50 text-indigo-600 font-medium"
+                    : "text-gray-600 hover:text-gray-900",
                 )}
-              />
-              <span className="truncate">{child.label}</span>
-            </Link>
-          ))}
+              >
+                <span
+                  className={clsx(
+                    "w-1.5 h-1.5 rounded-full",
+                    isActive(child.href) ? "bg-indigo-600" : "bg-gray-400",
+                  )}
+                />
+                <span className="truncate">{child.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
     </div>

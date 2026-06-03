@@ -4,6 +4,7 @@ import { ActivityInterface } from "@/services/api/activity";
 import { handleGetDepartment, handleGetWorkType } from "@/utils/activity";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
+import { Paperclip, Download } from "lucide-react";
 
 export default function Information({
   activity,
@@ -68,6 +69,40 @@ export default function Information({
             <p className="text-sm text-gray-500 mb-1">Địa điểm</p>
             <p className="font-medium text-gray-900">{activity.location}</p>
           </div>
+
+          <div className="border-t col-span-2 border-gray-200"></div>
+
+          {activity.attached_files?.length > 0 && (
+            <div className="col-span-2 space-y-2">
+              <p className="text-sm text-gray-500 font-medium">File đính kèm</p>
+              <div className="space-y-1.5">
+                {activity.attached_files.map((url, index) => {
+                  const filename = url.split("/").pop() || `file-${index + 1}`;
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 group"
+                    >
+                      <Paperclip className="h-4 w-4 text-gray-400 shrink-0" />
+                      <span className="text-sm text-gray-700 truncate flex-1">
+                        {decodeURIComponent(filename)}
+                      </span>
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                        className="shrink-0 text-gray-400 hover:text-[#556B2F] transition-colors"
+                        title="Tải về"
+                      >
+                        <Download className="h-4 w-4" />
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="border-t col-span-2 border-gray-200"></div>
 

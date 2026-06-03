@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
-import { Plus, Info, ListTodo, Save } from "lucide-react";
+import { Info, ListTodo, Save, AlertTriangle, Paperclip, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { activityAPI, CreateActivityInterface } from "@/services/api/activity";
 import Task from "@/components/activity/Task";
 import { createActivitySchema } from "@/lib/validations";
@@ -24,6 +32,7 @@ import {
   activityTemplateAPI,
   ActivityTemplateInterface,
 } from "@/services/api/activity-template";
+import { uploadAPI } from "@/services/api/upload";
 
 interface FormData {
   name: string;
@@ -57,14 +66,19 @@ interface FormData {
 export default function ActivityCreateSheet({
   onSuccess,
   onCancel,
+  onRequestClose,
 }: {
   onSuccess?: (newActivity: any) => void;
   onCancel?: () => void;
+  onRequestClose?: (confirmFn: () => void) => void;
 }) {
   const { user } = useAuth();
   const [templates, setTemplates] = useState<ActivityTemplateInterface[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | "">("");
   const [applyingTemplate, setApplyingTemplate] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [attachedFile, setAttachedFile] = useState<{ name: string; url: string } | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -80,6 +94,26 @@ export default function ActivityCreateSheet({
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   });
+
+  const isDirty =
+    formData.name !== "" ||
+    formData.work_type !== "" ||
+    formData.department !== "" ||
+    formData.location !== "" ||
+    formData.document_number !== "" ||
+    formData.tasks.length > 0;
+
+  const handleRequestClose = useCallback(() => {
+    if (isDirty) {
+      setShowConfirm(true);
+    } else {
+      onCancel?.();
+    }
+  }, [isDirty, onCancel]);
+
+  useEffect(() => {
+    onRequestClose?.(handleRequestClose);
+  }, [onRequestClose, handleRequestClose]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateErrors, setDateErrors] = useState<Record<string, string>>({});
@@ -361,6 +395,35 @@ export default function ActivityCreateSheet({
       .catch(() => {});
   }, []);
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    try {
+      const url = await uploadAPI.uploadDocument(file, "activities");
+      setAttachedFile({ name: file.name, url });
+      setFormData((prev) => ({ ...prev, attached_files: [url] }));
+    } catch {
+      toast.error("Không thể tải file lên, vui lòng thử lại");
+    } finally {
+      setUploadingFile(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveFile = async () => {
+    if (!attachedFile) return;
+    try {
+      await uploadAPI.deleteFile(attachedFile.url);
+    } catch {
+      // bỏ qua lỗi xóa — FE vẫn clear state
+    } finally {
+      setAttachedFile(null);
+      setFormData((prev) => ({ ...prev, attached_files: [] }));
+    }
+  };
+
   const handleApplyTemplate = async (templateId: number) => {
     setApplyingTemplate(true);
     try {
@@ -529,6 +592,47 @@ export default function ActivityCreateSheet({
               placeholder="VD: 123/CV..."
             />
           </FormField>
+
+          <FormField label="File đính kèm">
+            {attachedFile ? (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50">
+                <Paperclip className="h-4 w-4 text-gray-400 shrink-0" />
+                <a
+                  href={attachedFile.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:underline truncate flex-1"
+                >
+                  {attachedFile.name}
+                </a>
+                <button
+                  type="button"
+                  onClick={handleRemoveFile}
+                  className="shrink-0 text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-300 hover:border-[#556B2F] hover:bg-[#F4FAE8] transition-colors cursor-pointer">
+                {uploadingFile ? (
+                  <Loader2 className="h-4 w-4 text-[#556B2F] animate-spin" />
+                ) : (
+                  <Paperclip className="h-4 w-4 text-gray-400" />
+                )}
+                <span className="text-sm text-gray-500">
+                  {uploadingFile ? "Đang tải lên..." : "Chọn file (PDF, Word)"}
+                </span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleFileChange}
+                  disabled={uploadingFile}
+                />
+              </label>
+            )}
+          </FormField>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-4">
@@ -537,15 +641,14 @@ export default function ActivityCreateSheet({
               <ListTodo className="h-5 w-5 text-gray-600" />
               <h2 className="font-semibold text-gray-800 text-lg">Nhiệm Vụ</h2>
             </div>
-            <Button type="button" size="sm" onClick={handleAddTask}>
-              <Plus className="h-4 w-4 mr-1" />
-              Thêm
-            </Button>
           </div>
 
           {formData.tasks.length === 0 ? (
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center text-gray-500">
-              <p>Chưa có nhiệm vụ nào</p>
+            <div
+              onClick={handleAddTask}
+              className="items-center text-center gap-2 px-6 py-2.5 rounded-lg border border-dashed border-[#556B2F] bg-[#F4FAE8] text-[#556B2F] font-semibold text-sm hover:bg-[#e8f3cc] transition-colors cursor-pointer"
+            >
+              <p>+ Thêm nhiệm vụ</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -571,6 +674,12 @@ export default function ActivityCreateSheet({
                   />
                 </div>
               ))}
+              <div
+                onClick={handleAddTask}
+                className="items-center text-center gap-2 px-6 py-2.5 rounded-lg border border-dashed border-[#556B2F] bg-[#F4FAE8] text-[#556B2F] font-semibold text-sm hover:bg-[#e8f3cc] transition-colors cursor-pointer"
+              >
+                <p>+ Thêm nhiệm vụ</p>
+              </div>
             </div>
           )}
           {errors.tasks && (
@@ -579,15 +688,51 @@ export default function ActivityCreateSheet({
         </div>
 
         <div className="flex justify-end gap-3 pt-6 pb-2 border-t">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={handleRequestClose}>
             Hủy
           </Button>
-          <Button type="submit" disabled={loading || hasDraftDateErrors}>
+          <Button
+            type="submit"
+            disabled={loading || hasDraftDateErrors}
+            className="bg-[#556b2f]"
+          >
             <Save className="h-4 w-4 mr-2" />
             {loading ? "Đang lưu..." : "Tạo Hoạt Động"}
           </Button>
         </div>
       </form>
+
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+              <DialogTitle>Xác nhận đóng</DialogTitle>
+            </div>
+            <DialogDescription>
+              Bạn đã nhập một số thông tin. Nếu đóng, dữ liệu sẽ bị mất. Bạn
+              có chắc muốn đóng không?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirm(false)}
+            >
+              Tiếp tục chỉnh sửa
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setShowConfirm(false);
+                onCancel?.();
+              }}
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

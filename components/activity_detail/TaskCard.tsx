@@ -219,8 +219,7 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
         </Button>
       )}
 
-      {/* ── IN_PROGRESS: inline report + mobilize + hoàn thành ── */}
-      {task.status === "in_progress" && canOperate && (
+      {canUpdateProgress && task.status === "in_progress" && canOperate && (
         <div className="space-y-4 border-t pt-4">
           {/* Báo cáo */}
           {reportFields.length > 0 && (
@@ -264,15 +263,13 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
             </div>
           )}
 
-          {canUpdateProgress && (
-            <Button
-              className="w-full"
-              onClick={handleComplete}
-              disabled={loading || !canComplete}
-            >
-              {loading ? "Đang xử lý..." : "Hoàn thành nhiệm vụ"}
-            </Button>
-          )}
+          <Button
+            className="w-full"
+            onClick={handleComplete}
+            disabled={loading || !canComplete}
+          >
+            {loading ? "Đang xử lý..." : "Hoàn thành nhiệm vụ"}
+          </Button>
 
           {!allReportFilled && reportFields.length > 0 && (
             <p className="text-xs text-amber-600">
