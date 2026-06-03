@@ -110,7 +110,7 @@ const getDutyUsers = async (): Promise<UserOption[]> => {
 
 const getAllUser = async (params: {
   departmentCode: string[];
-  role?: string;
+  role?: string[];
 }): Promise<UserOption[]> => {
   const res = await axiosInstance.get("/api/users", {
     params: {
