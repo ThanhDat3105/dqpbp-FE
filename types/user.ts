@@ -18,7 +18,7 @@ export interface UserDetailInterface {
 }
 
 export const DEPARTMENT_MAP: Record<number, string> = {
-  1: "Văn phòng",
+  1: "Văn thư",
   2: "Tham mưu",
   3: "Chính trị",
   4: "Hậu cần - Kỹ thuật",

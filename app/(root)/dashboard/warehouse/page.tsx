@@ -468,7 +468,7 @@ export default function WarehouseDashboardPage() {
               className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col"
             >
               <h2 className="font-bold text-gray-800 text-sm mb-4">
-                Hoạt động gần đây
+                Công tác gần đây
               </h2>
               <div className="flex flex-col gap-0">
                 {ACTIVITIES.map((activity, idx) => (

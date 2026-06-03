@@ -1,97 +1,76 @@
+"use client";
+
 import { Trash2, Lightbulb, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiSelect } from "../ui/multi-select";
-import { Label } from "@/components/ui/label";
 import { Switch } from "../ui/switch";
+import { Label } from "@/components/ui/label";
 import { UserOption, usersAPI } from "@/services/api/user";
 import { departmentAPI, DepartmentInterface } from "@/services/api/department";
 import { useCallback, useEffect, useState } from "react";
 
-interface TaskData {
+export interface TemplateTaskData {
   id: number;
   title: string;
   team: string[];
   assignees: string[];
-  due_date: string;
   notes: string;
-  report_fields: Array<{ id: number; name: string; value: string }>;
-  status: string;
-  accepted_at: string | null;
-  completed: boolean;
-  created_at: Date | string;
-  updated_at: Date | string;
+  report_fields: Array<{ id: number; name: string }>;
   requires_dqcd: boolean;
 }
 
 interface Props {
-  task: TaskData;
+  task: TemplateTaskData;
   taskIndex: number;
   errors?: Record<string, string>;
-  activityStartDate?: string;
-  activityEndDate?: string;
   onDeleteTask: () => void;
   onChangeField: (field: string, value: any) => void;
   onAddReportField: () => void;
   onRemoveReportField: (fieldIndex: number) => void;
-  onChangeReportField: (
-    fieldIndex: number,
-    key: "name" | "value",
-    value: string,
-  ) => void;
+  onChangeReportField: (fieldIndex: number, value: string) => void;
 }
 
-export default function Task({
+export default function TemplateTask({
   task,
   taskIndex,
   errors = {},
-  activityStartDate,
-  activityEndDate,
   onDeleteTask,
   onChangeField,
   onAddReportField,
   onRemoveReportField,
   onChangeReportField,
 }: Props) {
-  const [departments, setDepartment] = useState<DepartmentInterface[]>([]);
+  const [departments, setDepartments] = useState<DepartmentInterface[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
 
-  const handleGetUser = async (teams: string[]) => {
+  const fetchDepartments = useCallback(async () => {
+    try {
+      const data = await departmentAPI.getAllDepartment();
+      setDepartments(data);
+    } catch {}
+  }, []);
+
+  const fetchUsers = async (teams: string[]) => {
     try {
       const data = await usersAPI.getAllUser({
         departmentCode: teams,
-        role: ["DQTT", "TO_TRUONG"],
+        role: "DQTT",
       });
-
       setUsers(data);
-    } catch (error) {
-      console.log(error);
-    }
+    } catch {}
   };
 
-  const handleGetDepartment = useCallback(async () => {
-    try {
-      const data = await departmentAPI.getAllDepartment();
-
-      setDepartment(data);
-    } catch (error) {
-      console.log(error);
-    }
-  }, []);
+  useEffect(() => {
+    fetchDepartments();
+  }, [fetchDepartments]);
 
   useEffect(() => {
-    handleGetDepartment();
-  }, [handleGetDepartment]);
-
-  useEffect(() => {
-    if (task.team.length > 0) {
-      handleGetUser(task.team);
-    }
+    if (task.team.length > 0) fetchUsers(task.team);
   }, [task.team]);
 
   return (
     <div className="border border-gray-200 rounded-lg p-5 bg-gray-50">
-      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold text-gray-800">
           Nhiệm Vụ {taskIndex + 1}
@@ -108,7 +87,6 @@ export default function Task({
       </div>
 
       <div className="space-y-4">
-        {/* Title */}
         <FormField
           label="Tên Nhiệm Vụ"
           required
@@ -121,7 +99,6 @@ export default function Task({
           />
         </FormField>
 
-        {/* Team */}
         <FormField
           label="Tổ Phụ Trách"
           error={errors[`tasks.${taskIndex}.team`]}
@@ -133,61 +110,33 @@ export default function Task({
           }
         >
           <MultiSelect
-            options={departments.map((dept) => ({
-              value: dept.code,
-              label: dept.name,
-            }))}
+            options={departments.map((d) => ({ value: d.code, label: d.name }))}
             value={task.team}
-            onValueChange={(value) => {
-              // onChangeField("assignees", []);
-              onChangeField("team", value);
-            }}
+            onValueChange={(value) => onChangeField("team", value)}
             placeholder="Chọn tổ phụ trách..."
           />
         </FormField>
 
-        {/* Assignees */}
         <FormField
-          label="Người Thực Hiện"
-          required
+          label="Người Thực Hiện Mặc Định"
           error={errors[`tasks.${taskIndex}.assignees`]}
         >
           <MultiSelect
             disabled={task.team.length === 0}
-            options={users.map((user) => ({
-              value: String(user.id),
-              label: user.name,
-            }))}
+            options={users.map((u) => ({ value: String(u.id), label: u.name }))}
             value={task.assignees}
             onValueChange={(value) => onChangeField("assignees", value)}
             placeholder="Chọn người thực hiện..."
           />
         </FormField>
 
-        {/* Due Date */}
-        <FormField
-          label="Thời Hạn Hoàn Thành"
-          error={errors[`tasks.${taskIndex}.due_date`]}
-        >
-          <Input
-            type="datetime-local"
-            value={task.due_date}
-            min={activityStartDate ? `${activityStartDate}T00:00` : undefined}
-            max={activityEndDate ? `${activityEndDate}T23:59` : undefined}
-            onChange={(e) => onChangeField("due_date", e.target.value)}
-          />
-        </FormField>
-
-        {/* Due Date */}
-
         <div className="flex items-center space-x-2">
           <Switch
-            id="requires_dqcd"
+            id={`requires_dqcd_${taskIndex}`}
             checked={task.requires_dqcd}
             onCheckedChange={(value) => onChangeField("requires_dqcd", value)}
           />
-
-          <Label className="leading-5" htmlFor="requires_dqcd">
+          <Label className="leading-5" htmlFor={`requires_dqcd_${taskIndex}`}>
             Loại nhiệm vụ cần điều động DQCĐ
           </Label>
         </div>
@@ -216,13 +165,11 @@ export default function Task({
             </p>
           ) : (
             <div className="space-y-2">
-              {task.report_fields.map((field, fieldIdx) => (
-                <div key={fieldIdx} className="flex gap-2">
+              {task.report_fields.map((field, idx) => (
+                <div key={idx} className="flex gap-2">
                   <Input
                     value={field.name}
-                    onChange={(e) =>
-                      onChangeReportField(fieldIdx, "name", e.target.value)
-                    }
+                    onChange={(e) => onChangeReportField(idx, e.target.value)}
                     placeholder="VD: Số lượng súng..."
                     className="flex-1"
                   />
@@ -230,7 +177,7 @@ export default function Task({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => onRemoveReportField(fieldIdx)}
+                    onClick={() => onRemoveReportField(idx)}
                     className="text-red-500 hover:bg-red-100 h-10 w-10"
                   >
                     ✕
@@ -245,9 +192,6 @@ export default function Task({
   );
 }
 
-/**
- * Reusable FormField Component
- */
 interface FormFieldProps {
   label: string;
   required?: boolean;

@@ -1,23 +1,16 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import {
-  activityAPI,
-  TaskInterface,
-  TaskStatus,
-} from "@/services/api/activity";
-import axios from "axios";
+import { activityAPI, TaskInterface } from "@/services/api/activity";
 import { format } from "date-fns";
 import { toast } from "sonner";
-
-// shadcn/ui imports
 import { Button } from "@/components/ui/button";
-import ReportDialog from "./ReportDialog";
-import ProgressDialog from "./ProgressDialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { handleGetDepartment } from "@/utils/activity";
-import MobilizeDialog from "./MobilizeDialog";
 import {
   Tooltip,
   TooltipContent,
@@ -26,260 +19,279 @@ import {
 } from "@/components/ui/tooltip";
 import { useActivity } from "@/context/ActivityContext";
 import { useAuth } from "@/context/AuthContext";
+import { UserOption, usersAPI } from "@/services/api/user";
+
+const STATUS_CONFIG = {
+  pending: {
+    bg: "bg-yellow-100",
+    dot: "bg-yellow-600",
+    text: "text-yellow-600",
+    label: "Chờ nhận",
+  },
+  in_progress: {
+    bg: "bg-blue-100",
+    dot: "bg-blue-600",
+    text: "text-blue-600",
+    label: "Đang thực hiện",
+  },
+  completed: {
+    bg: "bg-green-100",
+    dot: "bg-green-600",
+    text: "text-green-600",
+    label: "Hoàn thành",
+  },
+  cancelled: {
+    bg: "bg-red-100",
+    dot: "bg-red-600",
+    text: "text-red-600",
+    label: "Đã hủy",
+  },
+} as const;
+
+function StatusBadge({ status }: { status: string }) {
+  const s =
+    STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ??
+    STATUS_CONFIG.pending;
+  return (
+    <span
+      className={`flex items-center gap-1 px-2 py-1 font-bold rounded-full text-xs whitespace-nowrap ${s.bg} ${s.text}`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.dot}`} />
+      {s.label}
+    </span>
+  );
+}
 
 export default function TaskCard({ task }: { task: TaskInterface }) {
   const { user } = useAuth();
-
   const { fetchActivityDetail, activity } = useActivity();
-  const [formData, setFormData] = useState<TaskInterface>(task);
-  const [openUpdateTask, setOpenUpdateTask] = useState<boolean>(false);
+
+  const [reportFields, setReportFields] = useState(
+    task.report_fields?.map((f) => ({ ...f, value: f.value ?? "" })) ?? [],
+  );
+  const [dqcdUsers, setDqcdUsers] = useState<UserOption[]>([]);
+  const [selectedDqcd, setSelectedDqcd] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [openReportModal, setOpenReportModal] = useState(false);
-  const [openMobilizeModal, setOpenMobilizeModal] = useState(false);
 
-  // Compute field validation
-  const hasEmptyFields = useMemo(() => {
-    if (!formData.report_fields || formData.report_fields.length === 0) {
-      return false;
-    }
-    return formData.report_fields.some(
-      (field) => !field.value || field.value.trim() === "",
+  useEffect(() => {
+    setReportFields(
+      task.report_fields?.map((f) => ({ ...f, value: f.value ?? "" })) ?? [],
     );
-  }, [formData.report_fields]);
+  }, [task]);
 
-  // Handlers for report fields
-  const handleReportFieldChange = (index: number, value: string) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      report_fields: prevState.report_fields.map((field, i) =>
-        i === index ? { ...field, value } : field,
-      ),
-    }));
-  };
-
-  // Submit report fields
-  const handleSubmitReport = async () => {
+  const fetchDqcdUsers = useCallback(async () => {
+    if (!task.requires_dqcd) return;
     try {
-      setLoading(true);
+      const data = await usersAPI.getAvailableUsers({
+        start_date: task.start_date,
+        end_date: task.due_date,
+      });
+      setDqcdUsers(data);
+    } catch {}
+  }, [task.id]);
 
-      const data = formData.report_fields.filter(
-        (field) => field.value && field.value.trim() !== "",
-      );
+  useEffect(() => {
+    fetchDqcdUsers();
+  }, [fetchDqcdUsers]);
 
-      await activityAPI.updateReportFields(
-        activity.id,
-        task.id.toString(),
-        data,
-      );
+  const isPrivileged = user?.role === "CHI_HUY" || user?.role === "TO_TRUONG";
+  const canOperate = user?.role !== "DQCD";
+  const canUpdateProgress =
+    task.assignees.some((a) => String(a.id) === String(user?.id)) ||
+    isPrivileged;
 
-      toast.success("Cập nhật báo cáo thành công");
-      setOpenReportModal(false);
+  const allReportFilled = useMemo(() => {
+    if (!reportFields.length) return true;
+    if (selectedDqcd.length === 0 && task.requires_dqcd) return false;
+    return reportFields.every((f) => f.value.trim() !== "");
+  }, [reportFields]);
+
+  const canComplete = task.status === "in_progress" && allReportFilled;
+
+  const handleAccept = async () => {
+    setLoading(true);
+    try {
+      await activityAPI.updateTaskStatus(task.id, "in_progress");
+      toast.success("Đã nhận nhiệm vụ");
       await fetchActivityDetail(activity.id);
-    } catch (err) {
-      const errorMessage =
-        err instanceof axios.AxiosError
-          ? err.response?.data?.message || err.message
-          : "Cập nhật báo cáo thất bại";
-
-      toast.error(errorMessage);
+    } catch {
+      toast.error("Cập nhật thất bại");
     } finally {
       setLoading(false);
     }
   };
 
-  const acceptMobilize = user?.role === "CHI_HUY" || user?.role === "TO_TRUONG";
-  const canOperate = user?.role !== "DQCD";
-  const canUpdateProgress =
-    task.assignees.some(
-      (assignee) => String(assignee.id) === String(user?.id),
-    ) ||
-    user?.role === "CHI_HUY" ||
-    user?.role === "TO_TRUONG";
+  const handleComplete = async () => {
+    if (!canComplete) return;
+    setLoading(true);
+    try {
+      if (reportFields.length > 0) {
+        await activityAPI.updateReportFields(
+          activity.id,
+          task.id.toString(),
+          reportFields,
+        );
+      }
+      if (task.requires_dqcd && isPrivileged && selectedDqcd.length > 0) {
+        await usersAPI.assignDQCD(task.id, selectedDqcd);
+      }
+      await activityAPI.updateTaskStatus(task.id, "completed");
+      toast.success("Hoàn thành nhiệm vụ");
+      await fetchActivityDetail(activity.id);
+    } catch {
+      toast.error("Cập nhật thất bại");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  console.log(task, canUpdateProgress);
+  const isOverdue =
+    format(new Date(), "yyyy-MM-dd") > format(task.due_date, "yyyy-MM-dd") &&
+    task.status !== "completed";
 
   return (
-    <div className="w-full bg-white rounded-xl border border-gray-200 shadow p-4 h-fit">
+    <div className="w-full bg-white rounded-xl border border-gray-200 shadow p-4 h-fit space-y-4">
       {/* Header */}
-      <div>
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-gray-800 text-lg">
-            {formData.title}
-          </h2>
-
-          {/* Status */}
-          <div className="flex items-center gap-2 text-sm">
-            {format(new Date(), "yyyy-MM-dd") >
-              format(task.due_date, "yyyy-MM-dd") &&
-              task.status !== "completed" && (
-                <div className="flex justify-end">
-                  <span className="flex items-center gap-1 px-2 py-1 font-bold rounded-full text-xs bg-red-100 text-red-600 whitespace-nowrap">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      className="shrink-0"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M2.725 21q-.275 0-.5-.137t-.35-.363t-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3t.488.125t.387.375l9.25 16q.15.25.138.513t-.138.487t-.35.363t-.5.137zm1.725-2h15.1L12 6zm8.263-1.287Q13 17.425 13 17t-.288-.712T12 16t-.712.288T11 17t.288.713T12 18t.713-.288m0-3Q13 14.425 13 14v-3q0-.425-.288-.712T12 10t-.712.288T11 11v3q0 .425.288.713T12 15t.713-.288M12 12.5"
-                      />
-                    </svg>
-                    <span>Quá hạn</span>
-                  </span>
-                </div>
-              )}
-
-            <div className="flex sm:flex-col gap-1 sm:gap-1 flex-wrap sm:flex-nowrap">
-              {task?.status === "pending" && (
-                <span className="flex items-center gap-1 px-2 py-1 font-bold rounded-full text-xs bg-yellow-100 text-yellow-600 whitespace-nowrap">
-                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-600 shrink-0"></span>
-                  <span>Chờ nhận</span>
-                </span>
-              )}
-
-              {task?.status === "in_progress" && (
-                <span className="flex items-center gap-1 px-2 py-1 font-bold rounded-full text-xs bg-blue-100 text-blue-600 whitespace-nowrap">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></span>
-                  <span>Đang thực hiện</span>
-                </span>
-              )}
-
-              {task?.status === "completed" && (
-                <span className="flex items-center gap-1 px-2 py-1 font-bold rounded-full text-xs bg-green-100 text-green-600 whitespace-nowrap">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-600 shrink-0"></span>
-                  <span>Hoàn thành</span>
-                </span>
-              )}
-
-              {task?.status === "cancelled" && (
-                <span className="flex items-center gap-1 px-2 py-1 font-bold rounded-full text-xs bg-red-100 text-red-600 whitespace-nowrap">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0"></span>
-                  <span>Đã hủy</span>
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="flex flex-col items-start gap-4 text-sm text-gray-500 mt-2">
-          <span className="flex items-center gap-1">
-            <PeopleOutlinedIcon fontSize="small" />
-            {handleGetDepartment(activity?.department)}
-          </span>
-
-          {formData?.assignees?.length > 0 && (
-            <span className="flex items-center gap-1">
-              <PeopleOutlinedIcon fontSize="small" />
-
-              <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>{formData.assignees.length} người thực hiện</span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="flex flex-col gap-1">
-                      {formData.assignees.map((assignee) => (
-                        <span key={assignee.id}>{assignee.name}</span>
-                      ))}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+      <div className="flex items-start justify-between gap-2">
+        <h2 className="font-semibold text-gray-800 text-base">{task.title}</h2>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {isOverdue && (
+            <span className="flex items-center gap-1 px-2 py-1 font-bold rounded-full text-xs bg-red-100 text-red-600 whitespace-nowrap">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="currentColor"
+                  d="M2.725 21q-.275 0-.5-.137t-.35-.363t-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3t.488.125t.387.375l9.25 16q.15.25.138.513t-.138.487t-.35.363t-.5.137zm1.725-2h15.1L12 6zm8.263-1.287Q13 17.425 13 17t-.288-.712T12 16t-.712.288T11 17t.288.713T12 18t.713-.288m0-3Q13 14.425 13 14v-3q0-.425-.288-.712T12 10t-.712.288T11 11v3q0 .425.288.713T12 15t.713-.288M12 12.5"
+                />
+              </svg>
+              Quá hạn
             </span>
           )}
-
-          <span className="flex items-center gap-1">
-            <CalendarTodayIcon fontSize="small" />
-            {format(task?.start_date, "dd/MM/yyyy HH:mm") || ""} -{" "}
-            {format(task?.due_date, "dd/MM/yyyy HH:mm") || ""}
-          </span>
+          <StatusBadge status={task.status} />
         </div>
       </div>
 
-      {task?.status !== "completed" ? (
-        <>
-          {canOperate && (
-            <>
-              <div className="gap-2 mt-4 mb-2 grid grid-cols-2">
-                {formData?.report_fields?.length > 0 && (
-                  <Button
-                    onClick={() => setOpenReportModal(true)}
-                    disabled={loading}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Báo cáo
-                  </Button>
-                )}
-                {canUpdateProgress && (
-                  <Button
-                    onClick={() => setOpenUpdateTask(true)}
-                    disabled={loading}
-                    variant="default"
-                    className="flex-1"
-                  >
-                    Cập nhật tiến độ
-                  </Button>
-                )}
-              </div>
+      {/* Meta */}
+      <div className="flex flex-col gap-2 text-sm text-gray-500">
+        {task.team?.length > 0 && (
+          <span className="flex items-center gap-1.5">
+            <PeopleOutlinedIcon fontSize="small" />
+            <span>
+              {task.team.map((t) => handleGetDepartment(t)).join(", ")}
+            </span>
+          </span>
+        )}
+        {task.assignees?.length > 0 && (
+          <span className="flex items-center gap-1.5">
+            <PeopleOutlinedIcon fontSize="small" />
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="cursor-default">
+                    {task.assignees.length} người thực hiện
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="flex flex-col gap-0.5">
+                    {task.assignees.map((a) => (
+                      <span key={a.id}>{a.name}</span>
+                    ))}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </span>
+        )}
+        <span className="flex items-center gap-1.5">
+          <CalendarTodayIcon fontSize="small" />
+          {format(task.due_date, "dd/MM/yyyy HH:mm")}
+        </span>
+      </div>
 
-              {task.requires_dqcd && acceptMobilize && (
-                <div className="w-full">
-                  <Button
-                    onClick={() => setOpenMobilizeModal(true)}
-                    disabled={loading}
-                    variant="default"
-                    className="w-full"
-                  >
-                    Điều động DQCĐ
-                  </Button>
+      {/* ── PENDING: chỉ hiện nút nhận ── */}
+      {task.status === "pending" && canOperate && canUpdateProgress && (
+        <Button className="w-full" onClick={handleAccept} disabled={loading}>
+          {loading ? "Đang xử lý..." : "Nhận nhiệm vụ"}
+        </Button>
+      )}
+
+      {/* ── IN_PROGRESS: inline report + mobilize + hoàn thành ── */}
+      {task.status === "in_progress" && canOperate && (
+        <div className="space-y-4 border-t pt-4">
+          {/* Báo cáo */}
+          {reportFields.length > 0 && (
+            <div className="space-y-3">
+              {reportFields.map((field, idx) => (
+                <div key={idx}>
+                  <Label className="text-sm text-gray-700 mb-1 block">
+                    {field.name}
+                  </Label>
+                  <Input
+                    placeholder="Nhập câu trả lời"
+                    value={field.value}
+                    onChange={(e) =>
+                      setReportFields((prev) =>
+                        prev.map((f, i) =>
+                          i === idx ? { ...f, value: e.target.value } : f,
+                        ),
+                      )
+                    }
+                  />
                 </div>
-              )}
-            </>
+              ))}
+            </div>
           )}
 
-          {/* ===== REPORT MODAL ===== */}
-          <ReportDialog
-            formData={formData}
-            handleReportFieldChange={handleReportFieldChange}
-            handleSubmitReport={handleSubmitReport}
-            hasEmptyFields={hasEmptyFields}
-            loading={loading}
-            openReportModal={openReportModal}
-            setOpenReportModal={setOpenReportModal}
-          />
+          {/* Điều động DQCD */}
+          {task.requires_dqcd && isPrivileged && (
+            <div>
+              <Label className="text-sm text-gray-700 mb-1 block">
+                Điều động DQCĐ
+              </Label>
+              <MultiSelect
+                options={dqcdUsers.map((u) => ({
+                  value: String(u.id),
+                  label: u.name,
+                }))}
+                value={selectedDqcd}
+                onValueChange={setSelectedDqcd}
+                placeholder="Chọn đơn vị"
+              />
+            </div>
+          )}
 
-          {/* ===== PROGRESS MODAL ===== */}
-          <ProgressDialog
-            openUpdateTask={openUpdateTask}
-            setOpenUpdateTask={setOpenUpdateTask}
-            task={task}
-            formData={formData}
-            setFormData={setFormData}
-            loading={loading}
-            setLoading={setLoading}
-          />
+          {canUpdateProgress && (
+            <Button
+              className="w-full"
+              onClick={handleComplete}
+              disabled={loading || !canComplete}
+            >
+              {loading ? "Đang xử lý..." : "Hoàn thành nhiệm vụ"}
+            </Button>
+          )}
 
-          <MobilizeDialog
-            task={task}
-            loading={loading}
-            openMobilizeModal={openMobilizeModal}
-            setOpenMobilizeModal={setOpenMobilizeModal}
-            onSuccess={() => {
-              void fetchActivityDetail(activity.id);
-            }}
-          />
-        </>
-      ) : (
-        task?.report_fields?.map((field) => (
-          <div key={field.name} className="mt-4 flex gap-2">
-            <h3 className="text-sm">{field.name}:</h3>
-            <p className="font-bold">{field.value}</p>
-          </div>
-        ))
+          {!allReportFilled && reportFields.length > 0 && (
+            <p className="text-xs text-amber-600">
+              Điền đầy đủ báo cáo để hoàn thành nhiệm vụ
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── COMPLETED: hiện báo cáo đã điền ── */}
+      {task.status === "completed" && task.report_fields?.length > 0 && (
+        <div className="border-t pt-4 space-y-2">
+          {task.report_fields.map((field) => (
+            <div key={field.name} className="flex gap-2 text-sm">
+              <span className="text-gray-500">{field.name}:</span>
+              <span className="font-semibold text-gray-800">{field.value}</span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

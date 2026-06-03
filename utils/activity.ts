@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 
 export const handleGetDepartment = (value: string) => {
   const departmentMap: Record<string, string> = {
-    administration_office: "Văn phòng hành chính",
+    administration_office: "Văn thư",
     advise: "Tham mưu",
     political_affairs: "Chính trị",
     logistics: "Hậu cần",

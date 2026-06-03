@@ -57,7 +57,7 @@ export const menuConfig: MenuItem[] = [
   },
   {
     id: "activities",
-    label: "Hoạt động",
+    label: "Công tác",
     icon: Event,
     children: [
       {
@@ -84,6 +84,13 @@ export const menuConfig: MenuItem[] = [
         label: "Lịch Trực DQCĐ",
         href: "/calendar-qdcd",
         icon: Event,
+      },
+      {
+        id: "templates",
+        label: "Mẫu công tác",
+        href: "/templates",
+        icon: Event,
+        hiddenForRoles: ["DQCD", "DQTT"],
       },
     ],
   },
@@ -184,7 +191,7 @@ export const menuConfigMobile: MenuItem[] = [
   },
   {
     id: "activities",
-    label: "Hoạt động",
+    label: "Công tác",
     href: "/activities",
     icon: Event,
   },

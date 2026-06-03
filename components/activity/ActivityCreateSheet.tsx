@@ -6,6 +6,13 @@ import { Plus, Info, ListTodo, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { activityAPI, CreateActivityInterface } from "@/services/api/activity";
 import Task from "@/components/activity/Task";
 import { createActivitySchema } from "@/lib/validations";
@@ -13,6 +20,10 @@ import { toast } from "sonner";
 import { departmentAPI } from "@/services/api/department";
 import { handleGetDepartment } from "@/utils/activity";
 import { useAuth } from "@/context/AuthContext";
+import {
+  activityTemplateAPI,
+  ActivityTemplateInterface,
+} from "@/services/api/activity-template";
 
 interface FormData {
   name: string;
@@ -28,7 +39,6 @@ interface FormData {
     title: string;
     team: string[];
     assignees: string[];
-    start_date: string;
     due_date: string;
     notes: string;
     report_fields: Array<{ id: number; name: string; value: string }>;
@@ -52,6 +62,10 @@ export default function ActivityCreateSheet({
   onCancel?: () => void;
 }) {
   const { user } = useAuth();
+  const [templates, setTemplates] = useState<ActivityTemplateInterface[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | "">("");
+  const [applyingTemplate, setApplyingTemplate] = useState(false);
+
   const [formData, setFormData] = useState<FormData>({
     name: "",
     work_type: "",
@@ -91,19 +105,6 @@ export default function ActivityCreateSheet({
       const displayStart = new Date(start).toLocaleDateString("vi-VN");
       const displayEnd = new Date(end).toLocaleDateString("vi-VN");
 
-      // Validate Task Start Date
-      if (task.start_date) {
-        if (start && task.start_date < start) {
-          newDateErrors[`tasks.${index}.start_date`] =
-            `Thời gian bắt đầu nhiệm vụ phải từ ngày bắt đầu kế hoạch (${displayStart}) trở đi`;
-        }
-        if (task.due_date && task.start_date > task.due_date) {
-          newDateErrors[`tasks.${index}.start_date`] =
-            `Thời gian bắt đầu không được trễ hơn thời hạn hoàn thành`;
-        }
-      }
-
-      // Validate Task Due Date
       if (task.due_date) {
         if (start && task.due_date < start) {
           newDateErrors[`tasks.${index}.due_date`] =
@@ -206,6 +207,7 @@ export default function ActivityCreateSheet({
         created_by: String(user?.id) || "admin",
         tasks: formData.tasks.map((task) => ({
           ...task,
+          start_date: formData.start_date,
           created_at:
             typeof task.created_at === "string"
               ? task.created_at
@@ -245,7 +247,6 @@ export default function ActivityCreateSheet({
           title: "",
           team: [],
           assignees: [],
-          start_date: "", // Khởi tạo trường start_date
           due_date: "",
           notes: "",
           report_fields: [],
@@ -278,8 +279,7 @@ export default function ActivityCreateSheet({
         [field]: value,
       };
 
-      // Trigger validate lại khi thay đổi ngày của task
-      if (field === "start_date" || field === "due_date") {
+      if (field === "due_date") {
         validateDateRange(prev.start_date, prev.end_date, updatedTasks);
       }
 
@@ -342,12 +342,9 @@ export default function ActivityCreateSheet({
     setLoading(true);
     try {
       const res = await departmentAPI.getAllDepartment();
-
-      const department = res.map((de) => de.code);
-
-      setDepartment(department);
+      setDepartment(res.map((de) => de.code));
     } catch (error) {
-      console.error("Error fetching activities:", error);
+      console.error("Error fetching departments:", error);
     } finally {
       setLoading(false);
     }
@@ -356,6 +353,51 @@ export default function ActivityCreateSheet({
   useEffect(() => {
     handleGetDepartments();
   }, [handleGetDepartments]);
+
+  useEffect(() => {
+    activityTemplateAPI
+      .getTemplates({ status: "active", limit: 100 })
+      .then((data) => setTemplates(data.results))
+      .catch(() => {});
+  }, []);
+
+  const handleApplyTemplate = async (templateId: number) => {
+    setApplyingTemplate(true);
+    try {
+      const tpl = await activityTemplateAPI.getTemplateById(templateId);
+      setFormData((prev) => ({
+        ...prev,
+        name: tpl.name ?? prev.name,
+        work_type: tpl.work_type ?? prev.work_type,
+        department: tpl.department ?? prev.department,
+        location: tpl.location ?? prev.location,
+        document_number: tpl.document_number ?? prev.document_number,
+        tasks: tpl.tasks.map((t) => ({
+          id: Math.random(),
+          title: t.title,
+          team: t.team ?? [],
+          assignees: t.assignees.map((a) => String(a)) ?? [],
+          due_date: "",
+          notes: t.notes ?? "",
+          report_fields: (t.report_fields ?? []).map((rf, j) => ({
+            id: j,
+            name: rf.name,
+            value: rf.value ?? "",
+          })),
+          status: "pending",
+          accepted_at: null,
+          completed: false,
+          created_at: new Date(),
+          updated_at: new Date(),
+          requires_dqcd: t.requires_dqcd ?? false,
+        })),
+      }));
+    } catch {
+      toast.error("Không thể tải mẫu kế hoạch");
+    } finally {
+      setApplyingTemplate(false);
+    }
+  };
 
   return (
     <div className="flex flex-col">
@@ -375,6 +417,29 @@ export default function ActivityCreateSheet({
             </h2>
           </div>
 
+          <FormField label="Dùng mẫu có sẵn">
+            <Select
+              value={selectedTemplateId ? String(selectedTemplateId) : ""}
+              onValueChange={(val) => {
+                const id = Number(val);
+                setSelectedTemplateId(id);
+                handleApplyTemplate(id);
+              }}
+              disabled={applyingTemplate}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="-- Chọn mẫu kế hoạch --" />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((tpl) => (
+                  <SelectItem key={tpl.id} value={String(tpl.id)}>
+                    {tpl.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+
           <FormField label="Tên Kế Hoạch" required error={errors.name}>
             <Input
               name="name"
@@ -386,36 +451,44 @@ export default function ActivityCreateSheet({
           </FormField>
 
           <FormField label="Loại Hoạt Động" required error={errors.work_type}>
-            <select
-              name="work_type"
+            <Select
               value={formData.work_type}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.work_type ? "border-red-500" : "border-gray-200"
-              }`}
+              onValueChange={(val) =>
+                setFormData((prev) => ({ ...prev, work_type: val }))
+              }
             >
-              <option value="">-- Chọn loại công việc --</option>
-              <option value="suddenly">Công việc đột xuất</option>
-              <option value="annual">Công việc theo năm</option>
-            </select>
+              <SelectTrigger
+                className={errors.work_type ? "border-red-500" : ""}
+              >
+                <SelectValue placeholder="-- Chọn loại công việc --" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="suddenly">Công việc đột xuất</SelectItem>
+                <SelectItem value="annual">Công việc theo năm</SelectItem>
+              </SelectContent>
+            </Select>
           </FormField>
 
           <FormField label="Tổ Công Tác" required error={errors.department}>
-            <select
-              name="department"
+            <Select
               value={formData.department}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.department ? "border-red-500" : "border-gray-200"
-              }`}
+              onValueChange={(val) =>
+                setFormData((prev) => ({ ...prev, department: val }))
+              }
             >
-              <option value="">-- Chọn tổ công tác --</option>
-              {department.map((dept) => (
-                <option key={dept} value={dept}>
-                  {handleGetDepartment(dept)}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger
+                className={errors.department ? "border-red-500" : ""}
+              >
+                <SelectValue placeholder="-- Chọn tổ công tác --" />
+              </SelectTrigger>
+              <SelectContent>
+                {department.map((dept) => (
+                  <SelectItem key={dept} value={dept}>
+                    {handleGetDepartment(dept)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </FormField>
 
           <FormField label="Địa Điểm" error={errors.location}>

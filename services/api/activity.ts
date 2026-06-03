@@ -17,7 +17,7 @@ export interface Department {
 export const departments: Department[] = [
   {
     value: "administration_office",
-    label: "Tổ Văn thư – Văn phòng",
+    label: "Tổ Văn thư",
     teams: [
       {
         id: "u1",
