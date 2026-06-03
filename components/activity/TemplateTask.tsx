@@ -55,7 +55,7 @@ export default function TemplateTask({
     try {
       const data = await usersAPI.getAllUser({
         departmentCode: teams,
-        role: "DQTT",
+        role: ["DQTT", "TO_TRUONG"],
       });
       setUsers(data);
     } catch {}
