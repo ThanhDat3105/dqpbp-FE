@@ -398,7 +398,7 @@ function DetailDialog({ id, onClose }: { id: number | null; onClose: () => void 
 
   return (
     <Dialog open={!!id} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-slate-500" />

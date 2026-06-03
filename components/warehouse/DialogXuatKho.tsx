@@ -69,7 +69,6 @@ export default function DialogXuatKho({ open, onClose, inventory }: Props) {
     form.ngayXuat;
 
   const handleSubmit = () => {
-    console.log("Xuất kho:", { ...form, item: selectedItem });
     toast.success("Đã xuất kho thành công");
     setForm(EMPTY_FORM);
     setQtyError("");

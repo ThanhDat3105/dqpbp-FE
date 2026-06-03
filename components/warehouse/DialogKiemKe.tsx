@@ -60,7 +60,6 @@ export default function DialogKiemKe({ open, onClose, inventory }: Props) {
       actualQty: r.actual === "" ? null : Number(r.actual),
       diff: r.actual === "" ? null : Number(r.actual) - r.system,
     }));
-    console.log("Kiểm kê:", { rows: payload, nguoiKiem, ngayKiem });
     toast.success("Đã lưu kết quả kiểm kê");
     handleClose();
   };

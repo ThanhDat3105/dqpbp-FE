@@ -147,12 +147,12 @@ export default function ActivityListPage() {
   const handlePrevMonth = () => {
     const d = new Date(params.currentDate);
     d.setMonth(d.getMonth() - 1);
-    setParams((prev) => ({ ...prev, currentDate: d }));
+    setParams((prev) => ({ ...prev, currentDate: d, page: 1 }));
   };
   const handleNextMonth = () => {
     const d = new Date(params.currentDate);
     d.setMonth(d.getMonth() + 1);
-    setParams((prev) => ({ ...prev, currentDate: d }));
+    setParams((prev) => ({ ...prev, currentDate: d, page: 1 }));
   };
 
   // ── Fetch ──

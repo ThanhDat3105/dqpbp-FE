@@ -345,8 +345,6 @@ const createActivity = async (payload: CreateActivityInterface) => {
   try {
     const res = await axiosInstance.post(`/api/activities`, payload);
 
-    console.log(res);
-
     return res.data;
   } catch (error) {
     throw error;

@@ -44,6 +44,14 @@ export interface YouthCreatePayload {
 
 export type YouthUpdatePayload = Partial<YouthCreatePayload>;
 
+export interface YouthImportResponse {
+  imported: number;
+  failed: number;
+  default_date_of_birth?: string;
+  inserted?: Array<{ row: number; id: number; full_name: string }>;
+  errors?: Array<{ row: number; message: string }>;
+}
+
 // ─── API functions ────────────────────────────────────────────────────────────
 
 const getList = async (params: YouthListParams): Promise<YouthListResponse> => {
@@ -71,6 +79,16 @@ const create = async (
   return res.data.metaData;
 };
 
+const importExcel = async (file: File): Promise<YouthImportResponse> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await axiosInstance.post("/api/youth/import-excel", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data.metaData;
+};
+
 const update = async (
   id: number,
   payload: YouthUpdatePayload,
@@ -89,4 +107,12 @@ const promoteToNguon = async (id: number): Promise<{ id: number; full_name: stri
   return res.data.metaData;
 };
 
-export const youthApi = { getList, getById, create, update, remove, promoteToNguon };
+export const youthApi = {
+  getList,
+  getById,
+  create,
+  importExcel,
+  update,
+  remove,
+  promoteToNguon,
+};

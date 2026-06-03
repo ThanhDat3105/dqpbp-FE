@@ -206,16 +206,14 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
                     Báo cáo
                   </Button>
                 )}
-                {task.status === "pending" && (
-                  <Button
-                    onClick={() => setOpenUpdateTask(true)}
-                    disabled={loading}
-                    variant="default"
-                    className="flex-1"
-                  >
-                    Cập nhật tiến độ
-                  </Button>
-                )}
+                <Button
+                  onClick={() => setOpenUpdateTask(true)}
+                  disabled={loading}
+                  variant="default"
+                  className="flex-1"
+                >
+                  Cập nhật tiến độ
+                </Button>
               </div>
 
               {task.requires_dqcd && acceptMobilize && (

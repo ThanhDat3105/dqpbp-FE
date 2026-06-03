@@ -35,7 +35,6 @@ export default function DialogNhapKho({ open, onClose }: Props) {
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSubmit = () => {
-    console.log("Nhập kho:", form);
     toast.success("Đã nhập kho thành công");
     setForm(EMPTY);
     onClose();

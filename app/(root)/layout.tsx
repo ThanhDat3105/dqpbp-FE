@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import ChatFAB from "@/components/website/ChatFAB";
 
 export default function RootLayout({
   children,
@@ -59,10 +60,11 @@ export default function RootLayout({
 
         {/* Page content — only this scrolls */}
         <main className="flex-1 overflow-y-auto bg-gray-50 flex flex-col md:p-6 p-2 md:pb-6 pb-24">
-          {children}
+         {children}
         </main>
 
         <BottomNav />
+        <ChatFAB />
       </div>
     </div>
   );

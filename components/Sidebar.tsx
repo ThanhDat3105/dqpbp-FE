@@ -125,8 +125,6 @@ export default function Sidebar({
 
     try {
       const res = await logout();
-
-      console.log(res);
     } catch (error) {
       console.error(error);
     } finally {
@@ -257,10 +255,17 @@ export default function Sidebar({
           </div>
           {!collapsed && (
             <div className="min-w-0">
+              {user && (
+                <span className={clsx("inline-block text-xs rounded-full")}>
+                  {user.military_rank}
+                  {(user.role === "DQTT" || user.role === "DQCD") &&
+                    ` - ${user.role}`}
+                </span>
+              )}
               <p className="text-sm font-semibold truncate">
                 {user?.name || "Khách"}
               </p>
-              {user && (
+              {(user?.role === "CHI_HUY" || user?.role === "TO_TRUONG") && (
                 <span
                   className={clsx(
                     "inline-block text-xs px-2 py-0.5 rounded-full mt-1",
@@ -269,14 +274,7 @@ export default function Sidebar({
                       : "bg-blue-100 text-blue-700",
                   )}
                 >
-                  {user.military_rank} - {""}
-                  {user?.role === "CHI_HUY"
-                    ? "Chỉ huy"
-                    : user.role === "TO_TRUONG"
-                      ? "Tổ trưởng"
-                      : user.role === "DQCD"
-                        ? user.role
-                        : `${user.role} - ${handleGetDepartment(user?.department)}`}
+                  {user.position}
                 </span>
               )}
             </div>

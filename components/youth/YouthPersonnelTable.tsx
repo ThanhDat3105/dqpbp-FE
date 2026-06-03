@@ -8,11 +8,10 @@ import {
   Trash2,
   Plus,
   Search,
-  ChevronLeft,
-  ChevronRight,
   UserCircle2,
   FileText,
   ArrowRightCircle,
+  Upload,
 } from "lucide-react";
 import {
   Dialog,
@@ -435,6 +434,21 @@ function DeleteDialog({
 
 // ─── Main Table Component ─────────────────────────────────────────────────────
 
+const getErrorMessage = (err: unknown, fallback: string) => {
+  if (
+    err &&
+    typeof err === "object" &&
+    "data" in err &&
+    err.data &&
+    typeof err.data === "object" &&
+    "message" in err.data &&
+    typeof err.data.message === "string"
+  ) {
+    return err.data.message;
+  }
+  return fallback;
+};
+
 export default function YouthPersonnelTable() {
   const { user } = useAuth();
   const isReadOnly = user?.role === "DQCD";
@@ -464,6 +478,8 @@ export default function YouthPersonnelTable() {
   );
   const [deleteTarget, setDeleteTarget] = useState<YouthPersonnel | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const [promoteTarget, setPromoteTarget] = useState<YouthPersonnel | null>(null);
   const [promoteLoading, setPromoteLoading] = useState(false);
@@ -556,6 +572,27 @@ export default function YouthPersonnelTable() {
     }
   };
 
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setImportLoading(true);
+    try {
+      const result = await youthApi.importExcel(file);
+      toast.success(
+        `Da import ${result.imported} dong${
+          result.failed ? `, ${result.failed} dong loi` : ""
+        }`,
+      );
+      fetchData();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Import Excel that bai"));
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const handlePageChange = (newPage: number) => {
     setParams((prev) => ({ ...prev, page: newPage }));
   };
@@ -596,18 +633,39 @@ export default function YouthPersonnelTable() {
 
         {/* Nút Thêm mới */}
         {!isReadOnly && (
-          <Button
-            id="youth-add-btn"
-            onClick={() => {
-              setFormMode("create");
-              setFormInitial(null);
-              setFormOpen(true);
-            }}
-            className="bg-[#556B2F] hover:bg-[#455A1A] text-white h-9 px-4 flex items-center gap-1.5"
-          >
-            <Plus className="w-4 h-4" />
-            Thêm mới
-          </Button>
+          <div className="flex items-center gap-2">
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleImportExcel}
+              className="hidden"
+            />
+            <Button
+              id="youth-import-excel-btn"
+              type="button"
+              variant="outline"
+              onClick={() => importInputRef.current?.click()}
+              disabled={importLoading}
+              className="h-9 px-4 flex items-center gap-1.5"
+            >
+              <Upload className="w-4 h-4" />
+              {importLoading ? "Đang Nhập" : "Nhập Excel"}
+            </Button>
+            <Button
+              id="youth-add-btn"
+              type="button"
+              onClick={() => {
+                setFormMode("create");
+                setFormInitial(null);
+                setFormOpen(true);
+              }}
+              className="bg-[#556B2F] hover:bg-[#455A1A] text-white h-9 px-4 flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              Thêm mới
+            </Button>
+          </div>
         )}
       </div>
 

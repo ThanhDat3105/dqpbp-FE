@@ -167,9 +167,14 @@ export async function getRecentTasks(params: {
 }
 
 export async function getKpiSummary(params: {
-  period: string;
+  period?: string;
   role?: string;
   user_id?: number;
+  from?: string;
+  to?: string;
+  month?: number;
+  quarter?: number;
+  year?: number;
 }): Promise<KpiSummaryResponse> {
   const res = await axiosInstance.get("/api/kpi/summary", {
     params,

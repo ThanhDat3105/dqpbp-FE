@@ -1,171 +1,37 @@
 import Footer from "@/components/Footer";
 import Image from "next/image";
-import Link from "next/link";
-import FolderIcon from "@mui/icons-material/Folder";
-import GroupIcon from "@mui/icons-material/Group";
-import ScheduleIcon from "@mui/icons-material/Schedule";
-import PrecisionManufacturingIcon from "@mui/icons-material/PrecisionManufacturing";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import AssignmentIcon from "@mui/icons-material/Assignment";
+
 export default function HomePage() {
   return (
-    <div className="bg-gray-50 flex-1 flex flex-col">
+    <div className="bg-linear-to-br from-[#3d4f22] via-[#556B2F] to-[#6B8E23] flex-1 flex flex-col -mx-2 -mt-2 md:-mx-6 md:-mt-6 -mb-6">
       {/* HERO */}
-      <header className="bg-linear-to-br from-[#556B2F] via-[#6B8E23] to-[#8B4513] text-white">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="flex items-center gap-6">
+      <section className="flex-1 flex flex-col items-center justify-center text-white min-h-[80vh] px-6 py-20">
+        <div className="flex flex-col items-center text-center max-w-2xl mx-auto">
+          {/* Logo */}
+          <div className="w-28 h-28 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center mb-8 ring-4 ring-white/20 shadow-xl">
             <Image
               src="/img/logo-dqtv.png"
-              alt="logo"
-              className="size-24 object-contain"
-              width={40}
-              height={40}
+              alt="Logo Dân Quân Tự Vệ"
+              width={80}
+              height={80}
+              className="object-contain"
               unoptimized
             />
-
-            <div>
-              <h1 className="text-4xl font-black">Hệ thống Quản lý Dân quân</h1>
-              <p className="text-lg mt-2 text-white/90">
-                Ban CHQS phường Bình Phú
-              </p>
-            </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-            {["11 Trang", "5 Module", "100% Tiếng Việt", "Responsive"].map(
-              (item, i) => (
-                <div
-                  key={i}
-                  className="bg-white/10 backdrop-blur rounded-xl p-4 text-center"
-                >
-                  <p className="font-bold">{item}</p>
-                </div>
-              ),
-            )}
-          </div>
+          {/* Label */}
+          <span className="px-3 py-1 bg-white/15 rounded-full text-xs font-semibold uppercase tracking-widest text-white/80">
+            Ban CHQS Phường Bình Phú
+          </span>
+
+          {/* Title */}
+          <h1 className="text-4xl md:text-5xl font-black mt-5 leading-tight tracking-tight">
+            Hệ thống Quản lý <br />
+            <span className="text-yellow-300">Dân quân Tự vệ</span>
+          </h1>
         </div>
-      </header>
+      </section>
 
-      {/* QUICK ACTION */}
-      <div className="max-w-7xl mx-auto px-6 -mt-6">
-        <div className="bg-white p-4 rounded-xl shadow flex gap-3 justify-center flex-wrap item-center">
-          <Link href="/login" className="px-4 py-2 bg-gray-100 rounded-lg">
-            Đăng nhập
-          </Link>
-
-          <Link href="/activities" className="px-4 py-2 bg-gray-100 rounded-lg">
-            Danh sách Công tác
-          </Link>
-
-          <Link href="/lich" className="px-4 py-2 bg-gray-100 rounded-lg">
-            Lịch nhiệm vụ
-          </Link>
-        </div>
-      </div>
-
-      {/* MODULE */}
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-12">
-        <h2 className="text-2xl font-bold mb-6">Module Chính</h2>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Nhân sự */}
-          <Link
-            href="/nhansu"
-            className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
-          >
-            <div className="flex items-center gap-3">
-              <GroupIcon className="text-olive" />
-              <span className="font-semibold text-gray-800">Nhân sự</span>
-            </div>
-          </Link>
-
-          {/* Kho thiết bị */}
-          <Link
-            href="/inventory"
-            className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
-          >
-            <div className="flex items-center gap-3">
-              <PrecisionManufacturingIcon className="text-olive" />
-              <span className="font-semibold text-gray-800">Kho thiết bị</span>
-            </div>
-          </Link>
-
-          {/* Tài liệu */}
-          <Link
-            href="/documents"
-            className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
-          >
-            <div className="flex items-center gap-3">
-              <FolderIcon className="text-olive" />
-              <span className="font-semibold text-gray-800">Tài liệu</span>
-            </div>
-          </Link>
-
-          {/* Lịch */}
-          <Link
-            href="/lich"
-            className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
-          >
-            <div className="flex items-center gap-3">
-              <ScheduleIcon className="text-olive" />
-              <span className="font-semibold text-gray-800">Lịch trực</span>
-            </div>
-          </Link>
-        </div>
-
-        {/* Activity */}
-        <h2 className="text-2xl font-bold mt-12 mb-6">Quản lý hoạt động</h2>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Danh sách Công tác */}
-          <Link
-            href="/activities"
-            className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
-          >
-            <div className="flex items-center gap-3">
-              <AssignmentIcon className="text-olive" />
-              <span className="font-semibold text-gray-800">
-                Danh sách Công tác
-              </span>
-            </div>
-          </Link>
-
-          {/* Lịch */}
-          <Link
-            href="/calendar"
-            className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
-          >
-            <div className="flex items-center gap-3">
-              <CalendarMonthIcon className="text-olive" />
-              <span className="font-semibold text-gray-800">Lịch</span>
-            </div>
-          </Link>
-
-          {/* Tạo công tác */}
-          <Link
-            href="/create-activity"
-            className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
-          >
-            <div className="flex items-center gap-3">
-              <AddCircleIcon className="text-olive" />
-              <span className="font-semibold text-gray-800">Tạo công tác</span>
-            </div>
-          </Link>
-
-          {/* Chi tiết */}
-          <Link
-            href="/activity/1"
-            className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
-          >
-            <div className="flex items-center gap-3">
-              <VisibilityIcon className="text-olive" />
-              <span className="font-semibold text-gray-800">Chi tiết</span>
-            </div>
-          </Link>
-        </div>
-      </main>
       <Footer />
     </div>
   );

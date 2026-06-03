@@ -25,30 +25,33 @@ import clsx from "clsx";
 import { useAuth } from "@/context/AuthContext";
 import { axiosInstance } from "@/lib/axios.config";
 
+import type { KpiPeriod } from "@/components/kpi/KpiPageLayout";
+import DialogDetailKPI from "@/components/force/DialogDetailKPI";
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ROLE_LABELS: Record<string, string> = {
+export const ROLE_LABELS: Record<string, string> = {
   TO_TRUONG: "Tổ trưởng",
   DQTT: "Thành viên",
   DQCD: "Dân quân CĐ",
   CHI_HUY: "Chỉ huy",
 };
 
-const STATUS_LABELS: Record<string, string> = {
+export const STATUS_LABELS: Record<string, string> = {
   on_duty: "Đang trực",
   on_leave: "Nghỉ phép",
   training: "Huấn luyện",
   other: "Khác",
 };
 
-const STATUS_COLORS: Record<string, string> = {
+export const STATUS_COLORS: Record<string, string> = {
   on_duty: "#4caf50",
   training: "#9e9e9e",
   on_leave: "#ff9800",
   other: "#424242",
 };
 
-const STATUS_DOT: Record<string, string> = {
+export const STATUS_DOT: Record<string, string> = {
   on_duty: "bg-green-500",
   on_leave: "bg-orange-500",
   training: "bg-gray-400",
@@ -78,7 +81,7 @@ interface StatusItem {
   count: number;
   percent: number;
 }
-interface PersonnelItem {
+export interface PersonnelItem {
   id: number;
   name: string;
   role: string;
@@ -224,12 +227,11 @@ function ActionMenu({ person }: { person: PersonnelItem }) {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-8 z-20 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[160px]">
+          <div className="absolute right-0 top-8 z-20 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-40">
             {options.map((opt) => (
               <button
                 key={opt}
                 onClick={() => {
-                  console.log(`${opt}:`, person);
                   setOpen(false);
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
@@ -246,7 +248,7 @@ function ActionMenu({ person }: { person: PersonnelItem }) {
 
 // ─── Shift Time Formatter ─────────────────────────────────────────────────────
 
-function formatShift(iso: string | null): string {
+export function formatShift(iso: string | null): string {
   if (!iso) return "--";
   const d = new Date(iso);
   const hh = String(d.getHours()).padStart(2, "0");
@@ -302,6 +304,10 @@ export default function LucLuongDashboardPage() {
   const [personnelList, setPersonnelList] = useState<PersonnelItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [selectedPerson, setSelectedPerson] = useState<PersonnelItem | null>(
+    null,
+  );
+
   // ── Role guard ──
   useEffect(() => {
     if (isLoadingFetchUser) return;
@@ -323,7 +329,7 @@ export default function LucLuongDashboardPage() {
           axiosInstance.get("/api/personnel/by-department"),
           axiosInstance.get("/api/personnel/status-breakdown"),
           axiosInstance.get("/api/personnel/list", {
-            params: { status: "on_duty", limit: 10 },
+            params: { status: "on_duty", limit: 10, role: "DQTT" },
           }),
         ]);
 
@@ -547,11 +553,8 @@ export default function LucLuongDashboardPage() {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
             <h2 className="font-bold text-gray-800 text-sm">
-              Danh sách nhân sự trực ban
+              Danh sách nhân sự
             </h2>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Cập nhật theo thời gian thực
-            </p>
           </div>
           <a
             href="#"
@@ -597,8 +600,9 @@ export default function LucLuongDashboardPage() {
                 {personnelList.map((person, idx) => (
                   <tr
                     key={person.id}
+                    onClick={() => setSelectedPerson(person)}
                     className={clsx(
-                      "border-b border-gray-50 transition-colors hover:bg-gray-50/70",
+                      "border-b border-gray-50 transition-colors hover:bg-gray-50/70 cursor-pointer",
                       idx % 2 === 0 ? "bg-white" : "bg-gray-50/40",
                     )}
                   >
@@ -666,6 +670,12 @@ export default function LucLuongDashboardPage() {
           </div>
         )}
       </section>
+
+      {/* ── KPI Detail Dialog ── */}
+      <DialogDetailKPI
+        selectedPerson={selectedPerson}
+        setSelectedPerson={setSelectedPerson}
+      />
     </main>
   );
 }

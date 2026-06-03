@@ -11,9 +11,7 @@ export default function UsersPage() {
   const { token } = useAuth();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("Tất cả");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [departmentFilter, setDepartmentFilter] = useState("Tất cả");
+  const [roleFilter, setRoleFilter] = useState(["DQTT"]);
   const [users, setUsers] = useState<UserWithKpi[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,16 +28,10 @@ export default function UsersPage() {
       setError(null);
 
       try {
-        const data = await fetchUsers(
-          {
-            role: roleFilter,
-            search: debouncedSearch,
-            status: statusFilter,
-            // department: departmentFilter, // Truyền vào API nếu backend hỗ trợ
-            includeKpi: true,
-          },
-          token ?? undefined,
-        );
+        const data = await fetchUsers({
+          role: roleFilter,
+          search: debouncedSearch,
+        });
 
         setUsers(data);
       } catch {
@@ -50,14 +42,7 @@ export default function UsersPage() {
     };
 
     void load();
-  }, [
-    roleFilter,
-    statusFilter,
-    departmentFilter,
-    debouncedSearch,
-    token,
-    retrySeed,
-  ]);
+  }, [roleFilter, debouncedSearch, token, retrySeed]);
 
   // Helper function lấy màu cho trạng thái
   const getStatusConfig = (status: UserStatus) => {
@@ -166,9 +151,7 @@ export default function UsersPage() {
                   {user.name}
                 </h3>
                 <p className="text-sm font-medium text-slate-500 mt-0.5 text-center line-clamp-1 w-full px-2">
-                  {user.department_name ||
-                    DEPARTMENT_MAP[user.department_id] ||
-                    "Chưa phân bổ"}
+                  {DEPARTMENT_MAP[user.department_id] || "Chưa phân bổ"}
                 </p>
 
                 {/* Badges */}
@@ -186,12 +169,9 @@ export default function UsersPage() {
 
                 {/* Actions (Chi tiết & Sửa) */}
                 <div className="w-full mt-6 flex gap-2">
-                  <Link
-                    href={`/personnel/dqtt/${user.id}`}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl text-sm font-semibold text-slate-700 transition-all shadow-sm"
-                  >
+                  <div className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl text-sm font-semibold text-slate-700 transition-all shadow-sm">
                     <Eye className="w-4 h-4 text-slate-400" /> Chi tiết
-                  </Link>
+                  </div>
                 </div>
               </Link>
             );

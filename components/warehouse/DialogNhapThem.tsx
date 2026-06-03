@@ -53,13 +53,6 @@ export default function DialogNhapThem({ open, onClose, item }: Props) {
   const valid = soLuong && ngayNhap && nguoiNhap;
 
   const handleSubmit = () => {
-    console.log("Nhập thêm:", {
-      item,
-      soLuongNhapThem: soLuong,
-      ngayNhap,
-      nguoiNhap,
-      ghiChu,
-    });
     toast.success(`Đã cập nhật tồn kho cho ${item?.name}`);
     handleClose();
   };

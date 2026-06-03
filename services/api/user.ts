@@ -71,40 +71,22 @@ const normalizeUser = (item: any): UserWithKpi => {
   };
 };
 
-export async function fetchUsers(
-  params?: {
-    role?: string;
-    search?: string;
-    status?: string;
-    includeKpi?: boolean;
-  },
-  token?: string,
-): Promise<UserWithKpi[]> {
-  const query = new URLSearchParams();
-
-  if (params?.role && params.role !== "Tất cả") {
-    query.set("role", params.role);
-  }
-
-  if (params?.search) {
-    query.set("search", params.search);
-  }
-
-  if (params?.status && params.status !== "all") {
-    query.set("status", params.status);
-  }
-
-  if (params?.includeKpi) {
-    query.set("includeKpi", "true");
-  }
-
-  const res = await axiosInstance.get(`/api/users?${query.toString()}`);
+export async function fetchUsers(params?: {
+  role?: string[];
+  search?: string;
+}): Promise<UserWithKpi[]> {
+  const res = await axiosInstance.get(`/api/users`, {
+    params: {
+      role: params?.role,
+      search: params?.search ?? "",
+    },
+  });
 
   return res.data.data.map((item: any) => normalizeUser(item));
 }
 
 export async function fetchUserDetail(id: number): Promise<UserWithKpi> {
-  const res = await axiosInstance.get(`/api/users/${id}?includeKpi=true`);
+  const res = await axiosInstance.get(`/api/users/${id}`);
 
   return normalizeUser(res.data.data);
 }

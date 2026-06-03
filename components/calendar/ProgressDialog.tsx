@@ -76,8 +76,6 @@ export default function ProgressDialog({
     (task.status as TaskStatus) || "pending",
   );
 
-  console.log(formData);
-
   const handleSubmitStatus = async () => {
     try {
       setLoading(true);

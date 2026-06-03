@@ -20,8 +20,11 @@ import {
   History,
   TrendingUp,
   UserCircle2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { fetchUserDetail, UserWithKpi } from "@/services/api/user";
+import { getKpiSummary, KpiSummary } from "@/services/api/kpi";
 
 export default function UserDetailPage() {
   const { token } = useAuth();
@@ -32,8 +35,16 @@ export default function UserDetailPage() {
 
   const [user, setUser] = useState<UserWithKpi | null>(null);
   const [tasks, setTasks] = useState<TaskHistoryItem[]>([]);
+  const [kpiSummary, setKpiSummary] = useState<KpiSummary | null>(null);
+  const [kpiLoading, setKpiLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const now = new Date();
+  const [periodType, setPeriodType] = useState<"month" | "quarter" | "year">("month");
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+  const [selectedQuarter, setSelectedQuarter] = useState(Math.ceil((now.getMonth() + 1) / 3));
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
 
   useEffect(() => {
     const load = async () => {
@@ -69,6 +80,58 @@ export default function UserDetailPage() {
 
     void load();
   }, [userId, token]);
+
+  useEffect(() => {
+    if (!Number.isFinite(userId)) return;
+
+    const loadKpi = async () => {
+      setKpiLoading(true);
+      try {
+        const params: Parameters<typeof getKpiSummary>[0] = { user_id: userId };
+        if (periodType === "month") {
+          params.month = selectedMonth;
+          params.year = selectedYear;
+        } else if (periodType === "quarter") {
+          params.quarter = selectedQuarter;
+          params.year = selectedYear;
+        } else {
+          params.year = selectedYear;
+        }
+        const kpiData = await getKpiSummary(params);
+        setKpiSummary(kpiData.summary);
+      } catch {
+        setKpiSummary(null);
+      } finally {
+        setKpiLoading(false);
+      }
+    };
+
+    void loadKpi();
+  }, [userId, periodType, selectedMonth, selectedQuarter, selectedYear]);
+
+  const handleKpiPrev = () => {
+    if (periodType === "month") {
+      if (selectedMonth === 1) { setSelectedMonth(12); setSelectedYear((y) => y - 1); }
+      else setSelectedMonth((m) => m - 1);
+    } else if (periodType === "quarter") {
+      if (selectedQuarter === 1) { setSelectedQuarter(4); setSelectedYear((y) => y - 1); }
+      else setSelectedQuarter((q) => q - 1);
+    } else {
+      setSelectedYear((y) => y - 1);
+    }
+  };
+
+  const handleKpiNext = () => {
+    if (periodType === "month") {
+      if (selectedMonth === 12) { setSelectedMonth(1); setSelectedYear((y) => y + 1); }
+      else setSelectedMonth((m) => m + 1);
+    } else if (periodType === "quarter") {
+      if (selectedQuarter === 4) { setSelectedQuarter(1); setSelectedYear((y) => y + 1); }
+      else setSelectedQuarter((q) => q + 1);
+    } else {
+      setSelectedYear((y) => y + 1);
+    }
+  };
 
   const formatDate = (isoStr: string | null) => {
     if (!isoStr) return "---";
@@ -286,61 +349,75 @@ export default function UserDetailPage() {
 
               {/* Chỉ số KPI */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <h3 className="text-base font-bold text-slate-800 mb-4 pb-3 border-b border-slate-100 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-emerald-500" />
-                  Hiệu suất (KPI)
-                </h3>
+                {/* Header */}
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingUp className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <h3 className="text-base font-bold text-slate-800">Hiệu suất (KPI)</h3>
+                </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    {
-                      label: "Tổng NV",
-                      value: user?.kpi_total_assigned ?? 0,
-                      color: "text-slate-800",
-                      bg: "bg-slate-50",
-                    },
-                    {
-                      label: "Hoàn thành",
-                      value: user?.kpi_completed ?? 0,
-                      color: "text-emerald-700",
-                      bg: "bg-emerald-50",
-                    },
-                    {
-                      label: "Đúng hạn",
-                      value: user?.kpi_on_time ?? 0,
-                      color: "text-blue-700",
-                      bg: "bg-blue-50",
-                    },
-                    {
-                      label: "Tỉ lệ HT",
-                      value:
-                        user?.kpi_completion_rate != null
-                          ? `${user.kpi_completion_rate}%`
-                          : "-",
-                      color:
-                        (user?.kpi_completion_rate ?? 0) >= 70
-                          ? "text-emerald-700"
-                          : (user?.kpi_completion_rate ?? 0) >= 40
-                            ? "text-amber-700"
-                            : "text-red-600",
-                      bg:
-                        (user?.kpi_completion_rate ?? 0) >= 70
-                          ? "bg-emerald-50"
-                          : (user?.kpi_completion_rate ?? 0) >= 40
-                            ? "bg-amber-50"
-                            : "bg-red-50",
-                    },
-                  ].map((stat) => (
-                    <div
-                      key={stat.label}
-                      className={`${stat.bg} rounded-xl p-3 text-center border border-white/50`}
+                {/* Period controls */}
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                  {/* Tab selector */}
+                  <div className="flex gap-0.5 bg-slate-100 p-0.5 rounded-lg">
+                    {(["month", "quarter", "year"] as const).map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setPeriodType(type)}
+                        className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                          periodType === type
+                            ? "bg-white text-slate-800 shadow-sm"
+                            : "text-slate-500 hover:text-slate-700"
+                        }`}
+                      >
+                        {type === "month" ? "Tháng" : type === "quarter" ? "Quý" : "Năm"}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Navigation */}
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      onClick={handleKpiPrev}
+                      className="p-1 rounded-md hover:bg-slate-100 text-slate-500 transition-colors"
                     >
-                      <p className="text-xs text-slate-500 font-medium mb-1">
-                        {stat.label}
-                      </p>
-                      <p className={`text-lg font-bold ${stat.color}`}>
-                        {stat.value}
-                      </p>
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-xs font-bold text-slate-700 w-16 text-center tabular-nums">
+                      {periodType === "month" && `T${selectedMonth}/${selectedYear}`}
+                      {periodType === "quarter" && `Q${selectedQuarter}/${selectedYear}`}
+                      {periodType === "year" && selectedYear}
+                    </span>
+                    <button
+                      onClick={handleKpiNext}
+                      className="p-1 rounded-md hover:bg-slate-100 text-slate-500 transition-colors"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Stats grid */}
+                <div className={`grid grid-cols-2 gap-3 transition-opacity ${kpiLoading ? "opacity-40 pointer-events-none" : ""}`}>
+                  {(() => {
+                    const total = kpiSummary?.total_assigned ?? 0;
+                    const completed = kpiSummary?.completed ?? 0;
+                    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+                    return [
+                      { label: "Tổng NV", value: total, color: "text-slate-800", bg: "bg-slate-50" },
+                      { label: "Hoàn thành", value: completed, color: "text-emerald-700", bg: "bg-emerald-50" },
+                      { label: "Đúng hạn", value: kpiSummary?.completed_on_time ?? 0, color: "text-blue-700", bg: "bg-blue-50" },
+                      {
+                        label: "Tỉ lệ HT",
+                        value: kpiSummary ? `${rate}%` : "-",
+                        color: rate >= 70 ? "text-emerald-700" : rate >= 40 ? "text-amber-700" : "text-red-600",
+                        bg: rate >= 70 ? "bg-emerald-50" : rate >= 40 ? "bg-amber-50" : "bg-red-50",
+                      },
+                    ];
+                  })().map((stat) => (
+                    <div key={stat.label} className={`${stat.bg} rounded-xl p-3 text-center border border-white/50`}>
+                      <p className="text-xs text-slate-500 font-medium mb-1">{stat.label}</p>
+                      <p className={`text-lg font-bold ${stat.color}`}>{stat.value}</p>
                     </div>
                   ))}
                 </div>

@@ -1,6 +1,13 @@
 // sidebar.config.ts
-import { Assessment, Event, Group, Map, Article, Warehouse, } from "@mui/icons-material";
-import { LayoutList } from "lucide-react";
+import {
+  Assessment,
+  Event,
+  Group,
+  Map,
+  Article,
+  Warehouse,
+} from "@mui/icons-material";
+import { LayoutList, Globe } from "lucide-react";
 import type { ElementType } from "react";
 
 export type MenuRole = "DQTT" | "CHI_HUY" | "DQCD" | "TO_TRUONG";
@@ -133,6 +140,38 @@ export const menuConfig: MenuItem[] = [
     icon: Warehouse,
     role: "CHI_HUY",
   },
+  {
+    id: "website-cms",
+    label: "CMS",
+    icon: Globe,
+    href: "/website",
+  },
+  {
+    id: "manage-website-cms",
+    label: "Manage CMS",
+    icon: Globe,
+    role: "CHI_HUY",
+    children: [
+      {
+        id: "website-cms-news",
+        label: "Tin tức",
+        href: "/quan-ly/website/tin-tuc",
+        icon: Globe,
+      },
+      {
+        id: "website-cms-docs",
+        label: "Văn bản",
+        href: "/quan-ly/website/van-ban",
+        icon: Globe,
+      },
+      {
+        id: "website-cms-slides",
+        label: "Slide ảnh",
+        href: "/quan-ly/website/slide",
+        icon: Globe,
+      },
+    ],
+  },
 ];
 
 export const menuConfigMobile: MenuItem[] = [
@@ -142,7 +181,6 @@ export const menuConfigMobile: MenuItem[] = [
     icon: Assessment,
     href: "/dashboard/force",
     role: "CHI_HUY",
-
   },
   {
     id: "activities",

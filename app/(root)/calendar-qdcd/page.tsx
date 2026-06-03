@@ -33,7 +33,6 @@ export default function WeeklySchedulePage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [search, setSearch] = useState<string>("");
   const [unitFilter, setUnitFilter] = useState<string>("all");
-  const [isWeekend, setIsWeekend] = useState(false);
 
   const fetchWeeklySchedule = async (dateStr: string) => {
     setLoading(true);
@@ -67,13 +66,6 @@ export default function WeeklySchedulePage() {
     setWeekStart(next);
   };
 
-  useEffect(() => {
-    const today = new Date().getDay();
-    if (today === 0 || today === 6) {
-      setIsWeekend(true);
-    }
-  }, []);
-
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto flex flex-col space-y-6">
@@ -101,7 +93,7 @@ export default function WeeklySchedulePage() {
               />
             </div>
 
-            {user?.role === "DQCD" && !isWeekend && <DialogRegisterSchedule />}
+            {user?.role === "DQTT" && <DialogRegisterSchedule members={data?.members || []} isFetchingUsers={loading} />}
 
             {user?.role === "CHI_HUY" && (
               <Select value={unitFilter} onValueChange={setUnitFilter}>

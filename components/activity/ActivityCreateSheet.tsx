@@ -12,6 +12,7 @@ import { createActivitySchema } from "@/lib/validations";
 import { toast } from "sonner";
 import { departmentAPI } from "@/services/api/department";
 import { handleGetDepartment } from "@/utils/activity";
+import { useAuth } from "@/context/AuthContext";
 
 interface FormData {
   name: string;
@@ -50,6 +51,7 @@ export default function ActivityCreateSheet({
   onSuccess?: (newActivity: any) => void;
   onCancel?: () => void;
 }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     name: "",
     work_type: "",
@@ -201,6 +203,7 @@ export default function ActivityCreateSheet({
     try {
       const payload: CreateActivityInterface = {
         ...formData,
+        created_by: String(user?.id) || "admin",
         tasks: formData.tasks.map((task) => ({
           ...task,
           created_at:

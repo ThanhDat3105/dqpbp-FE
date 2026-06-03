@@ -56,11 +56,6 @@ export default function DialogBaoCao({ open, onClose }: Props) {
   };
 
   const handleSubmit = () => {
-    console.log("Báo cáo:", {
-      type: selectedType,
-      dateRange: { from: fromDate, to: toDate },
-      format,
-    });
     toast.success("Đang xuất báo cáo... (mock)");
     handleClose();
   };
