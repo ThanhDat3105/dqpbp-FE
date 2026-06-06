@@ -57,6 +57,7 @@ interface FormData {
     created_at: Date | string;
     updated_at: Date | string;
     requires_dqcd: boolean;
+    require_media_report: boolean;
   }>;
   created_by: string;
   created_at: string;
@@ -290,6 +291,7 @@ export default function ActivityCreateSheet({
           created_at: new Date(),
           updated_at: new Date(),
           requires_dqcd: false,
+          require_media_report: false,
         },
       ],
     }));
@@ -453,6 +455,7 @@ export default function ActivityCreateSheet({
           created_at: new Date(),
           updated_at: new Date(),
           requires_dqcd: t.requires_dqcd ?? false,
+          require_media_report: t.require_media_report ?? false,
         })),
       }));
     } catch {

@@ -261,6 +261,8 @@ export interface TaskInterface {
   updated_at: string;
   status: "pending" | "in_progress" | "completed" | "cancelled" | string;
   requires_dqcd: boolean;
+  require_media_report: boolean;
+  media_files?: string[];
 }
 
 export type TaskStatus = "pending" | "in_progress" | "completed";
@@ -329,16 +331,34 @@ const updateReportFields = async (
   }
 };
 
-const updateTaskStatus = async (task_id: number, status: TaskStatus) => {
+const updateTaskStatus = async (
+  task_id: number,
+  status: TaskStatus,
+  media_files?: string[],
+) => {
   try {
     const res = await axiosInstance.put(`/api/activities-task/${task_id}`, {
       status,
+      ...(media_files && media_files.length > 0 ? { media_files } : {}),
     });
 
     return res.data;
   } catch (error) {
     throw error;
   }
+};
+
+const uploadFile = async (file: File, folder = "task-media"): Promise<string> => {
+  const isDocument = /\.(pdf|doc|docx)$/i.test(file.name);
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await axiosInstance.post(
+    `/api/upload/${isDocument ? "document" : "single"}?folder=${folder}`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
+  return res.data.metaData.url;
 };
 
 const createActivity = async (payload: CreateActivityInterface) => {
@@ -357,4 +377,5 @@ export const activityAPI = {
   updateReportFields,
   updateTaskStatus,
   createActivity,
+  uploadFile,
 };

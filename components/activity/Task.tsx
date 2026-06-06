@@ -22,6 +22,7 @@ interface TaskData {
   created_at: Date | string;
   updated_at: Date | string;
   requires_dqcd: boolean;
+  require_media_report: boolean;
 }
 
 interface Props {
@@ -90,7 +91,7 @@ export default function Task({
   }, [task.team]);
 
   return (
-    <div className="border border-gray-200 rounded-lg p-5 bg-gray-50">
+    <div className="bg-gray-50">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold text-gray-800">
@@ -189,6 +190,18 @@ export default function Task({
 
           <Label className="leading-5" htmlFor="requires_dqcd">
             Loại nhiệm vụ cần điều động DQCĐ
+          </Label>
+        </div>
+
+         <div className="flex items-center space-x-2">
+          <Switch
+            id="require_media_report"
+            checked={task.require_media_report}
+            onCheckedChange={(value) => onChangeField("require_media_report", value)}
+          />
+
+          <Label className="leading-5" htmlFor="require_media_report">
+            Báo cáo bằng hình ảnh/file
           </Label>
         </div>
 

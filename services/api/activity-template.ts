@@ -9,6 +9,7 @@ export interface TemplateTaskInterface {
   report_fields: { name: string; value?: string }[];
   requires_dqcd: boolean;
   display_order?: number;
+  require_media_report: boolean;
 }
 
 export interface ActivityTemplateInterface {
