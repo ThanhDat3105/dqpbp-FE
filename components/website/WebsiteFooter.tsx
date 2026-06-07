@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { Shield, MapPin, Phone, Mail, Clock } from 'lucide-react';
+import Link from "next/link";
+import { Shield, MapPin, Phone, Mail, Clock } from "lucide-react";
 
 export default function WebsiteFooter() {
   return (
@@ -18,8 +18,8 @@ export default function WebsiteFooter() {
               </div>
             </div>
             <p className="text-white/70 text-sm leading-relaxed">
-              Ban Chỉ Huy Quân Sự Phường Bình Phú, TP.HCM — đơn vị dân quân
-              tự vệ bảo vệ an ninh, trật tự địa phương.
+              Ban Chỉ Huy Quân Sự Phường Bình Phú, TP.HCM — đơn vị dân quân tự
+              vệ bảo vệ an ninh, trật tự địa phương.
             </p>
             <div className="mt-4 flex items-center gap-2 text-sm text-[#ffb300] font-semibold">
               <span className="text-lg">⚡</span>
@@ -34,12 +34,12 @@ export default function WebsiteFooter() {
             </h3>
             <ul className="space-y-2">
               {[
-                { href: '/website', label: 'Trang Chủ' },
-                { href: '/website/gioi-thieu', label: 'Giới Thiệu' },
-                { href: '/website/tin-tuc', label: 'Tin Tức & Sự Kiện' },
-                { href: '/website/van-ban', label: 'Văn Bản Chỉ Đạo' },
-                { href: '/website/lien-he', label: 'Liên Hệ' },
-                { href: '/login', label: 'Cổng Đăng Nhập' },
+                { href: "/website", label: "Trang Chủ" },
+                { href: "/website/gioi-thieu", label: "Giới Thiệu" },
+                { href: "/website/tin-tuc", label: "Tin Tức & Sự Kiện" },
+                { href: "/website/van-ban", label: "Văn Bản Chỉ Đạo" },
+                { href: "/website/lien-he", label: "Liên Hệ" },
+                { href: "/login", label: "Cổng Đăng Nhập" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
@@ -61,19 +61,14 @@ export default function WebsiteFooter() {
             <ul className="space-y-3">
               <li className="flex items-start gap-2 text-sm text-white/70">
                 <MapPin className="w-4 h-4 text-[#ffb300] shrink-0 mt-0.5" />
-                <span>Phường Bình Phú, TP. Hồ Chí Minh</span>
+                <span>675 Hậu Giang, Phường Bình Phú, TP. Hồ Chí Minh</span>
               </li>
-              <li className="flex items-center gap-2 text-sm text-white/70">
-                <Phone className="w-4 h-4 text-[#ffb300] shrink-0" />
-                <span>(028) 3750 xxxx</span>
-              </li>
-              <li className="flex items-center gap-2 text-sm text-white/70">
-                <Mail className="w-4 h-4 text-[#ffb300] shrink-0" />
-                <span>bchqs.binhphu@binhtanq.hochiminhcity.gov.vn</span>
-              </li>
-              <li className="flex items-center gap-2 text-sm text-white/70">
+              <li className="flex items-center gap-1 text-sm text-white/70">
                 <Clock className="w-4 h-4 text-[#ffb300] shrink-0" />
-                <span>Thứ 2 – Thứ 6: 07:30 – 11:30, 13:30 – 17:00</span>
+                <div>
+                  <p>Thứ 2 – Thứ 6: 07:30 – 11:30, 13:30 – 17:00</p>
+                  <p>Thứ 7: 07:30 – 11:30</p>
+                </div>
               </li>
             </ul>
           </div>

@@ -10,7 +10,6 @@ const contactInfo = [
     value: 'Phường Bình Phú, TP. Hồ Chí Minh',
   },
   { icon: Phone, label: 'Điện thoại', value: '(028) 3750 xxxx' },
-  { icon: Mail, label: 'Email', value: 'bchqs.binhphu@binhtanq.hochiminhcity.gov.vn' },
   { icon: Clock, label: 'Giờ làm việc', value: 'Thứ 2 – Thứ 6: 07:30–11:30, 13:30–17:00' },
 ];
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { activityAPI, TaskInterface } from "@/services/api/activity";
@@ -24,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useActivity } from "@/context/ActivityContext";
 import { useAuth } from "@/context/AuthContext";
 import { UserOption, usersAPI } from "@/services/api/user";
@@ -85,9 +84,6 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
   const [dqcdEndTime, setDqcdEndTime] = useState("");
   const [loadingDqcd, setLoadingDqcd] = useState(false);
   const [dqcdSearched, setDqcdSearched] = useState(false);
-  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     setReportFields(
@@ -95,20 +91,26 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
     );
   }, [task]);
 
-  const fetchDqcdUsers = useCallback(async () => {
-    if (!task.requires_dqcd) return;
-    try {
-      const data = await usersAPI.getAvailableUsers({
-        start_date: task.start_date,
-        end_date: task.due_date,
-      });
-      setDqcdUsers(data);
-    } catch {}
-  }, [task.id]);
-
-  useEffect(() => {
-    fetchDqcdUsers();
-  }, [fetchDqcdUsers]);
+  const fetchDqcdUsers = useCallback(
+    async (startDatetime: string, endDatetime: string) => {
+      setLoadingDqcd(true);
+      setSelectedDqcd([]);
+      setDqcdSearched(false);
+      try {
+        const data = await usersAPI.getAvailableUsers({
+          start_date: startDatetime,
+          end_date: endDatetime,
+        });
+        setDqcdUsers(data);
+      } catch {
+        toast.error("Không thể tải danh sách DQCĐ");
+      } finally {
+        setLoadingDqcd(false);
+        setDqcdSearched(true);
+      }
+    },
+    [],
+  );
 
   const isPrivileged = user?.role === "CHI_HUY" || user?.role === "TO_TRUONG";
   const canOperate = user?.role !== "DQCD";
@@ -117,21 +119,15 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
     isPrivileged;
 
   const allReportFilled = useMemo(() => {
-    if (selectedDqcd.length === 0 && task.requires_dqcd) return false;
+    if (task.requires_dqcd && isPrivileged && selectedDqcd.length === 0)
+      return false;
     if (
       reportFields.length &&
       !reportFields.every((f) => f.value.trim() !== "")
     )
       return false;
-    if (task.require_media_report && mediaFiles.length === 0) return false;
     return true;
-  }, [
-    reportFields,
-    selectedDqcd,
-    mediaFiles,
-    task.requires_dqcd,
-    task.require_media_report,
-  ]);
+  }, [reportFields, selectedDqcd, task.requires_dqcd, isPrivileged]);
 
   const canComplete = task.status === "in_progress" && allReportFilled;
 
@@ -148,22 +144,6 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const selected = Array.from(e.target.files);
-    setMediaFiles((prev) => {
-      const existing = new Set(prev.map((f) => f.name + f.size));
-      return [
-        ...prev,
-        ...selected.filter((f) => !existing.has(f.name + f.size)),
-      ];
-    });
-    e.target.value = "";
-  };
-
-  const removeFile = (index: number) =>
-    setMediaFiles((prev) => prev.filter((_, i) => i !== index));
-
   const handleComplete = async () => {
     if (!canComplete) return;
     setLoading(true);
@@ -178,13 +158,7 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
       if (task.requires_dqcd && isPrivileged && selectedDqcd.length > 0) {
         await usersAPI.assignDQCD(task.id, selectedDqcd);
       }
-      let uploadedUrls: string[] = [];
-      if (mediaFiles.length > 0) {
-        uploadedUrls = await Promise.all(
-          mediaFiles.map((f) => activityAPI.uploadFile(f, "task-media")),
-        );
-      }
-      await activityAPI.updateTaskStatus(task.id, "completed", uploadedUrls);
+      await activityAPI.updateTaskStatus(task.id, "completed");
       toast.success("Hoàn thành nhiệm vụ");
       await fetchActivityDetail(activity.id);
     } catch {
@@ -296,153 +270,184 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
 
           {/* Điều động DQCD */}
           {task.requires_dqcd && isPrivileged && (
-            <div>
-              <Label className="text-sm text-gray-700 mb-1 block">
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-700 block">
                 Điều động DQCĐ
               </Label>
-              <MultiSelect
-                options={dqcdUsers.map((u) => ({
-                  value: String(u.id),
-                  label: u.name,
-                }))}
-                value={selectedDqcd}
-                onValueChange={setSelectedDqcd}
-                placeholder="Chọn đơn vị"
-              />
+
+              {/* Bước 1: chọn ngày */}
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-gray-500">Ngày điều động</span>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  value={dqcdDate}
+                  min={task.start_date?.slice(0, 10)}
+                  max={task.due_date?.slice(0, 10)}
+                  onChange={(e) => {
+                    setDqcdDate(e.target.value);
+                    setDqcdStartTime("");
+                    setDqcdEndTime("");
+                    setDqcdUsers([]);
+                    setDqcdSearched(false);
+                    setSelectedDqcd([]);
+                  }}
+                />
+              </div>
+
+              {/* Bước 2: chọn giờ bắt đầu & kết thúc */}
+              {dqcdDate && (
+                <div className="flex gap-2">
+                  {(
+                    [
+                      {
+                        label: "Giờ bắt đầu",
+                        value: dqcdStartTime,
+                        onChange: (v: string) => {
+                          setDqcdStartTime(v);
+                          setDqcdEndTime("");
+                          setDqcdUsers([]);
+                          setDqcdSearched(false);
+                          setSelectedDqcd([]);
+                        },
+                        filterHour: () => true,
+                        filterMinute: () => true,
+                      },
+                      {
+                        label: "Giờ kết thúc",
+                        value: dqcdEndTime,
+                        onChange: (v: string) => {
+                          setDqcdEndTime(v);
+                          setDqcdUsers([]);
+                          setDqcdSearched(false);
+                          setSelectedDqcd([]);
+                        },
+                        filterHour: (h: number) => {
+                          if (!dqcdStartTime) return true;
+                          const [sh] = dqcdStartTime.split(":").map(Number);
+                          return h >= sh;
+                        },
+                        filterMinute: (m: number) => {
+                          if (!dqcdStartTime) return true;
+                          const [sh, sm] = dqcdStartTime.split(":").map(Number);
+                          const [eh] = dqcdEndTime.split(":").map(Number);
+                          if (Number.isNaN(eh)) return true;
+                          const curH = Number(dqcdEndTime.split(":")[0]);
+                          if (curH === sh) return m > sm;
+                          return true;
+                        },
+                      },
+                    ] as const
+                  ).map(
+                    ({ label, value, onChange, filterHour, filterMinute }) => {
+                      const [selH = "", selM = ""] = value.split(":");
+                      return (
+                        <div key={label} className="flex flex-col gap-1 flex-1">
+                          <span className="text-xs text-gray-500">{label}</span>
+                          <div className="flex gap-1">
+                            <Select
+                              value={selH}
+                              onValueChange={(h) =>
+                                onChange(`${h}:${selM || "00"}`)
+                              }
+                            >
+                              <SelectTrigger className="flex-1 text-sm h-9">
+                                <SelectValue placeholder="Giờ" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 24 }, (_, i) => i)
+                                  .filter(filterHour)
+                                  .map((h) => {
+                                    const hStr = String(h).padStart(2, "0");
+                                    return (
+                                      <SelectItem key={hStr} value={hStr}>
+                                        {hStr}
+                                      </SelectItem>
+                                    );
+                                  })}
+                              </SelectContent>
+                            </Select>
+                            <span className="self-center text-gray-400 text-sm">
+                              :
+                            </span>
+                            <Select
+                              value={selM}
+                              onValueChange={(m) =>
+                                onChange(`${selH || "00"}:${m}`)
+                              }
+                              disabled={!selH}
+                            >
+                              <SelectTrigger className="flex-1 text-sm h-9">
+                                <SelectValue placeholder="Phút" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {["00", "15", "30", "45"]
+                                  .filter((m) => filterMinute(Number(m)))
+                                  .map((m) => (
+                                    <SelectItem key={m} value={m}>
+                                      {m}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      );
+                    },
+                  )}
+                </div>
+              )}
+
+              {/* Bước 3: tìm DQCD rảnh */}
+              {dqcdDate &&
+                dqcdStartTime &&
+                dqcdEndTime &&
+                dqcdEndTime > dqcdStartTime && (
+                  <>
+                    {dqcdUsers.length === 0 && !loadingDqcd && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs"
+                        onClick={() =>
+                          fetchDqcdUsers(
+                            `${dqcdDate}T${dqcdStartTime}:00`,
+                            `${dqcdDate}T${dqcdEndTime}:00`,
+                          )
+                        }
+                      >
+                        Tìm DQCĐ rảnh
+                      </Button>
+                    )}
+
+                    {loadingDqcd && (
+                      <p className="text-xs text-gray-400 text-center py-1">
+                        Đang tải...
+                      </p>
+                    )}
+
+                    {!loadingDqcd && dqcdSearched && dqcdUsers.length === 0 && (
+                      <p className="text-xs text-amber-600 text-center py-1">
+                        Hệ thống không tìm thấy DQCĐ rảnh trong khung giờ này
+                      </p>
+                    )}
+
+                    {!loadingDqcd && dqcdUsers.length > 0 && (
+                      <MultiSelect
+                        options={dqcdUsers.map((u) => ({
+                          value: String(u.id),
+                          label: u.name,
+                        }))}
+                        value={selectedDqcd}
+                        onValueChange={setSelectedDqcd}
+                        placeholder="Chọn DQCĐ"
+                      />
+                    )}
+                  </>
+                )}
             </div>
           )}
-
-          {/* Đính kèm ảnh / tài liệu */}
-          <div>
-            <Label className="text-sm text-gray-700 mb-1 block">
-              Đính kèm ảnh / tài liệu
-            </Label>
-            <div
-              className="border-2 border-dashed border-gray-200 rounded-lg p-4 flex flex-col items-center gap-2 cursor-pointer hover:border-gray-300 transition-colors"
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                const files = Array.from(e.dataTransfer.files);
-                setMediaFiles((prev) => {
-                  const existing = new Set(prev.map((f) => f.name + f.size));
-                  return [
-                    ...prev,
-                    ...files.filter((f) => !existing.has(f.name + f.size)),
-                  ];
-                });
-              }}
-            >
-              <div className="flex gap-3 text-gray-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <path d="m21 15-5-5L5 21" />
-                </svg>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                </svg>
-              </div>
-              <p className="text-sm text-gray-500">
-                Kéo thả hoặc{" "}
-                <span className="text-green-600 font-medium">chọn file</span>
-              </p>
-              <p className="text-xs text-gray-400">
-                PNG, JPG, PDF, DOCX — tối đa 10MB
-              </p>
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*,.pdf,.doc,.docx"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            {mediaFiles.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {mediaFiles.map((file, idx) => {
-                  const isImage = file.type.startsWith("image/");
-                  return (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-gray-200 bg-gray-50 text-xs text-gray-700 max-w-40"
-                    >
-                      {isImage ? (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          className="text-green-500 shrink-0"
-                        >
-                          <rect x="3" y="3" width="18" height="18" rx="2" />
-                          <circle cx="8.5" cy="8.5" r="1.5" />
-                          <path d="m21 15-5-5L5 21" />
-                        </svg>
-                      ) : (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          className="text-amber-500 shrink-0"
-                        >
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                          <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                      )}
-                      <span className="truncate">{file.name}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeFile(idx);
-                        }}
-                        className="text-gray-400 hover:text-red-500 shrink-0"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
 
           <Button
             className="w-full"
@@ -452,102 +457,25 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
             {loading ? "Đang xử lý..." : "Hoàn thành nhiệm vụ"}
           </Button>
 
-          {!allReportFilled &&
-            reportFields.length > 0 &&
-            reportFields.some((f) => f.value.trim() === "") && (
-              <p className="text-xs text-amber-600">
-                Điền đầy đủ báo cáo để hoàn thành nhiệm vụ
-              </p>
-            )}
-          {!allReportFilled &&
-            task.require_media_report &&
-            mediaFiles.length === 0 && (
-              <p className="text-xs text-amber-600">
-                Cần đính kèm ít nhất 1 ảnh / tài liệu để hoàn thành nhiệm vụ
-              </p>
-            )}
+          {!allReportFilled && reportFields.length > 0 && (
+            <p className="text-xs text-amber-600">
+              Điền đầy đủ báo cáo để hoàn thành nhiệm vụ
+            </p>
+          )}
         </div>
       )}
 
       {/* ── COMPLETED: hiện báo cáo đã điền ── */}
-      {task.status === "completed" &&
-        ((task.report_fields?.length ?? 0) > 0 ||
-          (task.media_files?.length ?? 0) > 0) && (
-          <div className="border-t pt-4 space-y-3">
-            {task.report_fields?.map((field) => (
-              <div key={field.name} className="flex gap-2 text-sm">
-                <span className="text-gray-500">{field.name}:</span>
-                <span className="font-semibold text-gray-800">
-                  {field.value}
-                </span>
-              </div>
-            ))}
-
-            {task.media_files && task.media_files.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-gray-500">Tệp đính kèm:</p>
-                <div className="flex flex-wrap gap-2">
-                  {task.media_files.map((url, idx) => {
-                    const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(url);
-                    const filename = url.split("/").pop() ?? `file-${idx + 1}`;
-                    if (isImage) {
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setPreviewUrl(url)}
-                          className="relative w-16 h-16 rounded-md overflow-hidden border border-gray-200 hover:opacity-80 transition-opacity shrink-0"
-                        >
-                          <img
-                            src={url}
-                            alt={filename}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      );
-                    }
-                    return (
-                      <a
-                        key={idx}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs text-gray-700 max-w-45 transition-colors"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          className="text-amber-500 shrink-0"
-                        >
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                          <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                        <span className="truncate">{filename}</span>
-                      </a>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-      <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl(null)}>
-        <DialogContent className="w-[50vw] p-2 border-none h-[80vh] flex items-center justify-center">
-          {previewUrl && (
-            <img
-              src={previewUrl}
-              alt="preview"
-              className="h-full w-auto max-w-full object-contain rounded"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {task.status === "completed" && task.report_fields?.length > 0 && (
+        <div className="border-t pt-4 space-y-2">
+          {task.report_fields.map((field) => (
+            <div key={field.name} className="flex gap-2 text-sm">
+              <span className="text-gray-500">{field.name}:</span>
+              <span className="font-semibold text-gray-800">{field.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

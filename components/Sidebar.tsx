@@ -130,18 +130,30 @@ export default function Sidebar({
     }
   };
 
+  const getDepartmentColorClass = (departmentName?: string) => {
+    const colorMap: Record<string, string> = {
+      administration_office: "text-purple-500 bg-purple-100", // Văn phòng
+      advise: "text-blue-500 bg-blue-100", // Tham mưu
+      political_affairs: "text-green-500 bg-green-100", // Chính trị
+      logistics: "text-orange-500 bg-orange-100", // Hậu cần
+      mobilization_recruitment: "text-red-500 bg-red-100", // Tuyển quân
+    };
+
+    return colorMap[departmentName || ""] || "text-gray-500 bg-gray-50";
+  };
+
   // Filter menu items based on user role
   const userRole = user?.role || "DQCD";
   const visibleMenuItems = menuConfig
     .filter((item) => {
-      if (item.role && item.role !== userRole) return false;
+      if (item.role && !item.role.includes(userRole)) return false;
       if (item.hiddenForRoles?.includes(userRole)) return false;
       return true;
     })
     .map((item) => {
       if (!item.children) return item;
       const children = item.children.filter((child) => {
-        if (child.role && child.role !== userRole) return false;
+        if (child.role && !child.role.includes(userRole)) return false;
         if (child.hiddenForRoles?.includes(userRole)) return false;
         return true;
       });
@@ -254,7 +266,7 @@ export default function Sidebar({
           {!collapsed && (
             <div className="min-w-0">
               {user && (
-                <span className={clsx("inline-block text-xs rounded-full")}>
+                <span className={clsx("text-xs rounded-full")}>
                   {user.military_rank}
                   {(user.role === "DQTT" || user.role === "DQCD") &&
                     ` - ${user.role}`}
@@ -273,6 +285,16 @@ export default function Sidebar({
                   )}
                 >
                   {user.position}
+                </span>
+              )}
+              {user?.role !== "CHI_HUY" && (
+                <span
+                  className={clsx(
+                    "inline-block text-xs px-2 py-0.5 rounded-full mt-1",
+                    getDepartmentColorClass(user?.department),
+                  )}
+                >
+                  Tổ {handleGetDepartment(user?.department ?? "")}
                 </span>
               )}
             </div>

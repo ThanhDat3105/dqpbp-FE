@@ -182,14 +182,6 @@ export default function GioiThieuPage() {
                 <MapPin className="w-4 h-4 text-[#546a2f] mt-0.5 shrink-0" />
                 <span className="text-gray-600">Phường Bình Phú, TP.HCM</span>
               </li>
-              <li className="flex items-center gap-3 px-4 py-3">
-                <Phone className="w-4 h-4 text-[#546a2f] shrink-0" />
-                <span className="text-gray-600">(028) 3750 xxxx</span>
-              </li>
-              <li className="flex items-center gap-3 px-4 py-3">
-                <Mail className="w-4 h-4 text-[#546a2f] shrink-0" />
-                <span className="text-gray-600 text-xs break-all">bchqs.binhphu@binhtanq.hochiminhcity.gov.vn</span>
-              </li>
             </ul>
           </div>
 

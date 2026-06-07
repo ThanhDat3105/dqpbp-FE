@@ -17,7 +17,7 @@ export interface MenuItem {
   label: string;
   href?: string;
   icon: ElementType;
-  role?: MenuRole;
+  role?: MenuRole[];
   hiddenForRoles?: MenuRole[];
   children?: MenuItem[];
 }
@@ -33,7 +33,7 @@ export const menuConfig: MenuItem[] = [
     id: "dashboard",
     label: "Dashboard",
     icon: Assessment,
-    role: "CHI_HUY",
+    role: ["CHI_HUY", "TO_TRUONG"],
     children: [
       // {
       //   id: "dashboard-summary",
@@ -43,13 +43,13 @@ export const menuConfig: MenuItem[] = [
       // },
       {
         id: "dashboard-warehouse",
-        label: "Kho",
+        label: "Vật chất trang bị",
         href: "/dashboard/warehouse",
         icon: Assessment,
       },
       {
         id: "dashboard-forces",
-        label: "Lực lượng",
+        label: "Hiệu xuất làm việc",
         href: "/dashboard/force",
         icon: Assessment,
       },
@@ -62,32 +62,26 @@ export const menuConfig: MenuItem[] = [
     children: [
       {
         id: "activities-list",
-        label: "Danh sách",
+        label: "Nhiệm vụ",
         href: "/activities",
         icon: Event,
         hiddenForRoles: ["DQCD"],
       },
       {
         id: "activities-calendar",
-        label: "Lịch",
+        label: "Lịch công tác",
         href: "/calendar",
         icon: Event,
       },
       {
         id: "activities-qdtt",
-        label: "Lịch Trực DQTT",
+        label: "Lịch Trực Tuần",
         href: "/calendar-qdtt",
         icon: Event,
       },
       {
-        id: "activities-qdcd",
-        label: "Lịch Trực DQCĐ",
-        href: "/calendar-qdcd",
-        icon: Event,
-      },
-      {
         id: "templates",
-        label: "Mẫu công tác",
+        label: "Mẫu VB, KH, BC",
         href: "/templates",
         icon: Event,
         hiddenForRoles: ["DQCD", "DQTT"],
@@ -96,33 +90,43 @@ export const menuConfig: MenuItem[] = [
   },
   {
     id: "personnel",
-    label: "Nhân sự",
-    role: "CHI_HUY",
+    label: "Thuộc diện QL",
+    role: ["CHI_HUY", "TO_TRUONG", "DQTT"],
     icon: Group,
     children: [
       {
         id: "personnel-age17",
         label: "Tuổi 17",
         href: "/personnel/17tuoi",
+        hiddenForRoles: ["DQCD", "DQTT"],
         icon: Group,
       },
       {
         id: "personnel-source",
-        label: "Nguồn",
+        label: "Nguồn NVQS",
         href: "/personnel/nguon",
+        hiddenForRoles: ["DQCD", "DQTT"],
         icon: Group,
       },
       {
         id: "personnel-reserve",
         label: "Quân nhân dự bị",
         href: "/personnel/Quannhandubi",
+        hiddenForRoles: ["DQCD", "DQTT"],
         icon: Group,
       },
       {
         id: "DQTT",
         label: "DQTT",
         href: "/personnel/dqtt",
+        hiddenForRoles: ["DQCD", "DQTT"],
         icon: Group,
+      },
+      {
+        id: "activities-qdcd",
+        label: "Lịch làm việc DQCĐ",
+        href: "/calendar-qdcd",
+        icon: Event,
       },
     ],
   },
@@ -131,25 +135,25 @@ export const menuConfig: MenuItem[] = [
     label: "Bản đồ",
     href: "/ban-do",
     icon: Map,
-    role: "CHI_HUY",
+    role: ["CHI_HUY", "TO_TRUONG"],
   },
   {
     id: "document",
-    label: "Tài liệu",
+    label: "Tài liệu QS-QP",
     href: "/document",
     icon: Article,
-    role: "CHI_HUY",
+    role: ["CHI_HUY", "TO_TRUONG"],
   },
   {
     id: "warehouse",
-    label: "Kho",
+    label: "Hậu cần",
     href: "/warehouse",
     icon: Warehouse,
-    role: "CHI_HUY",
+    role: ["CHI_HUY", "TO_TRUONG"],
   },
   {
     id: "website-cms",
-    label: "CMS",
+    label: "Trang thông tin",
     icon: Globe,
     href: "/website",
   },
@@ -157,7 +161,7 @@ export const menuConfig: MenuItem[] = [
     id: "manage-website-cms",
     label: "Manage CMS",
     icon: Globe,
-    role: "CHI_HUY",
+    role: ["CHI_HUY", "TO_TRUONG"],
     children: [
       {
         id: "website-cms-news",
@@ -187,7 +191,7 @@ export const menuConfigMobile: MenuItem[] = [
     label: "Dashboard",
     icon: Assessment,
     href: "/dashboard/force",
-    role: "CHI_HUY",
+    role: ["CHI_HUY"],
   },
   {
     id: "activities",
@@ -200,14 +204,14 @@ export const menuConfigMobile: MenuItem[] = [
     label: "Bản đồ",
     href: "/ban-do",
     icon: Map,
-    role: "CHI_HUY",
+    role: ["CHI_HUY"],
   },
   {
     id: "document",
     label: "Tài liệu",
     href: "/document",
     icon: Article,
-    role: "CHI_HUY",
+    role: ["CHI_HUY"],
   },
 ];
 

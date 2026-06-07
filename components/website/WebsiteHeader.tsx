@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu, X, Shield } from 'lucide-react';
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Menu, X, Shield } from "lucide-react";
 
 const navLinks = [
-  { href: '/website', label: 'Trang Chủ' },
-  { href: '/website/gioi-thieu', label: 'Giới Thiệu' },
-  { href: '/website/tin-tuc', label: 'Tin Tức' },
-  { href: '/website/van-ban', label: 'Văn Bản' },
-  { href: '/website/lien-he', label: 'Liên Hệ' },
+  { href: "/website", label: "Trang Chủ" },
+  { href: "/website/gioi-thieu", label: "Giới Thiệu" },
+  { href: "/website/tin-tuc", label: "Tin Tức" },
+  { href: "/website/van-ban", label: "Văn Bản" },
+  { href: "/website/lien-he", label: "Liên Hệ" },
 ];
 
 export default function WebsiteHeader() {
@@ -32,7 +32,9 @@ export default function WebsiteHeader() {
           </div>
           <div className="text-white">
             <div className="font-bold text-sm leading-tight">BCH Quân Sự</div>
-            <div className="text-xs text-[#ffb300] leading-tight">Phường Bình Phú</div>
+            <div className="text-xs text-[#ffb300] leading-tight">
+              Phường Bình Phú
+            </div>
           </div>
         </Link>
 
@@ -40,8 +42,8 @@ export default function WebsiteHeader() {
         <nav className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => {
             const active =
-              link.href === '/website'
-                ? pathname === '/website'
+              link.href === "/website"
+                ? pathname === "/website"
                 : pathname.startsWith(link.href);
             return (
               <Link
@@ -49,8 +51,8 @@ export default function WebsiteHeader() {
                 href={link.href}
                 className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
                   active
-                    ? 'bg-[#ffb300] text-[#546a2f]'
-                    : 'text-white/90 hover:bg-white/10'
+                    ? "bg-[#ffb300] text-[#546a2f]"
+                    : "text-white/90 hover:bg-white/10"
                 }`}
               >
                 {link.label}
@@ -61,18 +63,16 @@ export default function WebsiteHeader() {
 
         {/* Login + hamburger */}
         <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="hidden md:inline-flex items-center gap-1 bg-[#ffb300] text-[#546a2f] font-semibold px-4 py-2 rounded text-sm hover:bg-yellow-400 transition-colors"
-          >
-            Đăng Nhập
-          </Link>
           <button
             className="md:hidden text-white p-1"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Menu"
           >
-            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {menuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
       </div>
