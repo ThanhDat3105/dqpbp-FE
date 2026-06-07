@@ -17,6 +17,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useActivity } from "@/context/ActivityContext";
 import { useAuth } from "@/context/AuthContext";
@@ -73,6 +80,11 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
   const [dqcdUsers, setDqcdUsers] = useState<UserOption[]>([]);
   const [selectedDqcd, setSelectedDqcd] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [dqcdDate, setDqcdDate] = useState("");
+  const [dqcdStartTime, setDqcdStartTime] = useState("");
+  const [dqcdEndTime, setDqcdEndTime] = useState("");
+  const [loadingDqcd, setLoadingDqcd] = useState(false);
+  const [dqcdSearched, setDqcdSearched] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
