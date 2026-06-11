@@ -67,6 +67,7 @@ export default function EditTemplatePage() {
             name: typeof f === "string" ? f : f.name,
           })),
           requires_dqcd: t.requires_dqcd ?? false,
+          require_media_report: t.require_media_report ?? false,
         })),
       });
     } catch {
@@ -111,6 +112,7 @@ export default function EditTemplatePage() {
           requires_dqcd: false,
           start_offset_days: 0,
           due_offset_days: 0,
+          require_media_report: false,
         },
       ],
     }));

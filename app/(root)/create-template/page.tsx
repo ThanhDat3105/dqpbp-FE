@@ -73,6 +73,7 @@ export default function CreateTemplatePage() {
           requires_dqcd: false,
           start_offset_days: 0,
           due_offset_days: 0,
+          require_media_report: false,
         },
       ],
     }));
