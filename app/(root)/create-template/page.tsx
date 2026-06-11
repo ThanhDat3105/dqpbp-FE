@@ -179,6 +179,7 @@ export default function CreateTemplatePage() {
           notes: t.notes || null,
           report_fields: t.report_fields.map(({ name }) => ({ name })),
           requires_dqcd: t.requires_dqcd,
+          require_media_report: t.require_media_report || false,
           display_order: index,
         })),
       };

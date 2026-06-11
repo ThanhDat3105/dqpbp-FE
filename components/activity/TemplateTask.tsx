@@ -18,6 +18,7 @@ export interface TemplateTaskData {
   notes: string;
   report_fields: Array<{ id: number; name: string }>;
   requires_dqcd: boolean;
+  require_media_report?: boolean;
 }
 
 interface Props {

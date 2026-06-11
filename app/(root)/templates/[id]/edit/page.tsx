@@ -208,6 +208,7 @@ export default function EditTemplatePage() {
           report_fields: t.report_fields.map(({ name }) => ({ name })),
           requires_dqcd: t.requires_dqcd,
           display_order: index,
+          require_media_report: t.require_media_report || false,
         })),
       };
       await activityTemplateAPI.updateTemplate(Number(id), payload);
