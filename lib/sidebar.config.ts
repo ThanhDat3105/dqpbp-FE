@@ -142,7 +142,6 @@ export const menuConfig: MenuItem[] = [
     label: "Tài liệu QS-QP",
     href: "/document",
     icon: Article,
-    role: ["CHI_HUY", "TO_TRUONG"],
   },
   {
     id: "warehouse",

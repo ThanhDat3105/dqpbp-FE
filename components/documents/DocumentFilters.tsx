@@ -1,5 +1,7 @@
 "use client";
 
+import { Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -7,39 +9,62 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+import { DepartmentInterface } from "@/services/api/department";
 
-export interface DocumentFiltersProps {
-  selectedCategory: string;
-  onCategoryChange: (category: string) => void;
+interface Props {
+  search: string;
+  departmentId: string;
+  departments: DepartmentInterface[];
+  onSearchChange: (v: string) => void;
+  onDepartmentChange: (v: string) => void;
+  onClear: () => void;
 }
 
 export function DocumentFilters({
-  selectedCategory,
-  onCategoryChange,
-}: DocumentFiltersProps) {
+  search,
+  departmentId,
+  departments,
+  onSearchChange,
+  onDepartmentChange,
+  onClear,
+}: Props) {
+  const hasFilters = search !== "" || departmentId !== "all";
+
   return (
-    <div className="flex items-center space-x-4">
-      <div className="w-[200px]">
-        <Select value={selectedCategory} onValueChange={onCategoryChange}>
-          <SelectTrigger className="w-full bg-white">
-            <SelectValue placeholder="Danh mục" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Tất cả">Tất cả</SelectItem>
-            <SelectItem value="Huấn luyện">Huấn luyện</SelectItem>
-            <SelectItem value="Hành chính">Hành chính</SelectItem>
-            <SelectItem value="Báo cáo hoạt động">Báo cáo hoạt động</SelectItem>
-            <SelectItem value="Văn bản hành chính">
-              Văn bản hành chính
-            </SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="relative flex-1 min-w-50 max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <Input
+          placeholder="Tìm tên tài liệu, mô tả..."
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-9"
+        />
       </div>
 
-      <Button variant="outline" className="rounded-full px-6 bg-white">
-        Loại tài liệu
-      </Button>
+      <Select value={departmentId} onValueChange={onDepartmentChange}>
+        <SelectTrigger className="w-50 bg-white">
+          <SelectValue placeholder="Tất cả tổ" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Tất cả tổ</SelectItem>
+          {departments.map((d) => (
+            <SelectItem key={d.id} value={String(d.id)}>
+              {d.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {hasFilters && (
+        <button
+          onClick={onClear}
+          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+        >
+          <X className="w-4 h-4" />
+          Xóa lọc
+        </button>
+      )}
     </div>
   );
 }
