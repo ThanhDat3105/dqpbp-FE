@@ -2,6 +2,18 @@ export const formatMonth = (date: Date) => {
   return `Tháng ${date.getMonth() + 1} ${date.getFullYear()}`;
 };
 
+export const getCurrentWeekMonday = () => {
+  const today = new Date();
+  const currentDay = today.getDay();
+  const isoDay = currentDay === 0 ? 7 : currentDay;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (isoDay - 1));
+  const year = monday.getFullYear();
+  const month = String(monday.getMonth() + 1).padStart(2, "0");
+  const day = String(monday.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export const getNextWeekMonday = () => {
   const today = new Date();
 

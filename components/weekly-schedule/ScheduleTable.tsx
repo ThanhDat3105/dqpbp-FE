@@ -44,6 +44,7 @@ const SlotCell: React.FC<{
   if (!slot) {
     return <span>—</span>;
   }
+
   // Remove spaces around "h" for formatting like image: "7h - 10h"
   const startStr = slot.start.replace(":00", "h").replace(":", "h");
   const endStr = slot.end.replace(":00", "h").replace(":", "h");

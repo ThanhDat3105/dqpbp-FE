@@ -2,11 +2,19 @@ import { Trash2, Lightbulb, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiSelect } from "../ui/multi-select";
-import { Label } from "@/components/ui/label";
 import { Switch } from "../ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { UserOption, usersAPI } from "@/services/api/user";
 import { departmentAPI, DepartmentInterface } from "@/services/api/department";
 import { useCallback, useEffect, useState } from "react";
+import DueDatePicker from "@/components/DueDatePicker";
 
 interface TaskData {
   id: number;
@@ -42,6 +50,8 @@ interface Props {
   ) => void;
 }
 
+type DqcdValue = "unset" | "no" | "yes";
+
 export default function Task({
   task,
   taskIndex,
@@ -56,24 +66,31 @@ export default function Task({
 }: Props) {
   const [departments, setDepartment] = useState<DepartmentInterface[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
+  const [dqcdValue, setDqcdValue] = useState<DqcdValue>(
+    task.requires_dqcd ? "yes" : task.assignees.length > 0 || task.title ? "no" : "unset",
+  );
 
-  const handleGetUser = async (teams: string[]) => {
-    try {
-      const data = await usersAPI.getAllUser({
-        departmentCode: teams,
-        role: ["DQTT", "TO_TRUONG"],
-      });
+  const isTypeSelected = dqcdValue !== "unset";
 
-      setUsers(data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  const handleGetUser = useCallback(
+    async (teams: string[], requiresDqcd: boolean) => {
+      if (teams.length === 0) return;
+      try {
+        const data = await usersAPI.getAllUser({
+          departmentCode: teams,
+          role: requiresDqcd ? ["TO_TRUONG"] : ["DQTT", "TO_TRUONG"],
+        });
+        setUsers(data);
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    [],
+  );
 
   const handleGetDepartment = useCallback(async () => {
     try {
       const data = await departmentAPI.getAllDepartment();
-
       setDepartment(data);
     } catch (error) {
       console.log(error);
@@ -86,9 +103,18 @@ export default function Task({
 
   useEffect(() => {
     if (task.team.length > 0) {
-      handleGetUser(task.team);
+      handleGetUser(task.team, task.requires_dqcd);
+    } else {
+      setUsers([]);
     }
-  }, [task.team]);
+  }, [task.team, task.requires_dqcd, handleGetUser]);
+
+  const handleDqcdChange = (val: string) => {
+    const next = val as DqcdValue;
+    setDqcdValue(next);
+    onChangeField("requires_dqcd", next === "yes");
+    onChangeField("assignees", []);
+  };
 
   return (
     <div className="bg-gray-50">
@@ -109,6 +135,38 @@ export default function Task({
       </div>
 
       <div className="space-y-4">
+        {/* Loại nhiệm vụ — DQCĐ dropdown (đầu tiên) */}
+        <FormField
+          label="Loại Nhiệm Vụ"
+          required
+          hint={
+            !isTypeSelected ? (
+              <div className="flex items-center gap-1 text-amber-600">
+                <Lightbulb className="h-3 w-3" />
+                Chọn loại nhiệm vụ trước để tiếp tục
+              </div>
+            ) : dqcdValue === "no" ? (
+              <div className="flex items-center gap-1 text-amber-600">
+                <Lightbulb className="h-3 w-3" />
+                Nếu chọn loại này, chỉ có thể giao nhiệm vụ cho tổ trưởng trở lên
+              </div>
+            ) : undefined
+          }
+        >
+          <Select
+            value={dqcdValue === "unset" ? "" : dqcdValue}
+            onValueChange={handleDqcdChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="-- Chọn loại nhiệm vụ --" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="no">Không cần điều động DQCĐ</SelectItem>
+              <SelectItem value="yes">Cần điều động DQCĐ</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
+
         {/* Title */}
         <FormField
           label="Tên Nhiệm Vụ"
@@ -116,6 +174,7 @@ export default function Task({
           error={errors[`tasks.${taskIndex}.title`]}
         >
           <Input
+            disabled={!isTypeSelected}
             value={task.title}
             onChange={(e) => onChangeField("title", e.target.value)}
             placeholder="VD: Chuẩn bị vũ khí"
@@ -127,41 +186,47 @@ export default function Task({
           label="Tổ Phụ Trách"
           error={errors[`tasks.${taskIndex}.team`]}
           hint={
-            <div className="flex items-center gap-1 text-gray-500">
-              <Lightbulb className="h-3 w-3" />
-              Chọn tổ để lọc người thực hiện
-            </div>
+            isTypeSelected ? (
+              <div className="flex items-center gap-1 text-gray-500">
+                <Lightbulb className="h-3 w-3" />
+                Chọn tổ để lọc người thực hiện
+              </div>
+            ) : undefined
           }
         >
           <MultiSelect
+            disabled={!isTypeSelected}
             options={departments.map((dept) => ({
               value: dept.code,
               label: dept.name,
             }))}
             value={task.team}
-            onValueChange={(value) => {
-              // onChangeField("assignees", []);
-              onChangeField("team", value);
-            }}
+            onValueChange={(value) => onChangeField("team", value)}
             placeholder="Chọn tổ phụ trách..."
           />
         </FormField>
 
         {/* Assignees */}
         <FormField
-          label="Người Thực Hiện"
+          label={
+            dqcdValue === "yes" ? "Tổ Trưởng Phụ Trách" : "Người Thực Hiện"
+          }
           required
           error={errors[`tasks.${taskIndex}.assignees`]}
         >
           <MultiSelect
-            disabled={task.team.length === 0}
+            disabled={!isTypeSelected || task.team.length === 0}
             options={users.map((user) => ({
               value: String(user.id),
               label: user.name,
             }))}
             value={task.assignees}
             onValueChange={(value) => onChangeField("assignees", value)}
-            placeholder="Chọn người thực hiện..."
+            placeholder={
+              dqcdValue === "yes"
+                ? "Chọn tổ trưởng phụ trách..."
+                : "Chọn người thực hiện..."
+            } 
           />
         </FormField>
 
@@ -170,37 +235,40 @@ export default function Task({
           label="Thời Hạn Hoàn Thành"
           error={errors[`tasks.${taskIndex}.due_date`]}
         >
-          <Input
-            type="datetime-local"
-            value={task.due_date}
-            min={activityStartDate ? `${activityStartDate}T00:00` : undefined}
-            max={activityEndDate ? `${activityEndDate}T23:59` : undefined}
-            onChange={(e) => onChangeField("due_date", e.target.value)}
-          />
+          <div className="flex flex-col gap-2">
+            <input
+              type="date"
+              disabled={!isTypeSelected}
+              className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+              value={task.due_date?.slice(0, 10) ?? ""}
+              min={activityStartDate}
+              max={activityEndDate}
+              onChange={(e) => onChangeField("due_date", e.target.value ? `${e.target.value}T` : "")}
+            />
+            {task.due_date?.slice(0, 10) && (
+              <DueDatePicker
+                disabled={!isTypeSelected}
+                value={task.due_date?.slice(11, 16) ?? ""}
+                onChange={(time) => onChangeField("due_date", `${task.due_date.slice(0, 10)}T${time}`)}
+              />
+            )}
+          </div>
         </FormField>
 
-        {/* Due Date */}
-
+        {/* Báo cáo bằng hình ảnh/file */}
         <div className="flex items-center space-x-2">
           <Switch
-            id="requires_dqcd"
-            checked={task.requires_dqcd}
-            onCheckedChange={(value) => onChangeField("requires_dqcd", value)}
-          />
-
-          <Label className="leading-5" htmlFor="requires_dqcd">
-            Loại nhiệm vụ cần điều động DQCĐ
-          </Label>
-        </div>
-
-         <div className="flex items-center space-x-2">
-          <Switch
-            id="require_media_report"
+            id={`require_media_report_${taskIndex}`}
+            disabled={!isTypeSelected}
             checked={task.require_media_report}
-            onCheckedChange={(value) => onChangeField("require_media_report", value)}
+            onCheckedChange={(value) =>
+              onChangeField("require_media_report", value)
+            }
           />
-
-          <Label className="leading-5" htmlFor="require_media_report">
+          <Label
+            className="leading-5"
+            htmlFor={`require_media_report_${taskIndex}`}
+          >
             Báo cáo bằng hình ảnh/file
           </Label>
         </div>
@@ -215,6 +283,7 @@ export default function Task({
               type="button"
               variant="ghost"
               size="sm"
+              disabled={!isTypeSelected}
               onClick={onAddReportField}
               className="text-slate-700 h-7"
             >
@@ -258,11 +327,9 @@ export default function Task({
   );
 }
 
-/**
- * Reusable FormField Component
- */
+
 interface FormFieldProps {
-  label: string;
+  label: string | React.ReactNode;
   required?: boolean;
   error?: string;
   hint?: React.ReactNode;

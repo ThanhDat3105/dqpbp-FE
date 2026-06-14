@@ -129,8 +129,8 @@ export default function ActivityCreateSheet({
     const newDateErrors: Record<string, string> = {};
 
     if (start && end && start > end) {
-      newDateErrors["start_date"] =
-        "Ngày bắt đầu không được lớn hơn ngày kết thúc";
+      newDateErrors["end_date"] =
+        "Ngày kết thúc không được nhỏ hơn ngày bắt đầu";
     }
 
     // Thêm T23:59 để đảm bảo due_date (datetime-local) có thể chọn vào ngày cuối cùng
@@ -577,13 +577,20 @@ export default function ActivityCreateSheet({
             />
           </FormField>
 
-          <FormField label="Ngày Kết Thúc" required error={errors.end_date}>
+          <FormField
+            label="Ngày Kết Thúc"
+            required
+            error={dateErrors.end_date || errors.end_date}
+          >
             <Input
               type="date"
               name="end_date"
               value={formData.end_date}
+              min={formData.start_date || undefined}
               onChange={handleChange}
-              className={errors.end_date ? "border-red-500" : ""}
+              className={
+                dateErrors.end_date || errors.end_date ? "border-red-500" : ""
+              }
             />
           </FormField>
 

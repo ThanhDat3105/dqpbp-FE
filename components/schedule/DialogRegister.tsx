@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MemberSchedule, scheduleAPI } from "@/services/api/schedule";
+import { DaySchedule, MemberSchedule, scheduleAPI } from "@/services/api/schedule";
 import { toast } from "sonner";
 import { getNextWeekMonday } from "@/utils/formatDate";
 
@@ -69,14 +69,31 @@ const SHIFTS = [
   },
 ];
 
+function buildExistingSlots(
+  schedule: Record<number | string, DaySchedule>,
+): Record<string, { start: string; end: string }> {
+  const result: Record<string, { start: string; end: string }> = {};
+  for (let dow = 1; dow <= 7; dow++) {
+    const daySchedule = schedule[dow];
+    if (!daySchedule) continue;
+    (["SANG", "CHIEU", "DEM"] as const).forEach((shift) => {
+      const slot = daySchedule[shift];
+      if (slot) result[`${dow}-${shift}`] = { start: slot.start, end: slot.end };
+    });
+  }
+  return result;
+}
+
 interface Props {
   members: MemberSchedule[];
   isFetchingUsers: boolean;
+  onSuccess?: () => void;
 }
 
 export default function DialogRegisterSchedule({
   members,
   isFetchingUsers,
+  onSuccess,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -84,13 +101,39 @@ export default function DialogRegisterSchedule({
   const [selectedSchedules, setSelectedSchedules] = useState<
     Record<string, { start_time: string; end_time: string }>
   >({});
+  const [existingSlots, setExistingSlots] = useState<
+    Record<string, { start: string; end: string }>
+  >({});
+  const [loadingExisting, setLoadingExisting] = useState(false);
+
+  const fetchExistingForUser = async (userId: string) => {
+    const nextMonday = getNextWeekMonday();
+    setLoadingExisting(true);
+    setExistingSlots({});
+    try {
+      const res = await scheduleAPI.getWeeklySchedule(nextMonday, userId, "all");
+      const member = res.members.find((m) => String(m.user_id) === userId);
+      setExistingSlots(member ? buildExistingSlots(member.schedule) : {});
+    } catch {
+      setExistingSlots({});
+    } finally {
+      setLoadingExisting(false);
+    }
+  };
 
   const handleOpenChange = (value: boolean) => {
     setOpen(value);
     if (!value) {
       setSelectedUserId("");
       setSelectedSchedules({});
+      setExistingSlots({});
     }
+  };
+
+  const handleUserChange = (userId: string) => {
+    setSelectedUserId(userId);
+    setSelectedSchedules({});
+    fetchExistingForUser(userId);
   };
 
   const handleToggle = (
@@ -121,10 +164,7 @@ export default function DialogRegisterSchedule({
     const key = `${dayId}-${shiftId}`;
     setSelectedSchedules((prev) => ({
       ...prev,
-      [key]: {
-        ...prev[key],
-        [field]: value,
-      },
+      [key]: { ...prev[key], [field]: value },
     }));
   };
 
@@ -140,7 +180,7 @@ export default function DialogRegisterSchedule({
       const [dayId, shift] = key.split("-");
       return {
         day_of_week: parseInt(dayId),
-        shift: shift,
+        shift,
         start_time: selectedSchedules[key].start_time,
         end_time: selectedSchedules[key].end_time,
       };
@@ -156,6 +196,7 @@ export default function DialogRegisterSchedule({
       const res = await scheduleAPI.registerSchedule(payload);
       toast.success(res.message);
       handleOpenChange(false);
+      onSuccess?.();
     } catch (error) {
       toast.error("Đã có lỗi xảy ra");
       console.error(error);
@@ -169,7 +210,10 @@ export default function DialogRegisterSchedule({
   )?.name;
 
   const canSubmit =
-    !isLoading && !!selectedUserId && Object.keys(selectedSchedules).length > 0;
+    !isLoading &&
+    !!selectedUserId &&
+    !loadingExisting &&
+    Object.keys(selectedSchedules).length > 0;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -194,7 +238,7 @@ export default function DialogRegisterSchedule({
             </span>
             <Select
               value={selectedUserId}
-              onValueChange={setSelectedUserId}
+              onValueChange={handleUserChange}
               disabled={isFetchingUsers}
             >
               <SelectTrigger className="w-full sm:w-64 focus:ring-0 focus:ring-offset-0">
@@ -220,129 +264,146 @@ export default function DialogRegisterSchedule({
           {/* Bảng chọn lịch */}
           {selectedUserName && (
             <div className="rounded-md overflow-x-auto">
-              <table className="min-w-160 w-full text-sm text-center">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="py-3 px-2 border-r font-semibold w-24">
-                      CA
-                    </th>
-                    {DAYS.map((day) => (
-                      <th
-                        key={day.id}
-                        className="py-3 px-2 border-r font-semibold"
-                      >
-                        {day.label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {SHIFTS.map((shift) => (
-                    <tr
-                      key={shift.id}
-                      className="border-b last:border-0 hover:bg-slate-50/50"
-                    >
-                      <td
-                        className={`py-4 px-2 border-r font-bold ${
-                          shift.id === "SANG"
-                            ? "text-blue-600"
-                            : shift.id === "CHIEU"
-                              ? "text-orange-500"
-                              : "text-purple-600"
-                        }`}
-                      >
-                        {shift.label}
-                      </td>
-
-                      {DAYS.map((day) => {
-                        const key = `${day.id}-${shift.id}`;
-                        const isSelected = !!selectedSchedules[key];
-
-                        return (
-                          <td
+              {loadingExisting ? (
+                <div className="flex items-center justify-center py-12 text-sm text-gray-400 gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Đang tải lịch tuần sau...
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 mb-2 px-1 text-xs text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <span className="inline-block w-3 h-3 rounded bg-green-100 border border-green-300" />
+                      Đã đăng ký
+                    </span>
+                  </div>
+                  <table className="min-w-160 w-full text-sm text-center">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="py-3 px-2 border-r font-semibold w-24">
+                          CA
+                        </th>
+                        {DAYS.map((day) => (
+                          <th
                             key={day.id}
-                            className="py-3 px-2 border-r align-top"
+                            className="py-3 px-2 border-r font-semibold"
                           >
-                            <div className="flex flex-col items-center gap-2">
-                              <Checkbox
-                                checked={isSelected}
-                                disabled={!selectedUserId}
-                                onCheckedChange={(checked) =>
-                                  handleToggle(
-                                    day.id,
-                                    shift.id,
-                                    shift.defaultStart,
-                                    shift.defaultEnd,
-                                    checked as boolean,
-                                  )
-                                }
-                              />
-
-                              {isSelected && (
-                                <div className="flex flex-col gap-2 mt-1">
-                                  <Select
-                                    value={selectedSchedules[key].start_time}
-                                    onValueChange={(value) =>
-                                      handleTimeChange(
-                                        day.id,
-                                        shift.id,
-                                        "start_time",
-                                        value,
-                                      )
-                                    }
-                                  >
-                                    <SelectTrigger className="h-7 text-xs px-2 w-18.75 mx-auto focus:ring-0 focus:ring-offset-0">
-                                      <SelectValue placeholder="Từ" />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-50">
-                                      {shift.timeOptions.map((time) => (
-                                        <SelectItem
-                                          key={`start-${time}`}
-                                          value={time}
-                                          className="text-xs"
-                                        >
-                                          {time}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-
-                                  <Select
-                                    value={selectedSchedules[key].end_time}
-                                    onValueChange={(value) =>
-                                      handleTimeChange(
-                                        day.id,
-                                        shift.id,
-                                        "end_time",
-                                        value,
-                                      )
-                                    }
-                                  >
-                                    <SelectTrigger className="h-7 text-xs px-2 w-18.75 mx-auto focus:ring-0 focus:ring-offset-0">
-                                      <SelectValue placeholder="Đến" />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-50">
-                                      {shift.timeOptions.map((time) => (
-                                        <SelectItem
-                                          key={`end-${time}`}
-                                          value={time}
-                                          className="text-xs"
-                                        >
-                                          {time}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              )}
-                            </div>
+                            {day.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {SHIFTS.map((shift) => (
+                        <tr
+                          key={shift.id}
+                          className="border-b last:border-0 hover:bg-slate-50/50"
+                        >
+                          <td
+                            className={`py-4 px-2 border-r font-bold ${
+                              shift.id === "SANG"
+                                ? "text-blue-600"
+                                : shift.id === "CHIEU"
+                                  ? "text-orange-500"
+                                  : "text-purple-600"
+                            }`}
+                          >
+                            {shift.label}
                           </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+                          {DAYS.map((day) => {
+                            const key = `${day.id}-${shift.id}`;
+                            const isSelected = !!selectedSchedules[key];
+                            const existing = existingSlots[key];
+
+                            return (
+                              <td
+                                key={day.id}
+                                className={`py-3 px-2 border-r align-top ${existing ? "bg-green-50" : ""}`}
+                              >
+                                <div className="flex flex-col items-center gap-2">
+                                  {existing ? (
+                                    <div className="flex flex-col items-center gap-0.5">
+                                      <span className="text-[10px] font-semibold text-green-700 bg-green-100 rounded px-1 py-0.5 leading-tight">
+                                        Đã đăng ký
+                                      </span>
+                                      <span className="text-[10px] text-green-600">
+                                        {existing.start.slice(0, 5)}–{existing.end.slice(0, 5)}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <Checkbox
+                                      checked={isSelected}
+                                      disabled={!selectedUserId}
+                                      onCheckedChange={(checked) =>
+                                        handleToggle(
+                                          day.id,
+                                          shift.id,
+                                          shift.defaultStart,
+                                          shift.defaultEnd,
+                                          checked as boolean,
+                                        )
+                                      }
+                                    />
+                                  )}
+
+                                  {isSelected && !existing && (
+                                    <div className="flex flex-col gap-2 mt-1">
+                                      <Select
+                                        value={selectedSchedules[key].start_time}
+                                        onValueChange={(value) =>
+                                          handleTimeChange(day.id, shift.id, "start_time", value)
+                                        }
+                                      >
+                                        <SelectTrigger className="h-7 text-xs px-2 w-18.75 mx-auto focus:ring-0 focus:ring-offset-0">
+                                          <SelectValue placeholder="Từ" />
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-50">
+                                          {shift.timeOptions.map((time) => (
+                                            <SelectItem
+                                              key={`start-${time}`}
+                                              value={time}
+                                              className="text-xs"
+                                            >
+                                              {time}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+
+                                      <Select
+                                        value={selectedSchedules[key].end_time}
+                                        onValueChange={(value) =>
+                                          handleTimeChange(day.id, shift.id, "end_time", value)
+                                        }
+                                      >
+                                        <SelectTrigger className="h-7 text-xs px-2 w-18.75 mx-auto focus:ring-0 focus:ring-offset-0">
+                                          <SelectValue placeholder="Đến" />
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-50">
+                                          {shift.timeOptions.map((time) => (
+                                            <SelectItem
+                                              key={`end-${time}`}
+                                              value={time}
+                                              className="text-xs"
+                                            >
+                                              {time}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
             </div>
           )}
 

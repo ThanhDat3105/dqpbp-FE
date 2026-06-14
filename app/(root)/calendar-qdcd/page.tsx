@@ -93,7 +93,13 @@ export default function WeeklySchedulePage() {
               />
             </div>
 
-            {user?.role === "DQTT" && <DialogRegisterSchedule members={data?.members || []} isFetchingUsers={loading} />}
+            {user?.role === "DQTT" && (
+              <DialogRegisterSchedule
+                members={data?.members || []}
+                isFetchingUsers={loading}
+                onSuccess={() => fetchWeeklySchedule(weekStart)}
+              />
+            )}
 
             {user?.role === "CHI_HUY" && (
               <Select value={unitFilter} onValueChange={setUnitFilter}>
