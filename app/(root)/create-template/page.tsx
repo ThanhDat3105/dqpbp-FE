@@ -64,15 +64,13 @@ export default function CreateTemplatePage() {
       tasks: [
         ...prev.tasks,
         {
-          id: Math.random(),
+          id: Date.now(),
           title: "",
           team: [],
           assignees: [],
           notes: "",
           report_fields: [],
           requires_dqcd: false,
-          start_offset_days: 0,
-          due_offset_days: 0,
           require_media_report: false,
         },
       ],
@@ -152,6 +150,10 @@ export default function CreateTemplatePage() {
     for (const [i, task] of formData.tasks.entries()) {
       if (!task.title.trim()) {
         newErrors[`tasks.${i}.title`] = "Tên nhiệm vụ không được để trống";
+      }
+      if (task.assignees.length === 0) {
+        newErrors[`tasks.${i}.assignees`] =
+          "Người thực hiện không được để trống";
       }
     }
 

@@ -59,6 +59,13 @@ export interface RegisterSchedule {
   }[]
 }
 
+export interface DeleteRegisteredSchedulePayload {
+  user_id: number;
+  week_start: string;
+  day_of_week?: number;
+  shift?: ShiftType;
+}
+
 const getWeeklySchedule = async (weekStart: string, user_id: string, unitFilter: string): Promise<WeeklyResponse> => {
   const res = await axiosInstance.get(`/api/schedule/weekly`, {
     params: { week_start: weekStart, user_id, unit_filter: unitFilter },
@@ -96,10 +103,19 @@ const registerSchedule = async (payload: RegisterSchedule) => {
   return res.data;
 };
 
+const deleteRegisteredSchedule = async (payload: DeleteRegisteredSchedulePayload) => {
+  const res = await axiosInstance.delete(`/api/schedule/register`, {
+    data: payload,
+  });
+
+  return res.data;
+};
+
 export const scheduleAPI = {
   getWeeklySchedule,
   upsertTemplate,
   deleteTemplate,
   updateMobilizeCount,
-  registerSchedule
+  registerSchedule,
+  deleteRegisteredSchedule
 };

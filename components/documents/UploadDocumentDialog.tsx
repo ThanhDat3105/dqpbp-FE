@@ -29,7 +29,12 @@ interface Props {
   onSuccess: () => void;
 }
 
-export function UploadDocumentDialog({ open, departments, onClose, onSuccess }: Props) {
+export function UploadDocumentDialog({
+  open,
+  departments,
+  onClose,
+  onSuccess,
+}: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -60,8 +65,18 @@ export function UploadDocumentDialog({ open, departments, onClose, onSuccess }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) { toast.error("Vui lòng chọn file"); return; }
-    if (!title.trim()) { toast.error("Vui lòng nhập tiêu đề"); return; }
+    if (!file) {
+      toast.error("Vui lòng chọn file");
+      return;
+    }
+    if (!title.trim()) {
+      toast.error("Vui lòng nhập tiêu đề");
+      return;
+    }
+    if (!departmentId) {
+      toast.error("Vui lòng chọn tổ");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -82,7 +97,12 @@ export function UploadDocumentDialog({ open, departments, onClose, onSuccess }: 
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) handleClose();
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Tải lên tài liệu</DialogTitle>
@@ -97,22 +117,37 @@ export function UploadDocumentDialog({ open, departments, onClose, onSuccess }: 
             {file ? (
               <>
                 <FileText className="w-8 h-8 text-blue-500" />
-                <p className="text-sm font-medium text-gray-800 text-center break-all">{file.name}</p>
-                <p className="text-xs text-gray-400">{(file.size / 1024).toFixed(1)} KB</p>
+                <p className="text-sm font-medium text-gray-800 text-center break-all">
+                  {file.name}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {(file.size / 1024).toFixed(1)} KB
+                </p>
               </>
             ) : (
               <>
                 <Upload className="w-8 h-8 text-gray-400" />
                 <p className="text-sm text-gray-500">Nhấn để chọn file</p>
-                <p className="text-xs text-gray-400">PDF, DOC, DOCX, XLS, XLSX, PPT, PNG, JPG...</p>
+                <p className="text-xs text-gray-400">
+                  PDF, DOC, DOCX, XLS, XLSX
+                </p>
               </>
             )}
-            <input ref={fileRef} type="file" className="hidden" onChange={handleFileChange} />
+            <input
+              ref={fileRef}
+              type="file"
+              className="hidden"
+              onChange={handleFileChange}
+            />
           </div>
           {file && (
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); setFile(null); if (fileRef.current) fileRef.current.value = ""; }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setFile(null);
+                if (fileRef.current) fileRef.current.value = "";
+              }}
               className="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1 -mt-2"
             >
               <X className="w-3 h-3" /> Xóa file
@@ -133,7 +168,9 @@ export function UploadDocumentDialog({ open, departments, onClose, onSuccess }: 
 
           {/* Description */}
           <div>
-            <Label className="text-sm font-medium text-gray-700 mb-1.5 block">Mô tả</Label>
+            <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
+              Mô tả
+            </Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -144,20 +181,26 @@ export function UploadDocumentDialog({ open, departments, onClose, onSuccess }: 
           {/* Department + Visibility */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-sm font-medium text-gray-700 mb-1.5 block">Tổ công tác</Label>
+              <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                Tổ công tác <span className="text-red-500">*</span>
+              </Label>
               <Select value={departmentId} onValueChange={setDepartmentId}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="-- Chọn tổ --" />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map((d) => (
-                    <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
+                    <SelectItem key={d.id} value={String(d.id)}>
+                      {d.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-700 mb-1.5 block">Phạm vi</Label>
+              <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                Phạm vi
+              </Label>
               <Select value={isPublic} onValueChange={setIsPublic}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -171,7 +214,12 @@ export function UploadDocumentDialog({ open, departments, onClose, onSuccess }: 
           </div>
 
           <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={loading}
+            >
               Hủy
             </Button>
             <Button type="submit" disabled={loading}>
