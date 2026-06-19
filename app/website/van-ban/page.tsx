@@ -100,7 +100,7 @@ export default function VanBanPage() {
             Trang chủ
           </a>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-[#ffb300]">Văn Bản Chỉ Đạo</span>
+          <span className="text-yellow-300">Văn Bản Chỉ Đạo</span>
         </nav>
       </section>
 
@@ -111,7 +111,7 @@ export default function VanBanPage() {
           {/* Filter form */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="bg-[#546a2f] text-white px-4 py-3 flex items-center gap-2">
-              <Filter className="w-4 h-4 text-[#ffb300]" />
+              <Filter className="w-4 h-4 text-yellow-300" />
               <span className="font-semibold text-sm">Bộ Lọc Tìm Kiếm</span>
             </div>
             <div className="p-4 space-y-3">
@@ -202,7 +202,7 @@ export default function VanBanPage() {
           {/* Notifications */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="bg-[#546a2f] text-white px-4 py-3 flex items-center gap-2">
-              <Bell className="w-4 h-4 text-[#ffb300]" />
+              <Bell className="w-4 h-4 text-yellow-300" />
               <span className="font-semibold text-sm">Thông Báo</span>
             </div>
             <ul className="divide-y divide-gray-100">

@@ -7,9 +7,10 @@ interface FilterSidebarProps {
   visibleTypes: Record<PersonType, boolean>;
   onToggle: (type: PersonType) => void;
   persons: Person[];
+  allowedTypes?: PersonType[];
 }
 
-const FILTER_TYPES: PersonType[] = ["TUOI_17", "QUAN_NHAN_DU_BI", "DQCD"];
+const ALL_FILTER_TYPES: PersonType[] = ["TUOI_17", "QUAN_NHAN_DU_BI", "DQCD"];
 const DISPLAY_COUNTS: Record<PersonType, number> = {
   TUOI_17: 14,
   QUAN_NHAN_DU_BI: 48,
@@ -21,7 +22,9 @@ export default function FilterSidebar({
   visibleTypes,
   onToggle,
   persons,
+  allowedTypes = ALL_FILTER_TYPES,
 }: FilterSidebarProps) {
+  const FILTER_TYPES = ALL_FILTER_TYPES.filter((t) => allowedTypes.includes(t));
   const allChecked = FILTER_TYPES.every((t) => visibleTypes[t]);
 
   function handleSelectAll() {

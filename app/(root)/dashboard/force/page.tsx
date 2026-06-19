@@ -61,6 +61,132 @@ export const STATUS_DOT: Record<string, string> = {
 const BAR_COLOR = "#6B8E23";
 const ALLOWED_ROLES = ["CHI_HUY", "TO_TRUONG", "ADMIN"];
 
+// ─── KPI Department types ─────────────────────────────────────────────────────
+
+interface KpiDeptGroup {
+  department_id: number | null;
+  department_code: string | null;
+  department_name: string;
+  total: number;
+  exceeded: number;
+  achieved: number;
+  warning: number;
+  failed: number;
+  in_progress: number;
+}
+
+// ─── KPI Dept Card (Pie Chart) ────────────────────────────────────────────────
+
+const PIE_SEGMENTS: {
+  key: keyof KpiDeptGroup;
+  label: string;
+  color: string;
+}[] = [
+  { key: "exceeded", label: "Vượt", color: "#16a34a" },
+  { key: "achieved", label: "Đạt", color: "#4ade80" },
+  { key: "warning", label: "Cảnh báo", color: "#fbbf24" },
+  { key: "failed", label: "Không đạt", color: "#f87171" },
+  { key: "in_progress", label: "Đang thực hiện", color: "#93c5fd" },
+];
+
+function KpiDeptCard({ dept }: { dept: KpiDeptGroup }) {
+  const achieved = (dept.exceeded || 0) + (dept.achieved || 0);
+  const percent =
+    dept.total > 0 ? Math.round((achieved / dept.total) * 100) : 0;
+  const dotColor =
+    percent >= 100
+      ? "bg-green-500"
+      : percent >= 50
+        ? "bg-yellow-400"
+        : "bg-gray-300";
+
+  const pieData = PIE_SEGMENTS.map((s) => ({
+    name: s.label,
+    value: (dept[s.key] as number) ?? 0,
+    color: s.color,
+  })).filter((d) => d.value > 0);
+
+  const isEmpty = pieData.length === 0;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-col gap-2 min-w-0">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-1">
+        <p className="text-sm font-semibold text-gray-800 leading-snug mt-1 line-clamp-2 flex-1 min-w-0">
+          {dept.department_name}
+        </p>
+        <span
+          className={clsx("w-2.5 h-2.5 rounded-full shrink-0 mt-1.5", dotColor)}
+        />
+      </div>
+
+      {/* Pie chart */}
+      <div className="flex justify-center">
+        <PieChart width={110} height={110}>
+          <Pie
+            data={
+              isEmpty
+                ? [{ name: "Trống", value: 1, color: "#e5e7eb" }]
+                : pieData
+            }
+            cx={55}
+            cy={55}
+            innerRadius={30}
+            outerRadius={50}
+            dataKey="value"
+            strokeWidth={1}
+            stroke="#fff"
+          >
+            {(isEmpty ? [{ color: "#e5e7eb" }] : pieData).map((entry, i) => (
+              <Cell key={i} fill={entry.color} />
+            ))}
+          </Pie>
+          <Tooltip
+            formatter={(value, name) => [`${value}`, name]}
+            contentStyle={{ borderRadius: 8, fontSize: 11, fontWeight: 700 }}
+          />
+        </PieChart>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-col gap-1">
+        {PIE_SEGMENTS.map(({ key, label, color }) => {
+          const val = (dept[key] as number) ?? 0;
+          return (
+            <div key={key} className="flex items-center gap-1.5 text-xs">
+              <span
+                className="w-2 h-2 rounded-sm shrink-0"
+                style={{ backgroundColor: color }}
+              />
+              <span className="font-semibold text-gray-700 w-3 text-right shrink-0">
+                {val}
+              </span>
+              <span className="text-gray-400 truncate">{label}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Completion % */}
+      <div className="text-xs text-gray-500 font-medium border-t border-gray-100 pt-2">
+        Hoàn thành:{" "}
+        <span
+          className={clsx(
+            "font-bold",
+            percent >= 80
+              ? "text-green-600"
+              : percent >= 50
+                ? "text-yellow-600"
+                : "text-red-500",
+          )}
+        >
+          {percent}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Overview {
@@ -173,42 +299,6 @@ const BarValueLabel = (props: any) => {
     </text>
   );
 };
-
-// ─── Donut Center Text ────────────────────────────────────────────────────────
-
-const DonutCenterLabel = ({
-  cx,
-  cy,
-  total,
-}: {
-  cx: number;
-  cy: number;
-  total: number;
-}) => (
-  <>
-    <text
-      x={cx}
-      y={cy - 8}
-      textAnchor="middle"
-      fill="#111827"
-      fontSize={22}
-      fontWeight={700}
-    >
-      {total}
-    </text>
-    <text
-      x={cx}
-      y={cy + 12}
-      textAnchor="middle"
-      fill="#9ca3af"
-      fontSize={11}
-      fontWeight={600}
-    >
-      TỔNG
-    </text>
-  </>
-);
-
 // ─── Action Dropdown ─────────────────────────────────────────────────────────
 
 function ActionMenu({ person }: { person: PersonnelItem }) {
@@ -297,11 +387,8 @@ export default function LucLuongDashboardPage() {
 
   const [overview, setOverview] = useState<Overview | null>(null);
   const [byDept, setByDept] = useState<DeptItem[]>([]);
-  const [statusBreakdown, setStatusBreakdown] = useState<{
-    total: number;
-    breakdown: StatusItem[];
-  } | null>(null);
   const [personnelList, setPersonnelList] = useState<PersonnelItem[]>([]);
+  const [kpiDepts, setKpiDepts] = useState<KpiDeptGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedPerson, setSelectedPerson] = useState<PersonnelItem | null>(
@@ -324,19 +411,21 @@ export default function LucLuongDashboardPage() {
     const fetchAll = async () => {
       setLoading(true);
       try {
-        const [ovRes, deptRes, statusRes, listRes] = await Promise.all([
+        const [ovRes, deptRes, listRes, kpiDeptRes] = await Promise.all([
           axiosInstance.get("/api/personnel/overview"),
           axiosInstance.get("/api/personnel/by-department"),
-          axiosInstance.get("/api/personnel/status-breakdown"),
           axiosInstance.get("/api/personnel/list", {
             params: { status: "on_duty", limit: 10, role: "DQTT" },
+          }),
+          axiosInstance.get("/api/kpi/departments", {
+            params: { period: "month" },
           }),
         ]);
 
         setOverview(ovRes.data.metaData);
         setByDept(deptRes.data.metaData.data ?? []);
-        setStatusBreakdown(statusRes.data.metaData);
         setPersonnelList(listRes.data.metaData.data ?? []);
+        setKpiDepts(kpiDeptRes.data.metaData?.departments ?? []);
       } catch (err) {
         toast.error("Không thể tải dữ liệu nhân sự. Vui lòng thử lại.");
         console.error(err);
@@ -428,7 +517,7 @@ export default function LucLuongDashboardPage() {
       {/* ── Section 2: Charts (60/40) ── */}
       <section id="charts-row" className="flex flex-col md:flex-row gap-6">
         {/* Left: Bar Chart */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 md:w-[60%] w-full">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 w-full">
           <h2 className="font-bold text-gray-800 text-sm">
             Phân bổ nhân sự theo Tổ
           </h2>
@@ -474,77 +563,34 @@ export default function LucLuongDashboardPage() {
             </ResponsiveContainer>
           )}
         </div>
-
-        {/* Right: Donut Chart */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 md:w-[40%] w-full">
-          <h2 className="font-bold text-gray-800 text-sm">
-            Trạng thái lực lượng
-          </h2>
-          <p className="text-xs text-gray-400 mt-0.5 mb-2">
-            Tỷ lệ sẵn sàng chiến đấu
-          </p>
-
-          {loading || !statusBreakdown ? (
-            <Skeleton className="h-52" />
-          ) : (
-            <div className="flex items-center gap-4">
-              <div className="shrink-0">
-                <PieChart width={180} height={180}>
-                  <Pie
-                    data={statusBreakdown.breakdown}
-                    dataKey="count"
-                    nameKey="status"
-                    cx={85}
-                    cy={85}
-                    innerRadius={52}
-                    outerRadius={80}
-                    paddingAngle={2}
-                  >
-                    {statusBreakdown.breakdown.map((entry) => (
-                      <Cell
-                        key={entry.status}
-                        fill={STATUS_COLORS[entry.status] ?? "#999"}
-                      />
-                    ))}
-                  </Pie>
-                  <DonutCenterLabel
-                    cx={85}
-                    cy={85}
-                    total={statusBreakdown.total}
-                  />
-                </PieChart>
-              </div>
-
-              {/* Legend */}
-              <div className="flex flex-col gap-2 flex-1 min-w-0">
-                {statusBreakdown.breakdown.map((item) => (
-                  <div
-                    key={item.status}
-                    className="flex items-center justify-between gap-2"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{
-                          backgroundColor: STATUS_COLORS[item.status] ?? "#999",
-                        }}
-                      />
-                      <span className="text-xs text-gray-600 truncate">
-                        {STATUS_LABELS[item.status] ?? item.status}
-                      </span>
-                    </div>
-                    <span className="text-xs font-bold text-gray-700 shrink-0">
-                      {item.percent}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
       </section>
 
-      {/* ── Section 3: Personnel Table ── */}
+      {/* ── Section 3: KPI by Department ── */}
+      <section id="kpi-departments">
+        <h2 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+          <span className="w-1 h-4 bg-blue-600 rounded-full inline-block" />
+          Tỉ lệ hoàn thành nhiệm vụ của {kpiDepts.length} tổ
+        </h2>
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-44" />
+            ))}
+          </div>
+        ) : kpiDepts.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 py-10 text-center text-sm text-gray-400">
+            Chưa có dữ liệu KPI theo tổ trong tháng này
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {kpiDepts.map((dept, i) => (
+              <KpiDeptCard key={dept.department_id ?? i} dept={dept} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── Section 4: Personnel Table ── */}
       <section
         id="personnel-table"
         className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"

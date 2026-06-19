@@ -10,8 +10,10 @@ import {
 import ScheduleHeader from "@/components/schedule/schedule-header";
 import ScheduleTable from "@/components/schedule/schedule-table";
 import { calendarDQTTAPI } from "@/services/api/calendar-dqtt";
+import { useAuth } from "@/context/AuthContext";
 
 export default function CalendarQdttPage() {
+  const { user } = useAuth();
   const [schedule, setSchedule] = useState<WeekSchedule | null>(null);
   const [loading, setLoading] = useState(true);
   const [referenceDate, setReferenceDate] = useState<Date>(new Date());
@@ -83,6 +85,7 @@ export default function CalendarQdttPage() {
           onToday={handleToday}
           onExport={handleExport}
           onCreated={() => fetchSchedule(referenceDate)}
+          canCreate={user?.role !== "DQTT"}
         />
 
         <main className="flex-1">

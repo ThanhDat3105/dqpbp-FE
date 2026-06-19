@@ -93,8 +93,8 @@ export default function ChatFAB() {
       >
         {/* Header */}
         <div className="bg-linear-to-r from-[#3d5020] to-[#546a2f] px-4 py-3 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#ffb300]/20 border border-[#ffb300]/40 flex items-center justify-center shrink-0">
-            <Bot className="w-5 h-5 text-[#ffb300]" />
+          <div className="w-9 h-9 rounded-full bg-yellow-300/20 border border-yellow-300/40 flex items-center justify-center shrink-0">
+            <Bot className="w-5 h-5 text-yellow-300" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-semibold text-sm leading-tight">

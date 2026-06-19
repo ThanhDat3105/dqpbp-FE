@@ -26,8 +26,8 @@ export default function HomePage() {
 
           {/* Title */}
           <h1 className="text-4xl md:text-5xl font-black mt-5 leading-tight tracking-tight">
-            Hệ thống Quản lý <br />
-            <span className="text-yellow-300">Quân sự quốc phòng</span>
+            Hệ thống quản lý <br />
+            <span className="text-yellow-300">Công tác hành chính quân sự</span>
           </h1>
         </div>
       </section>

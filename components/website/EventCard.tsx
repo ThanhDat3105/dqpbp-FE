@@ -20,7 +20,7 @@ export default function EventCard({ event }: Props) {
       {/* Date block */}
       <div className="bg-[#546a2f] text-white flex flex-col items-center justify-center px-4 py-4 min-w-18">
         <span className="text-2xl font-bold leading-none">{day}</span>
-        <span className="text-xs uppercase mt-1 text-[#ffb300]">
+        <span className="text-xs uppercase mt-1 text-yellow-300">
           Th{month}/{year.slice(2)}
         </span>
       </div>

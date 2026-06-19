@@ -53,7 +53,7 @@ export default function TinTucPage() {
         <nav className="flex items-center justify-center gap-2 text-sm text-white/60 mt-3">
           <a href="/website" className="hover:text-white transition-colors">Trang chủ</a>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-[#ffb300]">Tin Tức & Sự Kiện</span>
+          <span className="text-yellow-300">Tin Tức & Sự Kiện</span>
         </nav>
       </section>
 
@@ -64,7 +64,7 @@ export default function TinTucPage() {
           {/* News list */}
           <div>
             <h2 className="text-xl font-bold text-[#546a2f] mb-4 flex items-center gap-2">
-              <span className="w-1 h-6 bg-[#ffb300] rounded-full" />
+              <span className="w-1 h-6 bg-yellow-300 rounded-full" />
               Bài Viết Mới Nhất
             </h2>
             <div className="space-y-4">
@@ -158,7 +158,7 @@ export default function TinTucPage() {
           {/* Popular */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="bg-[#546a2f] text-white px-4 py-3 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-[#ffb300]" />
+              <TrendingUp className="w-4 h-4 text-yellow-300" />
               <span className="font-semibold text-sm">Tin Xem Nhiều</span>
             </div>
             <ul className="divide-y divide-gray-100">
@@ -188,7 +188,7 @@ export default function TinTucPage() {
             </p>
             <a
               href="/website/lien-he"
-              className="inline-block bg-[#ffb300] text-[#546a2f] font-bold px-4 py-2 rounded-lg text-sm hover:bg-yellow-400 transition-colors"
+              className="inline-block bg-yellow-300 text-[#546a2f] font-bold px-4 py-2 rounded-lg text-sm hover:bg-yellow-400 transition-colors"
             >
               Liên Hệ Ngay
             </a>

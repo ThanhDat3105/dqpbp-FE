@@ -1,13 +1,13 @@
 // sidebar.config.ts
 import {
+  Article,
   Assessment,
   Event,
   Group,
   Map,
-  Article,
   Warehouse,
 } from "@mui/icons-material";
-import { LayoutList, Globe } from "lucide-react";
+import { FileCheck2, Globe, LayoutList } from "lucide-react";
 import type { ElementType } from "react";
 
 export type MenuRole = "DQTT" | "CHI_HUY" | "DQCD" | "TO_TRUONG";
@@ -128,6 +128,13 @@ export const menuConfig: MenuItem[] = [
         href: "/calendar-qdcd",
         icon: Event,
       },
+      {
+        id: "personnel-registrations",
+        label: "Hồ sơ đăng ký",
+        href: "/personnel/ho-so-dang-ky",
+        hiddenForRoles: ["DQCD", "DQTT"],
+        icon: FileCheck2,
+      },
     ],
   },
   {
@@ -179,6 +186,12 @@ export const menuConfig: MenuItem[] = [
         label: "Slide ảnh",
         href: "/quan-ly/website/slide",
         icon: Globe,
+      },
+      {
+        id: "website-cms-registrations",
+        label: "Quản lý hồ sơ đăng ký",
+        href: "/quan-ly/website/ho-so-dang-ky",
+        icon: FileCheck2,
       },
     ],
   },

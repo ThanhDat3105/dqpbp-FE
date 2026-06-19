@@ -25,6 +25,7 @@ interface ScheduleHeaderProps {
   onToday: () => void;
   onExport: () => void;
   onCreated: () => void;
+  canCreate?: boolean;
 }
 
 function getWeekLabel(referenceDate: Date): {
@@ -66,6 +67,7 @@ export default function ScheduleHeader({
   onToday,
   onExport,
   onCreated,
+  canCreate = true,
 }: ScheduleHeaderProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const { label, isCurrentWeek } = getWeekLabel(referenceDate);
@@ -130,16 +132,18 @@ export default function ScheduleHeader({
               <Notification />
             </div>
 
-            <Button
-              id="create-week-btn"
-              variant="outline"
-              size="sm"
-              onClick={() => setCreateOpen(true)}
-              className="gap-1.5 text-blue-700 border-blue-300 hover:bg-blue-50 w-full sm:w-auto justify-center"
-            >
-              <CalendarPlus className="h-4 w-4" />
-              Tạo lịch tuần
-            </Button>
+            {canCreate && (
+              <Button
+                id="create-week-btn"
+                variant="outline"
+                size="sm"
+                onClick={() => setCreateOpen(true)}
+                className="gap-1.5 text-blue-700 border-blue-300 hover:bg-blue-50 w-full sm:w-auto justify-center"
+              >
+                <CalendarPlus className="h-4 w-4" />
+                Tạo lịch tuần
+              </Button>
+            )}
 
             <Button
               id="export-excel-btn"

@@ -44,15 +44,15 @@ export default function GioiThieuPage() {
           className="absolute inset-0 opacity-10"
           style={{
             backgroundImage:
-              'repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,179,0,0.3) 20px, rgba(255,179,0,0.3) 21px)',
+              'repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(253,224,71,0.3) 20px, rgba(253,224,71,0.3) 21px)',
           }}
         />
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 bg-[#ffb300]/20 border border-[#ffb300]/40 rounded-full px-4 py-1.5 text-sm text-[#ffb300] mb-4">
+          <div className="inline-flex items-center gap-2 bg-yellow-300/20 border border-yellow-300/40 rounded-full px-4 py-1.5 text-sm text-yellow-300 mb-4">
             <Star className="w-3.5 h-3.5" /> BCH Quân Sự Phường Bình Phú
           </div>
           <h1 className="text-3xl md:text-5xl font-black mb-4">Giới Thiệu Đơn Vị</h1>
-          <p className="text-2xl md:text-3xl font-bold text-[#ffb300]">
+          <p className="text-2xl md:text-3xl font-bold text-yellow-300">
             "Đoàn Kết — Kỷ Cương — Quyết Thắng"
           </p>
         </div>
@@ -65,7 +65,7 @@ export default function GioiThieuPage() {
           {/* Giới thiệu chung */}
           <div>
             <h2 className="text-2xl font-bold text-[#546a2f] mb-4 flex items-center gap-2">
-              <span className="w-1 h-7 bg-[#ffb300] rounded-full" />
+              <span className="w-1 h-7 bg-yellow-300 rounded-full" />
               Giới Thiệu Chung
             </h2>
             <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed space-y-3">
@@ -93,9 +93,9 @@ export default function GioiThieuPage() {
                   phòng toàn dân vững mạnh tại địa phương.
                 </p>
               </div>
-              <div className="bg-[#ffb300]/5 border border-[#ffb300]/30 rounded-xl p-5">
+              <div className="bg-yellow-300/5 border border-yellow-300/30 rounded-xl p-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <Eye className="w-5 h-5 text-[#ffb300]" />
+                  <Eye className="w-5 h-5 text-yellow-300" />
                   <h3 className="font-bold text-gray-700">Tầm Nhìn</h3>
                 </div>
                 <p className="text-sm text-gray-600 leading-relaxed">
@@ -109,7 +109,7 @@ export default function GioiThieuPage() {
           {/* Lịch sử */}
           <div>
             <h2 className="text-2xl font-bold text-[#546a2f] mb-4 flex items-center gap-2">
-              <span className="w-1 h-7 bg-[#ffb300] rounded-full" />
+              <span className="w-1 h-7 bg-yellow-300 rounded-full" />
               Lịch Sử & Truyền Thống
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-6">
@@ -146,7 +146,7 @@ export default function GioiThieuPage() {
           {/* Cơ cấu tổ chức */}
           <div>
             <h2 className="text-2xl font-bold text-[#546a2f] mb-4 flex items-center gap-2">
-              <span className="w-1 h-7 bg-[#ffb300] rounded-full" />
+              <span className="w-1 h-7 bg-yellow-300 rounded-full" />
               Cơ Cấu Tổ Chức
             </h2>
             <div className="flex flex-col items-center gap-4">
@@ -174,7 +174,7 @@ export default function GioiThieuPage() {
           {/* Contact info */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="bg-[#546a2f] text-white px-4 py-3 flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#ffb300]" />
+              <Users className="w-4 h-4 text-yellow-300" />
               <span className="font-semibold text-sm">Thông Tin Liên Hệ</span>
             </div>
             <ul className="divide-y divide-gray-100 text-sm">
@@ -208,7 +208,7 @@ export default function GioiThieuPage() {
           {/* Core values */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="bg-[#546a2f] text-white px-4 py-3 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-[#ffb300]" />
+              <Shield className="w-4 h-4 text-yellow-300" />
               <span className="font-semibold text-sm">Giá Trị Cốt Lõi</span>
             </div>
             <ul className="divide-y divide-gray-100">

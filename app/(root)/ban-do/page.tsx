@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { PersonType } from "@/components/map/types";
 import { MOCK_PERSONS } from "@/components/map/mockData";
 import FilterSidebar from "@/components/map/FilterSidebar";
+import { useAuth } from "@/context/AuthContext";
 
 // Dynamic import to avoid SSR issues with Leaflet
 const MapView = dynamic(() => import("@/components/map/MapView"), {
@@ -21,18 +22,33 @@ const MapView = dynamic(() => import("@/components/map/MapView"), {
   ),
 });
 
+// DQTT chỉ thấy DQCD; TO_TRUONG trở lên thấy tất cả
+const DQTT_VISIBLE_TYPES: PersonType[] = ["DQCD"];
+const ALL_VISIBLE_TYPES: PersonType[] = ["TUOI_17", "QUAN_NHAN_DU_BI", "DQCD"];
+
+function buildInitialVisibility(
+  allowedTypes: PersonType[],
+): Record<PersonType, boolean> {
+  return {
+    TUOI_17: allowedTypes.includes("TUOI_17"),
+    QUAN_NHAN_DU_BI: allowedTypes.includes("QUAN_NHAN_DU_BI"),
+    DQCD: false,
+    HQ: true,
+  };
+}
+
 export default function BanDoPage() {
+  const { user } = useAuth();
+  const isDQTT = user?.role === "DQTT";
+  const allowedTypes = isDQTT ? DQTT_VISIBLE_TYPES : ALL_VISIBLE_TYPES;
+
   const [visibleTypes, setVisibleTypes] = useState<Record<PersonType, boolean>>(
-    {
-      TUOI_17: false,
-      QUAN_NHAN_DU_BI: false,
-      DQCD: false,
-      HQ: true,
-    },
+    () => buildInitialVisibility(allowedTypes),
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   function handleToggle(type: PersonType) {
+    if (!allowedTypes.includes(type)) return;
     setVisibleTypes((prev) => ({ ...prev, [type]: !prev[type] }));
   }
 
@@ -91,6 +107,7 @@ export default function BanDoPage() {
             visibleTypes={visibleTypes}
             onToggle={handleToggle}
             persons={MOCK_PERSONS}
+            allowedTypes={allowedTypes}
           />
         </div>
 
@@ -101,6 +118,7 @@ export default function BanDoPage() {
               visibleTypes={visibleTypes}
               onToggle={handleToggle}
               persons={MOCK_PERSONS}
+              allowedTypes={allowedTypes}
             />
           </div>
         )}
