@@ -20,14 +20,18 @@ export interface RegistrationFormTemplate {
   fileUrl: string;
 }
 
+export type TrainingSystem = "cao_dang_dai_hoc" | "thieu_sinh_quan";
+
 export interface PublicRegistrationPayload {
   category: RegistrationCategory;
   full_name: string;
   phone: string;
   address: string;
+  temporary_address: string;
   dob: string;
   workplace: string;
   guardian_phone: string;
+  training_system?: TrainingSystem;
   captcha_token: string;
 }
 
@@ -83,8 +87,7 @@ export const websiteRegistrationAPI = {
     const res = await axiosInstance.get("/api/public/registration-templates", {
       params: { category },
     });
-    const data = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
-    return data.map(mapTemplate);
+    return res.data.metaData.map(mapTemplate);
   },
 
   async createRegistration(

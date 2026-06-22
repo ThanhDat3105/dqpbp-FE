@@ -61,9 +61,35 @@ const categories: Array<{
     title: "Đăng ký tham gia DQTT",
     subtitle: "Đăng ký nhu cầu tham gia lực lượng dân quân thường trực.",
   },
+  {
+    value: "doituongchinhsach",
+    shortLabel: "ĐTCS",
+    label: "Đối tượng chính sách",
+    title: "Đối tượng chính sách",
+    subtitle: "Đăng ký thông tin đối tượng chính sách để được hỗ trợ.",
+  },
+  {
+    value: "siquandubi",
+    shortLabel: "SQDB",
+    label: "Đăng ký đào tạo sĩ quan dự bị",
+    title: "Đăng ký đào tạo sĩ quan dự bị",
+    subtitle: "Đăng ký nguyện vọng tham gia đào tạo sĩ quan dự bị.",
+  },
 ];
 
-type FormState = Omit<PublicRegistrationPayload, "category" | "captcha_token">;
+type FormState = Omit<
+  PublicRegistrationPayload,
+  "category" | "captcha_token" | "address"
+> & {
+  permanent_address: string;
+  temporary_address: string;
+  training_system: "cao_dang_dai_hoc" | "thieu_sinh_quan" | "";
+};
+
+const heOptions = [
+  { value: "cdh", label: "Cao đẳng đại học" },
+  { value: "tsq", label: "Thiếu sinh quân" },
+] as const;
 type FormErrors = Partial<Record<keyof FormState | "captcha", string>>;
 
 const skeletonRows = [
@@ -76,10 +102,12 @@ const skeletonRows = [
 const emptyForm: FormState = {
   full_name: "",
   phone: "",
-  address: "",
+  permanent_address: "",
+  temporary_address: "",
   dob: "",
   workplace: "",
   guardian_phone: "",
+  training_system: 'cao_dang_dai_hoc',
 };
 
 const phoneRegex = /^0\d{9}$/;
@@ -90,19 +118,30 @@ const formatDate = (value: string) => {
   return date.toLocaleDateString("vi-VN");
 };
 
-function validateForm(form: FormState, captchaToken: string | null) {
+function validateForm(
+  form: FormState,
+  captchaToken: string | null,
+  category: RegistrationCategory,
+) {
   const errors: FormErrors = {};
   if (!form.full_name.trim()) errors.full_name = "Vui lòng nhập họ và tên.";
   if (!phoneRegex.test(form.phone))
     errors.phone = "Số điện thoại gồm 10 chữ số và bắt đầu bằng 0.";
-  if (!form.address.trim()) errors.address = "Vui lòng nhập địa chỉ cư trú.";
-  if (!form.dob) errors.dob = "Vui lòng chọn ngày sinh.";
+  if (!form.permanent_address.trim())
+    errors.permanent_address = "Vui lòng nhập địa chỉ thường trú.";
+  if (!form.dob) {
+    errors.dob = "Vui lòng chọn ngày sinh.";
+  } else if (new Date(form.dob) >= new Date()) {
+    errors.dob = "Ngày sinh phải nhỏ hơn ngày hiện tại.";
+  }
   if (!form.workplace.trim())
     errors.workplace = "Vui lòng nhập nơi học tập hoặc làm việc.";
   if (!phoneRegex.test(form.guardian_phone)) {
     errors.guardian_phone =
       "Số điện thoại người thân gồm 10 chữ số và bắt đầu bằng 0.";
   }
+  if (category === "tsqs" && !form.training_system)
+    errors.training_system = "Vui lòng chọn hệ đào tạo.";
   if (!captchaToken)
     errors.captcha = "Vui lòng xác nhận captcha trước khi gửi.";
   return errors;
@@ -191,6 +230,9 @@ function FormList({
             href={form.fileUrl}
             download
             className="inline-flex h-8 shrink-0 items-center gap-1 rounded bg-[#546a2f] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#3d5020]"
+            onClick={(e) => e.stopPropagation()}
+            target="_blank"
+            rel="noopener noreferrer"
           >
             <Download className="h-3.5 w-3.5" />
             Tải xuống
@@ -252,6 +294,7 @@ export default function RegistrationPage() {
 
   const switchCategory = (nextCategory: RegistrationCategory) => {
     setCategory(nextCategory);
+    setForm(emptyForm);
     setErrors({});
     setSuccess(null);
     window.history.replaceState(
@@ -278,7 +321,7 @@ export default function RegistrationPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const nextErrors = validateForm(form, captchaToken);
+    const nextErrors = validateForm(form, captchaToken, category);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       toast.error(
@@ -289,9 +332,16 @@ export default function RegistrationPage() {
 
     setSubmitting(true);
     try {
+      const { permanent_address, temporary_address, training_system, ...rest } = form;
+
       const payload: PublicRegistrationPayload = {
         category,
-        ...form,
+        ...rest,
+        address: permanent_address.trim(),
+        temporary_address: temporary_address.trim(),
+        ...(category === "tsqs" && training_system
+          ? { training_system }
+          : {}),
         captcha_token: captchaToken as string,
       };
       const created = await websiteRegistrationAPI.createRegistration(payload);
@@ -377,23 +427,6 @@ export default function RegistrationPage() {
         </aside>
 
         <div className="space-y-6">
-          <div className="flex flex-wrap gap-2 rounded-lg border border-gray-200 bg-white p-2 shadow-sm">
-            {categories.map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                onClick={() => switchCategory(item.value)}
-                className={`h-9 rounded-md px-3 text-sm font-semibold transition-colors ${
-                  category === item.value
-                    ? "bg-[#546a2f] text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                {item.shortLabel}
-              </button>
-            ))}
-          </div>
-
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
             <div className="flex items-start gap-3 bg-[#546a2f] px-5 py-4 text-white">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ffb300] text-[#3d5020]">
@@ -517,6 +550,7 @@ export default function RegistrationPage() {
                       id="dob"
                       type="date"
                       value={form.dob}
+                      max={new Date().toISOString().split("T")[0]}
                       onChange={(event) =>
                         updateField("dob", event.target.value)
                       }
@@ -568,20 +602,39 @@ export default function RegistrationPage() {
                     />
                   </Field>
                   <Field
-                    id="address"
-                    label="Địa chỉ thường trú / tạm trú"
+                    id="permanent_address"
+                    label="Địa chỉ thường trú"
                     required
-                    error={errors.address}
+                    error={errors.permanent_address}
                   >
                     <input
-                      id="address"
-                      value={form.address}
+                      id="permanent_address"
+                      value={form.permanent_address}
                       onChange={(event) =>
-                        updateField("address", event.target.value)
+                        updateField("permanent_address", event.target.value)
                       }
-                      placeholder="Số nhà, đường, phường, quận/huyện, tỉnh/thành phố"
+                      placeholder="Số nhà, đường, phường, tỉnh/thành phố"
                       className={`h-10 w-full rounded border px-3 text-sm outline-none focus:border-[#546a2f] ${
-                        errors.address
+                        errors.permanent_address
+                          ? "border-red-400 bg-red-50"
+                          : "border-gray-200"
+                      }`}
+                    />
+                  </Field>
+                  <Field
+                    id="temporary_address"
+                    label="Địa chỉ tạm trú"
+                    error={errors.temporary_address}
+                  >
+                    <input
+                      id="temporary_address"
+                      value={form.temporary_address}
+                      onChange={(event) =>
+                        updateField("temporary_address", event.target.value)
+                      }
+                      placeholder="Để trống nếu trùng địa chỉ thường trú"
+                      className={`h-10 w-full rounded border px-3 text-sm outline-none focus:border-[#546a2f] ${
+                        errors.temporary_address
                           ? "border-red-400 bg-red-50"
                           : "border-gray-200"
                       }`}
@@ -607,6 +660,31 @@ export default function RegistrationPage() {
                       }`}
                     />
                   </Field>
+                  {category === "tsqs" ? (
+                    <Field
+                      id="training_system"
+                      label="Hệ đào tạo"
+                      required
+                      error={errors.training_system}
+                    >
+                      <select
+                        id="training_system"
+                        value={form.training_system}
+                        onChange={(event) =>
+                          updateField("training_system", event.target.value)
+                        }
+                        className={`h-10 w-full rounded border px-3 text-sm outline-none focus:border-[#546a2f] ${
+                          errors.training_system
+                            ? "border-red-400 bg-red-50"
+                            : "border-gray-200"
+                        }`}
+                      >
+                        <option value="">-- Chọn hệ đào tạo --</option>
+                        <option value="cao_dang_dai_hoc">Cao đẳng / Đại học</option>
+                        <option value="thieu_sinh_quan">Thiếu sinh quan</option>
+                      </select>
+                    </Field>
+                  ) : null}
                 </div>
 
                 <div className="mt-5">
