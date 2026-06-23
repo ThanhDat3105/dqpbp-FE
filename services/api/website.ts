@@ -28,6 +28,7 @@ const mapArticle = (row: any): NewsArticle => ({
   updatedAt: formatDate(row.updated_at),
   excerpt: row.excerpt ?? undefined,
   author: row.author ?? undefined,
+  content: row.content ?? undefined,
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,6 +44,7 @@ const mapDocument = (row: any): WebsiteDocument => ({
   status: row.status as "active" | "expired" | "new",
   order: row.display_order,
   visible: row.is_visible,
+  file_url: row.file_url,
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

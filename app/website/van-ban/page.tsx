@@ -94,13 +94,13 @@ export default function VanBanPage() {
         className="relative py-12 text-white text-center"
         style={{ background: "linear-gradient(135deg, #2d3a1a, #546a2f)" }}
       >
-        <h1 className="text-3xl md:text-4xl font-black">Văn Bản Chỉ Đạo</h1>
+        <h1 className="text-3xl md:text-4xl font-black">Văn Bản</h1>
         <nav className="flex items-center justify-center gap-2 text-sm text-white/60 mt-3">
           <a href="/website" className="hover:text-white transition-colors">
             Trang chủ
           </a>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-yellow-300">Văn Bản Chỉ Đạo</span>
+          <span className="text-yellow-300">Văn Bản</span>
         </nav>
       </section>
 

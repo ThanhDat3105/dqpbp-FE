@@ -11,7 +11,7 @@ const navLinks = [
   { href: "/website", label: "Trang Chủ" },
   { href: "/website/gioi-thieu", label: "Giới Thiệu" },
   { href: "/website/tin-tuc", label: "Tin Tức" },
-  { href: "/website/van-ban", label: "Văn Bản Pháp Lý" },
+  { href: "/website/van-ban", label: "Văn Bản" },
   { href: "/website/lien-he", label: "Tiếp Nhận Hồ Sơ" },
 ];
 

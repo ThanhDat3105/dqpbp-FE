@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Search, ChevronRight, TrendingUp } from 'lucide-react';
 import ArticleCard from '@/components/website/ArticleCard';
 import EventCard from '@/components/website/EventCard';
@@ -72,7 +73,9 @@ export default function TinTucPage() {
                 <p className="text-gray-400 text-sm py-6 text-center">Không tìm thấy bài viết.</p>
               ) : (
                 filtered.map((article) => (
-                  <ArticleCard key={article.id} article={article} variant="horizontal" />
+                  <Link key={article.id} href={`/website/tin-tuc/${article.id}`}>
+                    <ArticleCard article={article} variant="horizontal" />
+                  </Link>
                 ))
               )}
             </div>

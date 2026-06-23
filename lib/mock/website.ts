@@ -2,13 +2,14 @@ export interface NewsArticle {
   id: number;
   title: string;
   category: string;
-  thumbnail?: string;
+  thumbnail: string;
   order: number;
   featured: boolean;
   visible: boolean;
   updatedAt: string;
   excerpt?: string;
   author?: string;
+  content?: string;
 }
 
 export interface WebsiteDocument {
@@ -23,6 +24,7 @@ export interface WebsiteDocument {
   status: 'active' | 'expired' | 'new';
   order: number;
   visible: boolean;
+  file_url: string;
 }
 
 export interface Slide {

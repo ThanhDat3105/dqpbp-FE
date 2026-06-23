@@ -252,7 +252,7 @@ export default function VanBanCmsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Văn Bản Pháp Luật</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Quản lý các văn bản chỉ đạo và pháp luật trên website
+          Quản lý các văn bản và pháp luật trên website
         </p>
       </div>
 

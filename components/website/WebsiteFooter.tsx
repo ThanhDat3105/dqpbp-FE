@@ -48,15 +48,6 @@ export default function WebsiteFooter() {
                 </div>
               </li>
               <li className="flex items-center gap-2 text-sm text-white/70">
-                <Phone className="w-4 h-4 text-yellow-300 shrink-0" />
-                <a
-                  href="tel:02838667722"
-                  className="hover:text-yellow-300 transition-colors"
-                >
-                  (028) 3866 7722
-                </a>
-              </li>
-              <li className="flex items-center gap-2 text-sm text-white/70">
                 <Clock className="w-4 h-4 text-yellow-300 shrink-0" />
                 <div>
                   <p>Thứ 2 – Thứ 6: 07:30 – 11:30, 13:30 – 17:00</p>

@@ -12,13 +12,14 @@ import {
 import ArticleCard from "@/components/website/ArticleCard";
 import { websiteAPI } from "@/services/api/website";
 import type { NewsArticle, WebsiteDocument } from "@/lib/mock/website";
+import Image from "next/image";
 
-const stats = [
-  { value: "100%", label: "Hoàn thành chỉ tiêu" },
-  { value: "24/7", label: "Trực sẵn sàng chiến đấu" },
-  { value: "500+", label: "Dân quân đã huấn luyện" },
-  { value: "50+", label: "Văn bản chỉ đạo" },
-];
+// const stats = [
+//   { value: "100%", label: "Hoàn thành chỉ tiêu" },
+//   { value: "24/7", label: "Trực sẵn sàng chiến đấu" },
+//   { value: "100%", label: "Chấp hành nghiêm kỷ luật" },
+//   { value: "An toàn", label: "Tuyệt đối trong mọi nhiệm vụ" },
+// ];
 
 const quickLinks = [
   { label: "Cổng thông tin TP.HCM", href: "#" },
@@ -58,9 +59,8 @@ export default function WebsiteHomePage() {
   }, []);
 
   const featured = articles.find((a) => a.featured);
-  const sideNews = articles
-    .filter((a) => a.featured && a.id !== featured?.id)
-    .slice(0, 2);
+
+  const sideNews = articles.slice(1, 3);
 
   return (
     <>
@@ -73,15 +73,15 @@ export default function WebsiteHomePage() {
             "linear-gradient(135deg, #2d3a1a 0%, #546a2f 55%, #3d5020 100%)",
         }}
       >
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(253,224,71,0.3) 20px, rgba(253,224,71,0.3) 21px)",
-          }}
-        />
+        <div className="absolute inset-0 opacity-50">
+          <Image
+            src="https://pub-961ac25df80d4464a675ea2d2ab13fca.r2.dev/banner-home.jpg"
+            alt="Banner BCH Quân Sự Phường Bình Phú"
+            fill
+          />
+        </div>
         <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-yellow-300/20 border border-yellow-300/40 rounded-full px-4 py-1.5 text-sm text-yellow-300 mb-6">
+          <div className="inline-flex items-center gap-2 bg-yellow-300/40 border border-yellow-300 rounded-full px-4 py-1.5 text-sm text-yellow-300 mb-6 font-bold tracking-wide">
             <Star className="w-3.5 h-3.5" />
             Đoàn Kết — Kỷ Cương — Quyết Thắng
           </div>
@@ -111,7 +111,7 @@ export default function WebsiteHomePage() {
       </section>
 
       {/* Stats bar */}
-      <section className="bg-yellow-300">
+      {/* <section className="bg-yellow-300">
         <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((s) => (
             <div key={s.label} className="text-center">
@@ -124,7 +124,7 @@ export default function WebsiteHomePage() {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* Main content */}
       <section className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -147,15 +147,27 @@ export default function WebsiteHomePage() {
 
             {featured && (
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div className="md:col-span-3 bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100">
-                  <div className="bg-[#546a2f]/10 h-48 flex items-center justify-center text-[#546a2f]/20">
-                    <svg
-                      className="w-24 h-24"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
-                    </svg>
+                <Link
+                  href={`/website/tin-tuc/${featured.id}`}
+                  className="md:col-span-3 bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100 h-fit"
+                >
+                  <div className="bg-[#546a2f]/10 h-48 flex items-center justify-center text-[#546a2f]/20 relative">
+                    {featured.thumbnail ? (
+                      <Image
+                        src={featured.thumbnail}
+                        alt={featured.title}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <svg
+                        className="w-24 h-24"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                      </svg>
+                    )}
                   </div>
                   <div className="p-4">
                     <span className="text-xs font-semibold bg-[#546a2f] text-white px-2 py-0.5 rounded">
@@ -171,11 +183,13 @@ export default function WebsiteHomePage() {
                       {featured.updatedAt}
                     </p>
                   </div>
-                </div>
+                </Link>
 
                 <div className="md:col-span-2 flex flex-col gap-4">
                   {sideNews.map((n) => (
-                    <ArticleCard key={n.id} article={n} variant="vertical" />
+                    <Link key={n.id} href={`/website/tin-tuc/${n.id}`}>
+                      <ArticleCard article={n} variant="vertical" />
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -189,32 +203,18 @@ export default function WebsiteHomePage() {
                 <span className="w-1 h-6 bg-yellow-300 rounded-full inline-block" />
                 Hoạt Động Phong Trào
               </h2>
+              <Link
+                href="/website/tin-tuc"
+                className="text-sm text-[#546a2f] hover:underline flex items-center gap-1"
+              >
+                Xem tất cả <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-            <div className="space-y-3">
-              {activities.map((a) => (
-                <div
-                  key={a.title}
-                  className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex gap-4"
-                >
-                  <div className="w-16 h-16 bg-[#546a2f]/10 rounded-lg shrink-0 flex items-center justify-center text-[#546a2f]/30">
-                    <svg
-                      className="w-8 h-8"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800 text-sm">
-                      {a.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                      {a.desc}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-2">{a.date}</p>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {articles.slice(0, 6).map((a) => (
+                <Link key={a.id} href={`/website/tin-tuc/${a.id}`}>
+                  <ArticleCard article={a} variant="horizontal" />
+                </Link>
               ))}
             </div>
           </div>
