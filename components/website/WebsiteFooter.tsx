@@ -27,10 +27,10 @@ export default function WebsiteFooter() {
               Ban Chỉ Huy Quân Sự Phường Bình Phú, TP.HCM — đơn vị dân quân tự
               vệ bảo vệ an ninh, trật tự địa phương.
             </p>
-            <div className="mt-4 flex items-center gap-2 text-sm text-yellow-300 font-semibold">
+            {/* <div className="mt-4 flex items-center gap-2 text-sm text-yellow-300 font-semibold">
               <span className="text-lg">⚡</span>
               Đoàn Kết — Kỷ Cương — Quyết Thắng
-            </div>
+            </div> */}
           </div>
 
           {/* Col 2: Contact */}

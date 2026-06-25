@@ -12,7 +12,7 @@ const navLinks = [
   { href: "/website/gioi-thieu", label: "Giới Thiệu" },
   { href: "/website/tin-tuc", label: "Tin Tức" },
   { href: "/website/van-ban", label: "Văn Bản" },
-  { href: "/website/lien-he", label: "Tiếp Nhận Hồ Sơ" },
+  { href: "/website/lien-he", label: "Kiến Nghị Phản Ánh" },
 ];
 
 const registrationLinks: Array<{
@@ -87,7 +87,7 @@ export default function WebsiteHeader() {
                   : "text-white/90 hover:bg-white/10"
               }`}
             >
-              Tiếp Nhận Đăng Ký
+              Tiếp Nhận Đăng Ký - Hồ Sơ
               <ChevronDown className="h-4 w-4" />
             </Link>
             <div className="invisible absolute left-0 top-full w-72 overflow-hidden rounded-b bg-white py-1 opacity-0 shadow-xl transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">

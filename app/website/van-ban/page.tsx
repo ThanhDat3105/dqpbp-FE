@@ -7,12 +7,12 @@ import { websiteAPI } from "@/services/api/website";
 import type { WebsiteDocument, NewsArticle } from "@/lib/mock/website";
 
 const DOC_TYPES = [
-  "Kế hoạch",
-  "Quyết định",
-  "Nghị quyết",
-  "Thông tư",
-  "Chỉ thị",
-  "Quy chế",
+  "Tuyển sinh quân sự (TSQS)",
+  "Đăng ký quản lý NVQS lần đầu (tuổi 17)",
+  "Tình nguyện tham gia NVQS",
+  "Đăng ký tham gia DQTT - Dân quân nòng cốt",
+  "Đối tượng chính sách",
+  "Đăng ký đào tạo sĩ quan dự bị",
 ];
 const YEARS = ["2025", "2024", "2023", "2022"];
 const CATEGORIES = [
@@ -173,7 +173,7 @@ export default function VanBanPage() {
             </div>
           </div>
 
-          {/* Category list */}
+          {/* Category list
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="bg-[#546a2f] text-white px-4 py-3">
               <span className="font-semibold text-sm">Phân Loại</span>
@@ -199,7 +199,6 @@ export default function VanBanPage() {
             </ul>
           </div>
 
-          {/* Notifications */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="bg-[#546a2f] text-white px-4 py-3 flex items-center gap-2">
               <Bell className="w-4 h-4 text-yellow-300" />
@@ -226,7 +225,7 @@ export default function VanBanPage() {
                 </li>
               )}
             </ul>
-          </div>
+          </div> */}
         </aside>
 
         {/* Main content */}

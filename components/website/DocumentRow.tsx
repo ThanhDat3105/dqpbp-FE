@@ -71,11 +71,11 @@ export default function DocumentRow({ doc }: Props) {
 
       {/* Category + Actions */}
       <div className="flex items-center gap-3 shrink-0">
-        <span
+        {/* <span
           className={`hidden sm:inline-flex text-xs font-medium px-2 py-1 rounded border ${catClass}`}
         >
           {doc.category}
-        </span>
+        </span> */}
         <button
           onClick={() =>
             doc.file_url &&

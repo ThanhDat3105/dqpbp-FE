@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   Target,
   Eye,
@@ -10,6 +13,8 @@ import {
   Clock,
 } from "lucide-react";
 import Image from "next/image";
+import ImgPopup from "./ImagePopUp";
+
 
 const values = [
   {
@@ -56,6 +61,8 @@ const gallery = [
 ];
 
 export default function GioiThieuPage() {
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
   return (
     <>
       {/* Hero Banner */}
@@ -80,9 +87,9 @@ export default function GioiThieuPage() {
           <h1 className="text-3xl md:text-5xl font-black mb-4">
             Giới Thiệu Đơn Vị
           </h1>
-          <p className="text-2xl md:text-3xl font-bold text-yellow-300">
+          {/* <p className="text-2xl md:text-3xl font-bold text-yellow-300">
             "Đoàn Kết — Kỷ Cương — Quyết Thắng"
-          </p>
+          </p> */}
         </div>
       </section>
 
@@ -170,7 +177,7 @@ export default function GioiThieuPage() {
           <div>
             <h2 className="text-2xl font-bold text-[#546a2f] mb-6 flex items-center gap-2">
               <span className="w-1 h-7 bg-yellow-300 rounded-full" />
-              Cơ Cấu Tổ Chức
+              Cơ Cấu Tổ Chức Hiện Nay
             </h2>
             <div className="flex flex-col items-center gap-0">
               {/* Cấp 1: Chỉ huy trưởng */}
@@ -259,6 +266,7 @@ export default function GioiThieuPage() {
                   key={label}
                   className="aspect-square bg-[#546a2f]/10 rounded-lg flex items-center justify-center text-[#546a2f]/40 hover:bg-[#546a2f]/20 cursor-pointer transition-colors relative border"
                   title={label}
+                  onClick={() => setSelectedImage(label)}
                 >
                   <Image
                     src={label}
@@ -270,29 +278,12 @@ export default function GioiThieuPage() {
               ))}
             </div>
           </div>
-
-          {/* Core values */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="bg-[#546a2f] text-white px-4 py-3 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-yellow-300" />
-              <span className="font-semibold text-sm">Giá Trị Cốt Lõi</span>
-            </div>
-            <ul className="divide-y divide-gray-100">
-              {values.map((v) => (
-                <li key={v.title} className="px-4 py-3 flex items-start gap-3">
-                  <span className="text-xl">{v.icon}</span>
-                  <div>
-                    <p className="font-semibold text-gray-800 text-sm">
-                      {v.title}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">{v.desc}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
         </aside>
       </section>
+      <ImgPopup
+        imageUrl={selectedImage}
+        onClose={() => setSelectedImage(null)}
+      />
     </>
   );
 }

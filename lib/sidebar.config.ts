@@ -49,7 +49,7 @@ export const menuConfig: MenuItem[] = [
       },
       {
         id: "dashboard-forces",
-        label: "Hiệu xuất làm việc",
+        label: "Hiệu suất làm việc",
         href: "/dashboard/force",
         icon: Assessment,
       },

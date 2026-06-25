@@ -9,6 +9,7 @@ import {
   Send,
 } from "lucide-react";
 import { useState } from "react";
+import { websiteContactApi, type ContactMode } from "@/services/api/website-contacts";
 
 const contactInfo = [
   {
@@ -27,13 +28,31 @@ const contactInfo = [
 
 const subjects = [
   "Thắc mắc về nghĩa vụ quân sự",
-  "Thông tin về huấn luyện dân quân",
-  "Yêu cầu văn bản, giấy tờ",
-  "Phản ánh, kiến nghị",
+  "Cung cấp thông tin chính trị trên địa bàn phường",
+  "Phản ánh, kiến nghị về phục vụ nhân dân",
   "Vấn đề khác",
 ];
 
-type ContactMode = "public" | "anonymous";
+function validateForm(form: {
+  name: string;
+  phone: string;
+  subject: string;
+  message: string;
+}) {
+  if(form.phone) {
+    const phoneRegex = /^0\d{9}$/;
+    if (!phoneRegex.test(form.phone)) {
+      return "Vui lòng nhập số điện thoại hợp lệ";
+    }
+  }
+  if (!form.subject) {
+    return "Vui lòng chọn chủ đề";
+  }
+  if (form.message.trim().length < 10) {
+    return "Vui lòng nhập nội dung tin nhắn (ít nhất 10 ký tự)";
+  }
+  return null;
+}
 
 export default function LienHePage() {
   const [sent, setSent] = useState(false);
@@ -47,6 +66,27 @@ export default function LienHePage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const error = validateForm(form);
+    if (error) {
+      alert(error);
+      return;
+    }
+    try {
+      const { name, phone, subject, message } = form;
+      const payload = {
+        mode,
+        full_name: name, 
+        phone,
+        subject,
+        message,
+      };
+      console.log("Sending contact form with payload:", payload);
+      const response = websiteContactApi.sendContact(payload);
+      console.log("Response from sendContact:", response);
+    } catch (error) {
+      console.error("Error sending contact form:", error);
+      alert("Có lỗi xảy ra khi gửi thông tin. Vui lòng thử lại.");
+    }
     setSent(true);
   };
 

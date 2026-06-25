@@ -74,10 +74,10 @@ export default function WebsiteHomePage() {
           />
         </div>
         <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-yellow-300/40 border border-yellow-300 rounded-full px-4 py-1.5 text-sm text-yellow-300 mb-6 font-bold tracking-wide">
+          {/* <div className="inline-flex items-center gap-2 bg-yellow-300/40 border border-yellow-300 rounded-full px-4 py-1.5 text-sm text-yellow-300 mb-6 font-bold tracking-wide">
             <Star className="w-3.5 h-3.5" />
             Đoàn Kết — Kỷ Cương — Quyết Thắng
-          </div>
+          </div> */}
           <h1 className="text-3xl md:text-5xl font-bold leading-tight mb-4">
             Cổng thông tin điện tử
             <br />
@@ -262,6 +262,7 @@ export default function WebsiteHomePage() {
                   <a
                     target="_blank"
                     href={l.href}
+                    target="_blank"
                     className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 hover:text-[#546a2f] transition-colors"
                   >
                     {l.label}
