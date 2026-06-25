@@ -420,9 +420,12 @@ const getAdminDocuments = async (
   const res = await axiosInstance.get("/api/website/admin/documents", {
     params: filters,
   });
+
+  console.log(res, "resss");
+
   return {
-    ...res.data.metaData,
-    data: res.data.metaData.data.map(mapDocumentAdmin),
+    ...res.data,
+    data: res.data.data.map(mapDocumentAdmin),
   };
 };
 
