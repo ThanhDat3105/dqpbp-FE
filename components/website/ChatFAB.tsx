@@ -4,23 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { MessageCircle, X, Send, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { axiosInstance } from "@/lib/axios.config";
 import { chatAPI } from "@/services/api/chat";
-
-interface Message {
-  id: number;
-  role: "bot" | "user";
-  text: string;
-  time: string;
-}
+import { MOCK_FLOW, FlowOption } from "./chat-fab/chat-flow-data";
+import { ChatMessageList, Message } from "./chat-fab/chat-message-list";
+import { ChatQuickOptions } from "./chat-fab/chat-quick-options";
 
 const now = () =>
-  new Date().toLocaleTimeString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
 const WELCOME: Message = {
   id: 0,
@@ -37,6 +28,7 @@ export default function ChatFAB() {
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+  const [currentOptions, setCurrentOptions] = useState<FlowOption[]>(MOCK_FLOW);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -48,19 +40,27 @@ export default function ChatFAB() {
     if (open) setTimeout(() => inputRef.current?.focus(), 100);
   }, [open]);
 
+  const handleFlowOption = (option: FlowOption) => {
+    const t = now();
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), role: "user", text: option.label, time: t },
+      { id: Date.now() + 1, role: "bot", text: option.next.reply, time: t },
+    ]);
+    setCurrentOptions(option.next.options ?? []);
+  };
+
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || typing) return;
 
-    const userMsg: Message = {
-      id: Date.now(),
-      role: "user",
-      text,
-      time: now(),
-    };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), role: "user", text, time: now() },
+    ]);
     setInput("");
     setTyping(true);
+    setCurrentOptions([]);
 
     try {
       const res = await chatAPI.sendMessage(text);
@@ -79,8 +79,16 @@ export default function ChatFAB() {
     }
   };
 
+  const handleReset = () => {
+    setMessages([{ ...WELCOME, time: now() }]);
+    setCurrentOptions(MOCK_FLOW);
+    setInput("");
+  };
+
   return (
-    <div className={`fixed lg:bottom-6 lg:right-6 bottom-24 right-6 z-50 flex flex-col items-end ${open ? "gap-3" : ""}`}>
+    <div
+      className={`fixed lg:bottom-6 lg:right-6 bottom-24 right-6 z-50 flex flex-col items-end ${open ? "gap-3" : ""}`}
+    >
       {/* Chat panel */}
       <div
         className={cn(
@@ -89,7 +97,7 @@ export default function ChatFAB() {
             ? "opacity-100 scale-100 pointer-events-auto sm:w-80 w-72"
             : "opacity-0 scale-90 pointer-events-none h-0 w-0",
         )}
-        style={{ maxHeight: 480 }}
+        style={{ maxHeight: 520 }}
       >
         {/* Header */}
         <div className="bg-linear-to-r from-[#3d5020] to-[#546a2f] px-4 py-3 flex items-center gap-3">
@@ -98,104 +106,46 @@ export default function ChatFAB() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-semibold text-sm leading-tight">
-              Trả lời trực Tuyến
+              Dân Quân Phường Bình Phú
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-white/60 text-xs">Đang hoạt động</span>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setOpen(false)}
-            className="text-white/70 hover:text-white hover:bg-white/10 shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {/* Messages */}
-        <div
-          className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/50"
-          style={{ minHeight: 220, maxHeight: 300 }}
-        >
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={cn(
-                "flex gap-2",
-                msg.role === "user" ? "justify-end" : "justify-start",
-              )}
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={handleReset}
+              title="Bắt đầu lại"
+              className="text-white/70 hover:text-white hover:bg-white/10 w-7 h-7"
             >
-              {msg.role === "bot" && (
-                <div className="w-6 h-6 rounded-full bg-[#546a2f]/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <Bot className="w-3.5 h-3.5 text-[#546a2f]" />
-                </div>
-              )}
-              <div
-                className={cn(
-                  "max-w-[78%] flex flex-col gap-1",
-                  msg.role === "user" && "items-end",
-                )}
-              >
-                <div
-                  className={cn(
-                    "px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap",
-                    msg.role === "bot"
-                      ? "bg-white text-gray-700 rounded-tl-sm shadow-sm border border-gray-100"
-                      : "bg-[#546a2f] text-white rounded-tr-sm",
-                  )}
-                >
-                  {msg.text}
-                </div>
-                <span className="text-[10px] text-gray-400 px-1">
-                  {msg.time}
-                </span>
-              </div>
-            </div>
-          ))}
-
-          {/* Typing indicator */}
-          {typing && (
-            <div className="flex gap-2 items-start">
-              <div className="w-6 h-6 rounded-full bg-[#546a2f]/10 flex items-center justify-center shrink-0 mt-0.5">
-                <Bot className="w-3.5 h-3.5 text-[#546a2f]" />
-              </div>
-              <div className="bg-white border border-gray-100 shadow-sm px-4 py-3 rounded-2xl rounded-tl-sm flex gap-1.5 items-center">
-                <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:0ms]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:150ms]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:300ms]" />
-              </div>
-            </div>
-          )}
-          <div ref={bottomRef} />
-        </div>
-
-        {/* Quick replies */}
-        <div className="px-3 pt-2 flex gap-1.5 flex-wrap bg-white border-t border-gray-100">
-          {["Nghĩa vụ quân sự", "Lịch huấn luyện", "Liên hệ"].map((q) => (
-            <button
-              key={q}
-              onClick={() => {
-                setInput(q);
-                inputRef.current?.focus();
-              }}
-              className="text-xs border border-[#546a2f]/30 text-[#546a2f] px-2.5 py-1 rounded-full hover:bg-[#546a2f]/5 transition-colors mb-1.5"
+              <span className="text-sm leading-none">↺</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setOpen(false)}
+              className="text-white/70 hover:text-white hover:bg-white/10"
             >
-              {q}
-            </button>
-          ))}
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
+
+        <ChatMessageList messages={messages} typing={typing} bottomRef={bottomRef} />
+
+        <ChatQuickOptions options={currentOptions} onSelect={handleFlowOption} />
 
         {/* Input area */}
-        <div className="p-3 bg-white flex gap-2 items-center">
+        <div className="p-3 bg-white flex gap-2 items-center border-t border-gray-100">
           <Input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-            placeholder="Nhập tin nhắn..."
+            placeholder="Nhập tin nhắn để tìm kiếm..."
             className="flex-1 text-sm rounded-full border-gray-200 bg-gray-50 focus-visible:ring-[#546a2f]/30 h-9"
           />
           <Button
@@ -209,23 +159,14 @@ export default function ChatFAB() {
         </div>
       </div>
 
-      {/* FAB */}
+      {/* FAB button */}
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Chat hỗ trợ"
         className="relative w-14 h-14 bg-[#546a2f] text-white rounded-full shadow-xl flex items-center justify-center hover:bg-[#3d5020] transition-colors"
       >
-        <div
-          className={cn(
-            "transition-transform duration-200",
-            open ? "rotate-90" : "rotate-0",
-          )}
-        >
-          {open ? (
-            <X className="w-6 h-6" />
-          ) : (
-            <MessageCircle className="w-6 h-6" />
-          )}
+        <div className={cn("transition-transform duration-200", open ? "rotate-90" : "rotate-0")}>
+          {open ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
         </div>
       </button>
     </div>
