@@ -1,5 +1,10 @@
 import { axiosInstance } from "@/lib/axios.config";
-import type { NewsArticle, WebsiteDocument, Slide } from "@/lib/mock/website";
+import type {
+  NewsArticle,
+  WebsiteDocument,
+  Slide,
+  QuickLink,
+} from "@/lib/mock/website";
 
 interface PaginatedResponse<T> {
   data: T[];
@@ -59,6 +64,26 @@ const mapSlide = (row: any): Slide => ({
   updatedAt: formatDate(row.updated_at),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mapQuickLink = (row: any): QuickLink => ({
+  id: row.id,
+  title: row.title,
+  url: row.url ?? undefined,
+  order: row.display_order,
+  visible: row.is_visible,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const unwrapList = (payload: any): any[] => {
+  const data = payload?.metaData ?? payload;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const unwrapItem = (payload: any): any => payload?.metaData ?? payload;
+
 export interface ArticleFilters {
   page?: number;
   limit?: number;
@@ -80,14 +105,14 @@ const getArticles = async (
   const res = await axiosInstance.get("/api/website/articles", {
     params: filters,
   });
-  const raw = res.data as PaginatedResponse<unknown>;
+  const raw = res.data.metaData as PaginatedResponse<unknown>;
   return { ...raw, data: raw.data.map(mapArticle) };
 };
 
 const getArticleById = async (id: number): Promise<NewsArticle | null> => {
   try {
     const res = await axiosInstance.get(`/api/website/articles/${id}`);
-    return mapArticle(res.data);
+    return mapArticle(res.data.metaData);
   } catch {
     return null;
   }
@@ -99,14 +124,19 @@ const getDocuments = async (
   const res = await axiosInstance.get("/api/website/documents", {
     params: filters,
   });
-  const raw = res.data as PaginatedResponse<unknown>;
+  const raw = res.data.metaData as PaginatedResponse<unknown>;
   return { ...raw, data: raw.data.map(mapDocument) };
 };
 
 const getSlides = async (): Promise<Slide[]> => {
   const res = await axiosInstance.get("/api/website/slides");
-  const raw = res.data as PaginatedResponse<unknown>;
+  const raw = res.data.metaData as PaginatedResponse<unknown>;
   return raw.data.map(mapSlide);
+};
+
+const getQuickLinks = async (): Promise<QuickLink[]> => {
+  const res = await axiosInstance.get("/api/website/quick-links");
+  return unwrapList(res.data).map(mapQuickLink);
 };
 
 // --- Admin API ---
@@ -126,6 +156,20 @@ export interface CreateSlideBody {
   is_visible: boolean;
 }
 
+export interface CreateQuickLinkBody {
+  title: string;
+  url: string;
+  display_order: number;
+  is_visible: boolean;
+}
+
+export interface UpdateQuickLinkBody {
+  title?: string;
+  url?: string;
+  display_order?: number;
+  is_visible?: boolean;
+}
+
 export interface CreateArticleBody {
   title: string;
   category: string;
@@ -136,13 +180,6 @@ export interface CreateArticleBody {
   is_visible: boolean;
   excerpt?: string;
 }
-
-const ARTICLE_CATEGORY_TO_SLUG: Record<string, string> = {
-  "Hoạt động": "hoat-dong",
-  "Tin tức": "tin-tuc",
-  "Thông báo": "thong-bao",
-  "Văn bản pháp quy": "van-ban-phap-quy",
-};
 
 const ARTICLE_CATEGORY_FROM_SLUG: Record<string, string> = {
   "hoat-dong": "Hoạt động",
@@ -163,13 +200,13 @@ const getAdminSlides = async (
   const res = await axiosInstance.get("/api/website/admin/slides", {
     params: filters,
   });
-  const raw = res.data as PaginatedResponse<unknown>;
+  const raw = res.data.metaData as PaginatedResponse<unknown>;
   return { ...raw, data: raw.data.map(mapSlide) };
 };
 
 const createSlide = async (body: CreateSlideBody): Promise<Slide> => {
   const res = await axiosInstance.post("/api/website/admin/slides", body);
-  return mapSlide(res.data);
+  return mapSlide(res.data.metaData);
 };
 
 const updateSlide = async (
@@ -177,11 +214,43 @@ const updateSlide = async (
   body: Partial<CreateSlideBody>,
 ): Promise<Slide> => {
   const res = await axiosInstance.put(`/api/website/admin/slides/${id}`, body);
-  return mapSlide(res.data);
+  return mapSlide(res.data.metaData);
 };
 
 const deleteSlide = async (id: number): Promise<void> => {
   await axiosInstance.delete(`/api/website/admin/slides/${id}`);
+};
+
+const getAdminQuickLinks = async (
+  filters?: AdminListFilters,
+): Promise<PaginatedResponse<QuickLink>> => {
+  const res = await axiosInstance.get("/api/website/admin/quick-links", {
+    params: filters,
+  });
+  const raw = unwrapItem(res.data) as PaginatedResponse<unknown>;
+  return { ...raw, data: raw.data.map(mapQuickLink) };
+};
+
+const createQuickLink = async (
+  body: CreateQuickLinkBody,
+): Promise<QuickLink> => {
+  const res = await axiosInstance.post("/api/website/admin/quick-links", body);
+  return mapQuickLink(unwrapItem(res.data));
+};
+
+const updateQuickLink = async (
+  id: number,
+  body: UpdateQuickLinkBody,
+): Promise<QuickLink> => {
+  const res = await axiosInstance.put(
+    `/api/website/admin/quick-links/${id}`,
+    body,
+  );
+  return mapQuickLink(unwrapItem(res.data));
+};
+
+const deleteQuickLink = async (id: number): Promise<void> => {
+  await axiosInstance.delete(`/api/website/admin/quick-links/${id}`);
 };
 
 const getAdminArticles = async (
@@ -190,17 +259,19 @@ const getAdminArticles = async (
   const res = await axiosInstance.get("/api/website/admin/articles", {
     params: filters,
   });
-  const raw = res.data as PaginatedResponse<unknown>;
-  return { ...raw, data: raw.data.map(mapArticleAdmin) };
+
+  const raw = res.data.metaData.data as PaginatedResponse<unknown>;
+  return { ...raw, data: res.data.metaData.data.map(mapArticleAdmin) };
 };
 
 const createArticle = async (body: CreateArticleBody): Promise<NewsArticle> => {
   const payload = {
     ...body,
-    category: ARTICLE_CATEGORY_TO_SLUG[body.category] ?? body.category,
+    category: body.category,
   };
   const res = await axiosInstance.post("/api/website/admin/articles", payload);
-  return mapArticleAdmin(res.data);
+  const data = res.data?.metaData ?? res.data;
+  return mapArticleAdmin(data);
 };
 
 const updateArticle = async (
@@ -210,14 +281,15 @@ const updateArticle = async (
   const payload = {
     ...body,
     ...(body.category && {
-      category: ARTICLE_CATEGORY_TO_SLUG[body.category] ?? body.category,
+      category: body.category,
     }),
   };
   const res = await axiosInstance.put(
     `/api/website/admin/articles/${id}`,
     payload,
   );
-  return mapArticleAdmin(res.data);
+  const data = res.data?.metaData ?? res.data;
+  return mapArticleAdmin(data);
 };
 
 const deleteArticle = async (id: number): Promise<void> => {
@@ -266,7 +338,7 @@ const getAdminDocuments = async (
   const res = await axiosInstance.get("/api/website/admin/documents", {
     params: filters,
   });
-  const raw = res.data as PaginatedResponse<unknown>;
+  const raw = res.data.metaData as PaginatedResponse<unknown>;
   return { ...raw, data: raw.data.map(mapDocumentAdmin) };
 };
 
@@ -278,7 +350,7 @@ const createDocument = async (
     category: DOC_CATEGORY_TO_SLUG[body.category] ?? body.category,
   };
   const res = await axiosInstance.post("/api/website/admin/documents", payload);
-  return mapDocumentAdmin(res.data);
+  return mapDocumentAdmin(res.data.metaData);
 };
 
 const updateDocument = async (
@@ -295,7 +367,7 @@ const updateDocument = async (
     `/api/website/admin/documents/${id}`,
     payload,
   );
-  return mapDocumentAdmin(res.data);
+  return mapDocumentAdmin(res.data.metaData);
 };
 
 const deleteDocument = async (id: number): Promise<void> => {
@@ -307,10 +379,15 @@ export const websiteAPI = {
   getArticleById,
   getDocuments,
   getSlides,
+  getQuickLinks,
   getAdminSlides,
   createSlide,
   updateSlide,
   deleteSlide,
+  getAdminQuickLinks,
+  createQuickLink,
+  updateQuickLink,
+  deleteQuickLink,
   getAdminArticles,
   createArticle,
   updateArticle,

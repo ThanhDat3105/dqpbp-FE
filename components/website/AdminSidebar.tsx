@@ -4,6 +4,7 @@ import {
   FileCheck2,
   FileText,
   Image,
+  Link2,
   LogOut,
   Newspaper,
   Shield,
@@ -20,6 +21,7 @@ const navItems = [
     icon: FileText,
   },
   { href: "/quan-ly/website/slide", label: "Slide Ảnh", icon: Image },
+  { href: "/quan-ly/website/quick-link", label: "Liên Kết Nhanh", icon: Link2 },
   {
     href: "/quan-ly/website/ho-so-dang-ky",
     label: "Quản lý hồ sơ đăng ký",

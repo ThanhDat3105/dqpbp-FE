@@ -11,56 +11,49 @@ import {
 } from "lucide-react";
 import ArticleCard from "@/components/website/ArticleCard";
 import { websiteAPI } from "@/services/api/website";
-import type { NewsArticle, WebsiteDocument } from "@/lib/mock/website";
+import type {
+  NewsArticle,
+  WebsiteDocument,
+  QuickLink,
+} from "@/lib/mock/website";
 import Image from "next/image";
 
-// const stats = [
-//   { value: "100%", label: "Hoàn thành chỉ tiêu" },
-//   { value: "24/7", label: "Trực sẵn sàng chiến đấu" },
-//   { value: "100%", label: "Chấp hành nghiêm kỷ luật" },
-//   { value: "An toàn", label: "Tuyệt đối trong mọi nhiệm vụ" },
-// ];
-
-const quickLinks = [
+const fallbackQuickLinks = [
   { label: "Cổng thông tin TP.HCM", href: "#" },
   { label: "UBND Phường Bình Phú", href: "#" },
   { label: "Bộ Quốc phòng", href: "#" },
   { label: "Báo Quân đội nhân dân", href: "#" },
 ];
 
-const activities = [
-  {
-    title: "Tổ chức huấn luyện kỹ năng chiến đấu bộ binh",
-    desc: "Đợt huấn luyện kỹ năng chiến đấu bộ binh tháng 4 đã hoàn thành tốt đẹp với 120 cán bộ chiến sĩ tham gia.",
-    date: "20/04/2025",
-  },
-  {
-    title: "Tham gia hội thi thao diễn quân sự cấp quận",
-    desc: "Đơn vị đạt giải Nhì trong hội thi thao diễn quân sự cấp quận, khẳng định chất lượng huấn luyện.",
-    date: "05/04/2025",
-  },
-];
-
 export default function WebsiteHomePage() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [newDocs, setNewDocs] = useState<WebsiteDocument[]>([]);
   const [notifications, setNotifications] = useState<NewsArticle[]>([]);
+  const [quickLinks, setQuickLinks] = useState<QuickLink[]>([]);
 
   useEffect(() => {
     websiteAPI.getArticles({ limit: 10 }).then((res) => {
       setArticles(res.data);
-      setNotifications(
-        res.data.filter((a) => a.category === "Thông báo").slice(0, 4),
-      );
+    });
+    websiteAPI.getArticles({ category: "thong-bao", limit: 4 }).then((res) => {
+      setNotifications(res.data);
     });
     websiteAPI
       .getDocuments({ status: "new", limit: 3 })
       .then((res) => setNewDocs(res.data));
+    websiteAPI.getQuickLinks().then(setQuickLinks);
   }, []);
 
-  const featured = articles.find((a) => a.featured);
-
-  const sideNews = articles.slice(1, 3);
+  const featured = articles.find((a) => a.featured) ?? articles[0];
+  const sideNews = articles.filter((a) => a.id !== featured?.id).slice(0, 2);
+  const displayQuickLinks =
+    quickLinks.length > 0
+      ? quickLinks.map((link) => ({
+          id: link.id,
+          label: link.title,
+          href: link.url || "#",
+        }))
+      : fallbackQuickLinks.map((link, index) => ({ id: index, ...link }));
 
   return (
     <>
@@ -211,11 +204,14 @@ export default function WebsiteHomePage() {
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {articles.slice(0, 6).map((a) => (
-                <Link key={a.id} href={`/website/tin-tuc/${a.id}`}>
-                  <ArticleCard article={a} variant="horizontal" />
-                </Link>
-              ))}
+              {articles
+                .filter((a) => a.id !== featured?.id)
+                .slice(0, 6)
+                .map((a) => (
+                  <Link key={a.id} href={`/website/tin-tuc/${a.id}`}>
+                    <ArticleCard article={a} variant="horizontal" />
+                  </Link>
+                ))}
             </div>
           </div>
         </div>
@@ -261,9 +257,10 @@ export default function WebsiteHomePage() {
               <span className="font-semibold text-sm">Liên Kết Nhanh</span>
             </div>
             <ul className="divide-y divide-gray-100">
-              {quickLinks.map((l) => (
-                <li key={l.label}>
+              {displayQuickLinks.map((l) => (
+                <li key={l.id}>
                   <a
+                    target="_blank"
                     href={l.href}
                     className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 hover:text-[#546a2f] transition-colors"
                   >

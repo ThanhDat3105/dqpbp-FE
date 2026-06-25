@@ -20,8 +20,8 @@ export interface WebsiteDocument {
   issuedDate: string;
   category: string;
   fileSize: string;
-  fileType: 'PDF' | 'DOCX';
-  status: 'active' | 'expired' | 'new';
+  fileType: "PDF" | "DOCX";
+  status: "active" | "expired" | "new";
   order: number;
   visible: boolean;
   file_url: string;
@@ -38,6 +38,14 @@ export interface Slide {
   updatedAt: string;
 }
 
+export interface QuickLink {
+  id: number;
+  title: string;
+  url?: string;
+  order: number;
+  visible: boolean;
+}
+
 export interface WebsiteNotification {
   id: number;
   title: string;
@@ -51,7 +59,7 @@ export interface WebsiteEvent {
   date: string;
   time: string;
   location: string;
-  status: 'upcoming' | 'past' | 'important';
+  status: "upcoming" | "past" | "important";
 }
 
 // export const mockNews: NewsArticle[] = [

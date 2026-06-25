@@ -263,7 +263,7 @@ export default function SlideCmsPage() {
       </div>
 
       {/* Table */}
-      <DataTable data={data} columns={columns} searchKeys={['name', 'description']} />
+      <DataTable data={data} columns={columns} />
 
       {/* FAB */}
       <button

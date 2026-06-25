@@ -256,7 +256,7 @@ export default function VanBanCmsPage() {
         </p>
       </div>
 
-      <DataTable data={data} columns={columns} searchKeys={['title', 'docNumber', 'category']} />
+      <DataTable data={data} columns={columns} />
 
       {/* FAB */}
       <button
