@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DocumentFilters } from "./DocumentFilters";
 import { DocumentTable } from "./DocumentTable";
 import { UploadDocumentDialog } from "./UploadDocumentDialog";
+import { EditDocumentDialog } from "./EditDocumentDialog";
 import { documentAPI, DocumentItem } from "@/services/api/document";
 import { departmentAPI, DepartmentInterface } from "@/services/api/department";
 import AppPagination from "@/components/ui/AppPagination";
@@ -17,6 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
@@ -39,7 +51,11 @@ export function DocumentListPage() {
   const [departments, setDepartments] = useState<DepartmentInterface[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
+
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<DocumentItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DocumentItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const debouncedParams = useDebounce(params, 300);
 
@@ -90,6 +106,21 @@ export function DocumentListPage() {
     setParams((prev) => ({ ...prev, limit: Number(v), page: 1 }));
   };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await documentAPI.remove(deleteTarget.id);
+      toast.success("Xóa tài liệu thành công!");
+      setDeleteTarget(null);
+      fetchDocuments(params);
+    } catch {
+      toast.error("Có lỗi xảy ra khi xóa tài liệu!");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen space-y-6">
       <div>
@@ -118,16 +149,18 @@ export function DocumentListPage() {
 
       <div className="bg-white rounded-lg border border-gray-200 flex flex-col">
         <div className="flex-1">
-          <DocumentTable documents={documents} loading={loading} />
+          <DocumentTable
+            documents={documents}
+            loading={loading}
+            onEdit={setEditTarget}
+            onDelete={setDeleteTarget}
+          />
         </div>
 
         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <span>Hiển thị</span>
-            <Select
-              value={String(params.limit)}
-              onValueChange={handleLimitChange}
-            >
+            <Select value={String(params.limit)} onValueChange={handleLimitChange}>
               <SelectTrigger className="h-8 w-18 text-sm">
                 <SelectValue />
               </SelectTrigger>
@@ -157,6 +190,37 @@ export function DocumentListPage() {
         onClose={() => setUploadOpen(false)}
         onSuccess={() => fetchDocuments({ ...params, page: 1 })}
       />
+
+      <EditDocumentDialog
+        open={editTarget !== null}
+        document={editTarget}
+        departments={departments}
+        onClose={() => setEditTarget(null)}
+        onSuccess={() => fetchDocuments(params)}
+      />
+
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa tài liệu</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa tài liệu{" "}
+              <span className="font-semibold text-gray-800">&quot;{deleteTarget?.title}&quot;</span>?
+              Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? "Đang xóa..." : "Xóa"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

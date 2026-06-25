@@ -65,4 +65,29 @@ const upload = async (file: File, payload: UploadDocumentPayload): Promise<Docum
   return res.data.metaData;
 };
 
-export const documentAPI = { fetchList, upload };
+export interface UpdateDocumentPayload {
+  title?: string;
+  description?: string;
+  department_id?: number;
+  is_public?: boolean;
+}
+
+const update = async (id: number, file: File | null, payload: UpdateDocumentPayload): Promise<DocumentItem> => {
+  const form = new FormData();
+  if (file) form.append("file", file);
+  if (payload.title !== undefined) form.append("title", payload.title);
+  if (payload.description !== undefined) form.append("description", payload.description);
+  if (payload.department_id != null) form.append("department_id", String(payload.department_id));
+  if (payload.is_public != null) form.append("is_public", String(payload.is_public));
+
+  const res = await axiosInstance.put(`/api/documents/${id}`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data.metaData;
+};
+
+const remove = async (id: number): Promise<void> => {
+  await axiosInstance.delete(`/api/documents/${id}`);
+};
+
+export const documentAPI = { fetchList, upload, update, remove };

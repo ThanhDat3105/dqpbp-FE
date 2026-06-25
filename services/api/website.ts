@@ -209,7 +209,7 @@ const ARTICLE_CATEGORY_FROM_SLUG: Record<string, string> = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mapArticleAdmin = (row: any): NewsArticle => ({
+export const mapArticleAdmin = (row: any): NewsArticle => ({
   ...mapArticle(row),
   category: ARTICLE_CATEGORY_FROM_SLUG[row.category] ?? row.category,
 });
@@ -280,7 +280,8 @@ const getAdminArticles = async (
     params: filters,
   });
 
-  const raw = res.data.metaData.data as PaginatedResponse<unknown>;
+  const raw = res.data.metaData as PaginatedResponse<unknown>;
+  return res.data.metaData;
   return { ...raw, data: res.data.metaData.data.map(mapArticleAdmin) };
 };
 
@@ -419,8 +420,10 @@ const getAdminDocuments = async (
   const res = await axiosInstance.get("/api/website/admin/documents", {
     params: filters,
   });
-  const raw = unwrapItem(res.data) as PaginatedResponse<unknown>;
-  return { ...raw, data: raw.data.map(mapDocumentAdmin) };
+  return {
+    ...res.data.metaData,
+    data: res.data.metaData.data.map(mapDocumentAdmin),
+  };
 };
 
 const createDocument = async (

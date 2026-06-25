@@ -1,14 +1,16 @@
 "use client";
 
-import { FileX, ExternalLink, Lock, Globe } from "lucide-react";
+import { FileX, ExternalLink, Lock, Globe, Pencil, Trash2 } from "lucide-react";
 import { DocumentItem } from "@/services/api/document";
 
 interface Props {
   documents: DocumentItem[];
   loading?: boolean;
+  onEdit?: (doc: DocumentItem) => void;
+  onDelete?: (doc: DocumentItem) => void;
 }
 
-export function DocumentTable({ documents, loading }: Props) {
+export function DocumentTable({ documents, loading, onEdit, onDelete }: Props) {
   if (loading) {
     return (
       <div className="divide-y divide-gray-100">
@@ -42,7 +44,7 @@ export function DocumentTable({ documents, loading }: Props) {
             <th className="px-4 py-3">Tổ công tác</th>
             <th className="px-4 py-3">Trạng thái</th>
             <th className="px-4 py-3">Ngày tạo</th>
-            <th className="px-4 py-3 text-right">Tải xuống</th>
+            <th className="px-4 py-3 text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 bg-white">
@@ -72,17 +74,39 @@ export function DocumentTable({ documents, loading }: Props) {
               <td className="px-4 py-3 text-sm text-gray-500">
                 {new Date(doc.created_at).toLocaleDateString("vi-VN")}
               </td>
-              <td className="px-4 py-3 text-right">
-                <a
-                  href={doc.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  Mở
-                </a>
+              <td className="px-4 py-3">
+                <div className="flex items-center justify-end gap-1.5">
+                  <a
+                    href={doc.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Mở
+                  </a>
+                  {onEdit && (
+                    <button
+                      type="button"
+                      onClick={() => onEdit(doc)}
+                      className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      Sửa
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(doc)}
+                      className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Xóa
+                    </button>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
