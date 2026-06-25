@@ -1,10 +1,12 @@
+import { categoryLabel } from "@/app/(cms)/quan-ly/website/ho-so-dang-ky/page";
 import { axiosInstance } from "@/lib/axios.config";
 import type {
   NewsArticle,
-  WebsiteDocument,
-  Slide,
   QuickLink,
+  Slide,
+  WebsiteDocument,
 } from "@/lib/mock/website";
+import type { RegistrationCategory } from "./website-registration";
 
 interface PaginatedResponse<T> {
   data: T[];
@@ -16,9 +18,27 @@ interface PaginatedResponse<T> {
 const formatDate = (dateStr: string): string => {
   if (!dateStr) return "";
   const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
   return `${day}/${month}/${d.getFullYear()}`;
+};
+
+const getFileType = (url?: string): "PDF" | "DOCX" => {
+  const ext = String(url || "")
+    .split("?")[0]
+    .split(".")
+    .pop()
+    ?.toLowerCase();
+  return ext === "doc" || ext === "docx" ? "DOCX" : "PDF";
+};
+
+const formatFileSize = (value?: string | number | null): string => {
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes) || bytes <= 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,8 +64,8 @@ const mapDocument = (row: any): WebsiteDocument => ({
   issuedBy: row.issued_by,
   issuedDate: formatDate(row.issued_date),
   category: row.category,
-  fileSize: row.file_size,
-  fileType: (row.file_type ?? "PDF") as "PDF" | "DOCX",
+  fileSize: formatFileSize(row.file_size),
+  fileType: (row.file_type ?? getFileType(row.file_url)) as "PDF" | "DOCX",
   status: row.status as "active" | "expired" | "new",
   order: row.display_order,
   visible: row.is_visible,
@@ -174,7 +194,7 @@ export interface CreateArticleBody {
   title: string;
   category: string;
   content?: string;
-  thumbnail_url?: string;
+  thumbnail?: File;
   display_order: number;
   is_featured: boolean;
   is_visible: boolean;
@@ -265,19 +285,50 @@ const getAdminArticles = async (
 };
 
 const createArticle = async (body: CreateArticleBody): Promise<NewsArticle> => {
-  const payload = {
-    ...body,
-    category: body.category,
-  };
-  const res = await axiosInstance.post("/api/website/admin/articles", payload);
+  const form = buildArticleForm(body);
+  const res = await axiosInstance.post("/api/website/admin/articles", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   const data = res.data?.metaData ?? res.data;
   return mapArticleAdmin(data);
+};
+
+const buildArticleForm = (body: Partial<CreateArticleBody>): FormData => {
+  const form = new FormData();
+
+  if (body.thumbnail) form.append("thumbnail", body.thumbnail);
+  if (body.title) form.append("title", body.title);
+  if (body.category) form.append("category", body.category);
+  if (body.content != null) form.append("content", body.content);
+  if (body.excerpt != null) form.append("excerpt", body.excerpt);
+  if (body.display_order != null) {
+    form.append("display_order", String(body.display_order));
+  }
+  if (body.is_featured != null) {
+    form.append("is_featured", String(body.is_featured));
+  }
+  if (body.is_visible != null) {
+    form.append("is_visible", String(body.is_visible));
+  }
+
+  return form;
 };
 
 const updateArticle = async (
   id: number,
   body: Partial<CreateArticleBody>,
 ): Promise<NewsArticle> => {
+  if (body.thumbnail) {
+    const form = buildArticleForm(body);
+    const res = await axiosInstance.put(
+      `/api/website/admin/articles/${id}`,
+      form,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    const data = res.data?.metaData ?? res.data;
+    return mapArticleAdmin(data);
+  }
+
   const payload = {
     ...body,
     ...(body.category && {
@@ -302,15 +353,26 @@ export interface CreateDocumentBody {
   issued_by?: string;
   issued_date?: string;
   category: string;
-  file_url?: string;
-  file_size?: string;
-  file_type?: string;
+  file: File;
   status: "active" | "expired" | "new";
   display_order: number;
   is_visible: boolean;
 }
 
 const DOC_CATEGORY_TO_SLUG: Record<string, string> = {
+  "Tuyển sinh quân sự": "tsqs",
+  "Tuổi 17": "tuoi17",
+  "Tình nguyện": "tinhnguyen",
+  "Dân quân tự vệ": "dqtt",
+  "Tu nguyen quan su": "tsqs",
+  "Tuoi 17": "tuoi17",
+  "Tinh nguyen": "tinhnguyen",
+  "Dan quan tu ve": "dqtt",
+  "Nhiem vu": "nhiem-vu",
+  "Hanh chinh": "hanh-chinh",
+  "Tuyen truyen": "tuyen-truyen",
+  "Bao mat": "bao-mat",
+  "Hau can": "hau-can",
   "Nhiệm vụ": "nhiem-vu",
   "Hành chính": "hanh-chinh",
   "Tuyên truyền": "tuyen-truyen",
@@ -319,6 +381,10 @@ const DOC_CATEGORY_TO_SLUG: Record<string, string> = {
 };
 
 const DOC_CATEGORY_FROM_SLUG: Record<string, string> = {
+  tsqs: "Tuyển sinh quân sự",
+  tuoi17: "Tuổi 17",
+  tinhnguyen: "Tình nguyện",
+  dqtt: "Dân quân tự vệ",
   "nhiem-vu": "Nhiệm vụ",
   "hanh-chinh": "Hành chính",
   "tuyen-truyen": "Tuyên truyền",
@@ -326,10 +392,25 @@ const DOC_CATEGORY_FROM_SLUG: Record<string, string> = {
   "hau-can": "Hậu cần",
 };
 
+const DOC_CATEGORY_LABELS: Record<string, string> = {
+  tsqs: "Tuyển sinh quân sự",
+  tuoi17: "Tuổi 17",
+  tinhnguyen: "Tình nguyện",
+  dqtt: "Dân quân tự vệ",
+  "nhiem-vu": "Nhiem vu",
+  "hanh-chinh": "Hanh chinh",
+  "tuyen-truyen": "Tuyen truyen",
+  "bao-mat": "Bao mat",
+  "hau-can": "Hau can",
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapDocumentAdmin = (row: any): WebsiteDocument => ({
   ...mapDocument(row),
-  category: DOC_CATEGORY_FROM_SLUG[row.category] ?? row.category,
+  category: (DOC_CATEGORY_LABELS[row.category] ??
+    DOC_CATEGORY_FROM_SLUG[row.category] ??
+    categoryLabel[row.category as RegistrationCategory] ??
+    row.category) as unknown as RegistrationCategory,
 });
 
 const getAdminDocuments = async (
@@ -338,25 +419,60 @@ const getAdminDocuments = async (
   const res = await axiosInstance.get("/api/website/admin/documents", {
     params: filters,
   });
-  const raw = res.data.metaData as PaginatedResponse<unknown>;
+  const raw = unwrapItem(res.data) as PaginatedResponse<unknown>;
   return { ...raw, data: raw.data.map(mapDocumentAdmin) };
 };
 
 const createDocument = async (
   body: CreateDocumentBody,
 ): Promise<WebsiteDocument> => {
-  const payload = {
-    ...body,
-    category: DOC_CATEGORY_TO_SLUG[body.category] ?? body.category,
-  };
-  const res = await axiosInstance.post("/api/website/admin/documents", payload);
-  return mapDocumentAdmin(res.data.metaData);
+  const form = buildDocumentForm(body);
+
+  const res = await axiosInstance.post("/api/website/admin/documents", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return mapDocumentAdmin(unwrapItem(res.data));
+};
+
+const buildDocumentForm = (body: Partial<CreateDocumentBody>): FormData => {
+  const form = new FormData();
+
+  if (body.file) form.append("file", body.file);
+  if (body.title) form.append("title", body.title);
+  if (body.category) {
+    form.append(
+      "category",
+      DOC_CATEGORY_TO_SLUG[body.category] ?? body.category,
+    );
+  }
+  if (body.status) form.append("status", body.status);
+  if (body.display_order != null) {
+    form.append("display_order", String(body.display_order));
+  }
+  if (body.is_visible != null) {
+    form.append("is_visible", String(body.is_visible));
+  }
+  if (body.doc_number) form.append("doc_number", body.doc_number);
+  if (body.issued_by) form.append("issued_by", body.issued_by);
+  if (body.issued_date) form.append("issued_date", body.issued_date);
+
+  return form;
 };
 
 const updateDocument = async (
   id: number,
   body: Partial<CreateDocumentBody>,
 ): Promise<WebsiteDocument> => {
+  if (body.file) {
+    const form = buildDocumentForm(body);
+    const res = await axiosInstance.put(
+      `/api/website/admin/documents/${id}`,
+      form,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return mapDocumentAdmin(unwrapItem(res.data));
+  }
+
   const payload = {
     ...body,
     ...(body.category && {
@@ -367,7 +483,7 @@ const updateDocument = async (
     `/api/website/admin/documents/${id}`,
     payload,
   );
-  return mapDocumentAdmin(res.data.metaData);
+  return mapDocumentAdmin(unwrapItem(res.data));
 };
 
 const deleteDocument = async (id: number): Promise<void> => {

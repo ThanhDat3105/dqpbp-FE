@@ -19,7 +19,7 @@ const categories: Array<{
   { value: "dqtt", label: "DQTT" },
 ];
 
-const categoryLabel: Record<RegistrationCategory, string> = {
+export const categoryLabel: Record<RegistrationCategory, string> = {
   tsqs: "TSQS",
   tuoi17: "Tuổi 17",
   tinhnguyen: "Tình nguyện NVQS",

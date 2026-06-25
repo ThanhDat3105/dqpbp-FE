@@ -9,7 +9,7 @@ import Loading from "@/components/Loaing";
 const CATEGORY_OPTIONS: { value: RegistrationCategory | ""; label: string }[] =
   [
     { value: "", label: "Tất cả" },
-    { value: "tsqs", label: "Tự nguyện quân sự" },
+    { value: "tsqs", label: "Tuyển sinh quân sự" },
     { value: "tuoi17", label: "Tuổi 17" },
     { value: "tinhnguyen", label: "Tình nguyện" },
     { value: "dqtt", label: "Dân quân tự vệ" },

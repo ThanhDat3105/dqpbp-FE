@@ -1,14 +1,24 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Plus, Eye, Pencil, Trash2, X } from "lucide-react";
-import { toast } from "sonner";
-import DataTable, { Column } from "@/components/website/DataTable";
-import { NewsArticle } from "@/lib/mock/website";
-import { websiteAPI } from "@/services/api/website";
+import { Eye, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import DataTable, { type Column } from "@/components/website/DataTable";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type { NewsArticle } from "@/lib/mock/website";
+import { websiteAPI } from "@/services/api/website";
 
 const CATEGORIES = ["Hoạt động", "Tin tức", "Thông báo", "Văn bản pháp quy"];
+
+type ArticleForm = Partial<NewsArticle> & {
+  thumbnailFile?: File | null;
+};
 
 function CustomCheckbox({
   checked,
@@ -46,7 +56,7 @@ export default function TinTucCmsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<NewsArticle | null>(null);
-  const [form, setForm] = useState<Partial<NewsArticle>>({});
+  const [form, setForm] = useState<ArticleForm>({});
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<NewsArticle | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -76,13 +86,14 @@ export default function TinTucCmsPage() {
       featured: false,
       visible: true,
       excerpt: "",
+      thumbnailFile: null,
     });
     setModalOpen(true);
   };
 
   const openEdit = (row: NewsArticle) => {
     setEditing(row);
-    setForm({ ...row });
+    setForm({ ...row, thumbnailFile: null });
     setModalOpen(true);
   };
 
@@ -102,7 +113,12 @@ export default function TinTucCmsPage() {
   };
 
   const handleSave = async () => {
-    if (!form.title?.trim()) return;
+    const title = form.title?.trim();
+    if (!title) return;
+    if (!editing && !form.thumbnailFile) {
+      toast.error("Vui lòng chọn ảnh đại diện.");
+      return;
+    }
     setSaving(true);
     try {
       if (editing) {
@@ -110,7 +126,7 @@ export default function TinTucCmsPage() {
           title: form.title,
           category: form.category,
           excerpt: form.title,
-          thumbnail_url: form.thumbnail,
+          thumbnail: form.thumbnailFile || undefined,
           display_order: form.order ?? editing.order,
           is_featured: form.featured ?? editing.featured,
           is_visible: form.visible ?? editing.visible,
@@ -120,10 +136,10 @@ export default function TinTucCmsPage() {
         toast.success("Cập nhật bài viết thành công");
       } else {
         const created = await websiteAPI.createArticle({
-          title: form.title!,
+          title,
           category: form.category ?? "Hoạt động",
           excerpt: form.title,
-          thumbnail_url: form.thumbnail,
+          thumbnail: form.thumbnailFile as File,
           display_order: form.order ?? data.length + 1,
           is_featured: form.featured ?? false,
           is_visible: form.visible ?? true,
@@ -316,195 +332,196 @@ export default function TinTucCmsPage() {
       </button>
 
       {/* Delete Confirm Modal */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-              <h2 className="font-bold text-gray-800 dark:text-white">
-                Xác nhận xóa
-              </h2>
-              <button
-                onClick={() => setDeleteTarget(null)}
-                disabled={deleting}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-50"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="px-6 py-5">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                  <Trash2 className="w-5 h-5 text-red-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    Bạn có chắc muốn xóa bài viết này?
-                  </p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white mt-1 line-clamp-2">
-                    {deleteTarget.title}
-                  </p>
-                  <p className="text-xs text-red-500 mt-2">
-                    Hành động này không thể hoàn tác.
-                  </p>
-                </div>
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-sm p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 text-left">
+            <DialogTitle className="font-bold text-gray-800 dark:text-white">
+              Xác nhận xóa
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="px-6 py-5">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Bạn có chắc muốn xóa bài viết này?
+                </p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white mt-1 line-clamp-2">
+                  {deleteTarget?.title}
+                </p>
+                <p className="text-xs text-red-500 mt-2">
+                  Hành động này không thể hoàn tác.
+                </p>
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                disabled={deleting}
-                className="px-5 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="px-5 py-2 text-sm font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center gap-2"
-              >
-                {deleting && (
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                )}
-                {deleting ? "Đang xóa..." : "Xóa"}
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+            <button
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleting}
+              className="px-5 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="px-5 py-2 text-sm font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {deleting && (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              )}
+              {deleting ? "Đang xóa..." : "Xóa"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-              <h2 className="font-bold text-gray-800 dark:text-white">
-                {editing ? "Chỉnh Sửa Bài Viết" : "Thêm Bài Viết Mới"}
-              </h2>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 text-left">
+            <DialogTitle className="font-bold text-gray-800 dark:text-white">
+              {editing ? "Chỉnh Sửa Bài Viết" : "Thêm Bài Viết Mới"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+            <div>
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1 block">
+                Tiêu đề <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.title ?? ""}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="Nhập tiêu đề bài viết..."
+                className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 outline-none focus:border-[#546a2f] dark:bg-gray-800 dark:text-white"
+              />
             </div>
 
-            <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+            <div>
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1 block">
+                Chuyên mục
+              </label>
+              <select
+                value={form.category ?? ""}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 bg-white dark:bg-gray-800 dark:text-white outline-none focus:border-[#546a2f]"
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1 block">
+                Nội dung
+              </label>
+              <textarea
+                rows={4}
+                value={form.content ?? ""}
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
+                placeholder="Nhập nội dung..."
+                className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 outline-none focus:border-[#546a2f] resize-none dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1 block">
+                URL Ảnh đại diện
+              </label>
+              <label
+                htmlFor="article-thumbnail"
+                className="flex items-center gap-3 w-full text-sm border border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-3 py-3 cursor-pointer hover:border-[#546a2f] dark:bg-gray-800 dark:text-white transition-colors"
+              >
+                <Upload className="w-5 h-5 text-[#546a2f]" />
+                <span className="min-w-0 flex-1 truncate">
+                  {form.thumbnailFile?.name ??
+                    (editing
+                      ? "Chon anh moi de thay the anh hien tai"
+                      : "Chon anh JPG, PNG, GIF hoac WEBP")}
+                </span>
+                <input
+                  id="article-thumbnail"
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  className="hidden"
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      thumbnailFile: e.target.files?.[0] ?? null,
+                    })
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1 block">
-                  Tiêu đề <span className="text-red-500">*</span>
+                  Thứ tự
                 </label>
                 <input
-                  type="text"
-                  value={form.title ?? ""}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="Nhập tiêu đề bài viết..."
+                  type="number"
+                  value={form.order ?? 1}
+                  onChange={(e) =>
+                    setForm({ ...form, order: Number(e.target.value) })
+                  }
                   className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 outline-none focus:border-[#546a2f] dark:bg-gray-800 dark:text-white"
                 />
               </div>
-
-              <div>
-                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1 block">
-                  Chuyên mục
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Nổi bật
                 </label>
-                <select
-                  value={form.category ?? ""}
-                  onChange={(e) =>
-                    setForm({ ...form, category: e.target.value })
-                  }
-                  className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 bg-white dark:bg-gray-800 dark:text-white outline-none focus:border-[#546a2f]"
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1 block">
-                  Nội dung
-                </label>
-                <textarea
-                  rows={4}
-                  value={form.content ?? ""}
-                  onChange={(e) =>
-                    setForm({ ...form, content: e.target.value })
-                  }
-                  placeholder="Nhập nội dung..."
-                  className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 outline-none focus:border-[#546a2f] resize-none dark:bg-gray-800 dark:text-white"
+                <CustomCheckbox
+                  checked={form.featured ?? false}
+                  onChange={(v) => setForm({ ...form, featured: v })}
                 />
               </div>
-
-              <div>
-                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1 block">
-                  URL Ảnh đại diện
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Hiển thị
                 </label>
-                <input
-                  type="text"
-                  value={form.thumbnail ?? ""}
-                  onChange={(e) =>
-                    setForm({ ...form, thumbnail: e.target.value })
-                  }
-                  placeholder="https://..."
-                  className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 outline-none focus:border-[#546a2f] dark:bg-gray-800 dark:text-white"
+                <CustomCheckbox
+                  checked={form.visible ?? true}
+                  onChange={(v) => setForm({ ...form, visible: v })}
                 />
               </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1 block">
-                    Thứ tự
-                  </label>
-                  <input
-                    type="number"
-                    value={form.order ?? 1}
-                    onChange={(e) =>
-                      setForm({ ...form, order: Number(e.target.value) })
-                    }
-                    className="w-full text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 outline-none focus:border-[#546a2f] dark:bg-gray-800 dark:text-white"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                    Nổi bật
-                  </label>
-                  <CustomCheckbox
-                    checked={form.featured ?? false}
-                    onChange={(v) => setForm({ ...form, featured: v })}
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                    Hiển thị
-                  </label>
-                  <CustomCheckbox
-                    checked={form.visible ?? true}
-                    onChange={(v) => setForm({ ...form, visible: v })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-              <button
-                onClick={() => setModalOpen(false)}
-                disabled={saving}
-                className="px-5 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-5 py-2 text-sm font-semibold bg-[#546a2f] text-white rounded-lg hover:bg-[#3d5020] transition-colors disabled:opacity-50"
-              >
-                {saving ? "Đang lưu..." : "Lưu"}
-              </button>
             </div>
           </div>
-        </div>
-      )}
+
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+            <button
+              onClick={() => setModalOpen(false)}
+              disabled={saving}
+              className="px-5 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-5 py-2 text-sm font-semibold bg-[#546a2f] text-white rounded-lg hover:bg-[#3d5020] transition-colors disabled:opacity-50"
+            >
+              {saving ? "Đang lưu..." : "Lưu"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

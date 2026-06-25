@@ -1,3 +1,5 @@
+import { RegistrationCategory } from "@/services/api/website-registration";
+
 export interface NewsArticle {
   id: number;
   title: string;
@@ -18,7 +20,7 @@ export interface WebsiteDocument {
   docNumber: string;
   issuedBy: string;
   issuedDate: string;
-  category: string;
+  category: RegistrationCategory;
   fileSize: string;
   fileType: "PDF" | "DOCX";
   status: "active" | "expired" | "new";

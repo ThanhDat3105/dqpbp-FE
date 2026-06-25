@@ -23,7 +23,7 @@ const STATUS_MAP: Record<
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  tsqs: "Tự nguyện quân sự",
+  tsqs: "Tuyển sinh quân sự",
   tuoi17: "Tuổi 17",
   tinhnguyen: "Tình nguyện",
   dqtt: "Dân quân tự vệ",
