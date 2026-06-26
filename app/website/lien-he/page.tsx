@@ -9,6 +9,7 @@ import {
   Send,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner"
 import { websiteContactApi, type ContactMode } from "@/services/api/website-contacts";
 
 const contactInfo = [
@@ -68,7 +69,7 @@ export default function LienHePage() {
     e.preventDefault();
     const error = validateForm(form);
     if (error) {
-      alert(error);
+      toast.error(error);
       return;
     }
     try {

@@ -11,7 +11,9 @@ import {
   RefreshCw,
   ShieldCheck,
   UserRound,
+  CheckCircle,
 } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
@@ -107,7 +109,7 @@ const emptyForm: FormState = {
   dob: "",
   workplace: "",
   guardian_phone: "",
-  training_system: 'cao_dang_dai_hoc',
+  training_system: "cao_dang_dai_hoc",
 };
 
 const phoneRegex = /^0\d{9}$/;
@@ -244,6 +246,8 @@ function FormList({
 }
 
 export default function RegistrationPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [category, setCategory] = useState<RegistrationCategory>("tsqs");
   const [form, setForm] = useState<FormState>(emptyForm);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -259,16 +263,32 @@ export default function RegistrationPage() {
     [category],
   );
 
+  // useEffect(() => {
+  //   const params = new URLSearchParams(window.location.search);
+  //   const nextCategory = params.get("category") as RegistrationCategory | null;
+  //   if (
+  //     nextCategory &&
+  //     categories.some((item) => item.value === nextCategory)
+  //   ) {
+  //     setCategory(nextCategory);
+  //   }
+  // }, []);
+
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const nextCategory = params.get("category") as RegistrationCategory | null;
+    const nextCategory = searchParams.get(
+      "category",
+    ) as RegistrationCategory | null;
+
     if (
       nextCategory &&
       categories.some((item) => item.value === nextCategory)
     ) {
       setCategory(nextCategory);
+      setForm(emptyForm);
+      setErrors({});
+      setSuccess(null);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     let mounted = true;
@@ -292,16 +312,22 @@ export default function RegistrationPage() {
     };
   }, [category]);
 
+  // const switchCategory = (nextCategory: RegistrationCategory) => {
+  //   setCategory(nextCategory);
+  //   setForm(emptyForm);
+  //   setErrors({});
+  //   setSuccess(null);
+  //   window.history.replaceState(
+  //     null,
+  //     "",
+  //     `/website/tiep-nhan-dang-ky?category=${nextCategory}`,
+  //   );
+  // };
+
   const switchCategory = (nextCategory: RegistrationCategory) => {
-    setCategory(nextCategory);
-    setForm(emptyForm);
-    setErrors({});
-    setSuccess(null);
-    window.history.replaceState(
-      null,
-      "",
-      `/website/tiep-nhan-dang-ky?category=${nextCategory}`,
-    );
+    router.replace(`/website/tiep-nhan-dang-ky?category=${nextCategory}`, {
+      scroll: false,
+    });
   };
 
   const updateField = (field: keyof FormState, value: string) => {
@@ -309,14 +335,26 @@ export default function RegistrationPage() {
     setErrors((current) => ({ ...current, [field]: undefined }));
   };
 
+  // const resetForm = () => {
+  //   setForm(emptyForm);
+  //   setCaptchaToken(null);
+  //   recaptchaRef.current?.reset();
+  //   setErrors({});
+  //   setSuccess(null);
+  //   setCategory("tsqs");
+  //   window.history.replaceState(null, "", "/website/tiep-nhan-dang-ky");
+  // };
+
   const resetForm = () => {
     setForm(emptyForm);
     setCaptchaToken(null);
     recaptchaRef.current?.reset();
     setErrors({});
     setSuccess(null);
-    setCategory("tsqs");
-    window.history.replaceState(null, "", "/website/tiep-nhan-dang-ky");
+
+    router.replace("/website/tiep-nhan-dang-ky?category=tsqs", {
+      scroll: false,
+    });
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -332,16 +370,15 @@ export default function RegistrationPage() {
 
     setSubmitting(true);
     try {
-      const { permanent_address, temporary_address, training_system, ...rest } = form;
+      const { permanent_address, temporary_address, training_system, ...rest } =
+        form;
 
       const payload: PublicRegistrationPayload = {
         category,
         ...rest,
         address: permanent_address.trim(),
         temporary_address: temporary_address.trim(),
-        ...(category === "tsqs" && training_system
-          ? { training_system }
-          : {}),
+        ...(category === "tsqs" && training_system ? { training_system } : {}),
         captcha_token: captchaToken as string,
       };
       const created = await websiteRegistrationAPI.createRegistration(payload);
@@ -446,7 +483,7 @@ export default function RegistrationPage() {
 
             {success ? (
               <div className="p-5">
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+                {/* <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0" />
                     <div>
@@ -483,6 +520,16 @@ export default function RegistrationPage() {
                       </div>
                     </div>
                   </div>
+                </div> */}
+                <div className="flex flex-col items-center justify-center p-10 text-center">
+                  <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">
+                    Gửi thành công!
+                  </h3>
+                  <p className="text-gray-500 text-sm mb-6">
+                    Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm nhất có
+                    thể.
+                  </p>
                 </div>
 
                 <div className="mt-6">
@@ -680,7 +727,9 @@ export default function RegistrationPage() {
                         }`}
                       >
                         <option value="">-- Chọn hệ đào tạo --</option>
-                        <option value="cao_dang_dai_hoc">Cao đẳng / Đại học</option>
+                        <option value="cao_dang_dai_hoc">
+                          Cao đẳng / Đại học
+                        </option>
                         <option value="thieu_sinh_quan">Thiếu sinh quan</option>
                       </select>
                     </Field>
