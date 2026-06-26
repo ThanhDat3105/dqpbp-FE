@@ -14,6 +14,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense } from "react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
@@ -245,7 +246,7 @@ function FormList({
   );
 }
 
-export default function RegistrationPage() {
+function RegistrationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [category, setCategory] = useState<RegistrationCategory>("tsqs");
@@ -798,5 +799,13 @@ export default function RegistrationPage() {
         </div>
       </section>
     </>
+  );
+}
+
+export default function RegistrationPage() {
+  return (
+    <Suspense>
+      <RegistrationContent />
+    </Suspense>
   );
 }
