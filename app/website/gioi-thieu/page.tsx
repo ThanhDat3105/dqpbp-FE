@@ -11,8 +11,8 @@ import {
   Mail,
   MapPin,
   Clock,
-  BadgeCheck, 
-  ClipboardCheck 
+  BadgeCheck,
+  ClipboardCheck,
 } from "lucide-react";
 import Image from "next/image";
 import ImgPopup from "./ImagePopUp";
@@ -59,36 +59,71 @@ const orgMembers = [
   {
     key: "pol",
     role: "Chính trị viên",
-    name: "Nguyễn Văn A",
+    name: "Phạm Hồng Minh",
     birthYear: "1975",
     avatar: "/avatar.png",
   },
   {
     key: "commander",
     role: "Chỉ huy trưởng",
-    name: "Nguyễn Văn Minh",
+    name: "Lê Đỗ Uyên Bình",
     birthYear: "1975",
     avatar: "/avatar.png",
   },
   {
     key: "deputyPol",
-    role: "Phó Chính trị viên",
-    name: "Nguyễn Văn B",
+    role: "Chính trị viên phó",
+    name: "-",
     birthYear: "1980",
     avatar: "/avatar.png",
   },
   {
     key: "deputy",
     role: "Phó Chỉ huy trưởng",
-    name: "Nguyễn Văn C",
+    name: "Trần Nguyên Thiên Vũ",
+    birthYear: "1982",
+    avatar: "/avatar.png",
+  },
+  {
+    key: "staff-1",
+    role: "Nhân viên Tài Chính",
+    name: "Trịnh Lê Hoàng Thiện",
+    birthYear: "1985",
+    avatar: "/avatar.png",
+  },
+  {
+    key: "staff-2",
+    role: "Trợ lý tác huấn",
+    name: "Phạm Tuấn Anh",
+    birthYear: "1982",
+    avatar: "/avatar.png",
+  },
+  {
+    key: "staff-3",
+    role: "Trợ lý tác huấn",
+    name: "Tô Đại Quân",
+    birthYear: "1982",
+    avatar: "/avatar.png",
+  },
+  {
+    key: "staff-4",
+    role: "Nhân viên Văn thư",
+    name: "Nguyễn Đình Quyết",
+    birthYear: "1982",
+    avatar: "/avatar.png",
+  },
+  {
+    key: "staff-4",
+    role: "Nhân viên Tài Chính",
+    name: "Trịnh Lê Hoàng Thiện",
     birthYear: "1982",
     avatar: "/avatar.png",
   },
   ...orgStructure.staff.map((role, index) => ({
     key: `staff-${index}`,
-    role,
-    name: "Nguyễn Văn D",
-    birthYear: "1985",
+    role: "Trợ lý chính trị",
+    name: "Nguyễn Minh Mẫn",
+    birthYear: "1982",
     avatar: "/avatar.png",
   })),
 ];
@@ -246,7 +281,7 @@ export default function GioiThieuPage() {
 
               <div className="bg-yellow-300/5 border border-yellow-300/30 rounded-xl p-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <ClipboardCheck  className="w-5 h-5 text-yellow-300" />
+                  <ClipboardCheck className="w-5 h-5 text-yellow-300" />
                   <h3 className="font-bold text-gray-700">Trách Nhiệm</h3>
                 </div>
                 <p className="text-sm text-gray-600 leading-relaxed">
@@ -300,7 +335,6 @@ export default function GioiThieuPage() {
               </div>
             </div>
           </div>
-
 
           {/* Cơ cấu tổ chức */}
           <div>
