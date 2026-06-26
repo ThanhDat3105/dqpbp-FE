@@ -23,7 +23,7 @@ export default function RootLayout({
     if (isLoadingFetchUser) return;
 
     if (!user) {
-      router.push("/calendar");
+      router.push("/login");
     } else {
       setHasChecked(true);
     }
