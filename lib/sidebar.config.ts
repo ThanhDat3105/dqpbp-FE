@@ -7,7 +7,7 @@ import {
   Map,
   Warehouse,
 } from "@mui/icons-material";
-import { FileCheck2, Globe, LayoutList, MessageSquare } from "lucide-react";
+import { FileCheck2, Globe, LayoutList } from "lucide-react";
 import type { ElementType } from "react";
 
 export type MenuRole = "DQTT" | "CHI_HUY" | "DQCD" | "TO_TRUONG";
@@ -192,12 +192,6 @@ export const menuConfig: MenuItem[] = [
         label: "Quản lý hồ sơ đăng ký",
         href: "/quan-ly/website/ho-so-dang-ky",
         icon: FileCheck2,
-      },
-      {
-        id: "website-cms-contacts",
-        label: "Liên hệ",
-        href: "/quan-ly/website/lien-he",
-        icon: MessageSquare,
       },
     ],
   },
