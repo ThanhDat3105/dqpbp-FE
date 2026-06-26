@@ -98,13 +98,13 @@ export default function LienHePage() {
         className="relative py-12 text-white text-center"
         style={{ background: "linear-gradient(135deg, #2d3a1a, #546a2f)" }}
       >
-        <h1 className="text-3xl md:text-4xl font-black">Tiếp Nhận Hồ Sơ</h1>
+        <h1 className="text-3xl md:text-4xl font-black">Kiến Nghị Phản Ánh</h1>
         <nav className="flex items-center justify-center gap-2 text-sm text-white/60 mt-3">
           <a href="/website" className="hover:text-white transition-colors">
             Trang chủ
           </a>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-yellow-300">Tiếp Nhận Hồ Sơ</span>
+          <span className="text-yellow-300">Kiến Nghị Phản Ánh</span>
         </nav>
       </section>
 

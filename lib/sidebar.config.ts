@@ -33,7 +33,7 @@ export const menuConfig: MenuItem[] = [
     id: "dashboard",
     label: "Dashboard",
     icon: Assessment,
-    role: ["CHI_HUY", "TO_TRUONG"],
+    role: ["CHI_HUY", "TO_TRUONG", "DQTT"],
     children: [
       // {
       //   id: "dashboard-summary",
@@ -46,12 +46,21 @@ export const menuConfig: MenuItem[] = [
         label: "Vật chất trang bị",
         href: "/dashboard/warehouse",
         icon: Assessment,
+        role: ["CHI_HUY", "TO_TRUONG"],
       },
       {
         id: "dashboard-forces",
-        label: "Hiệu suất làm việc",
+        label: "Nhân sự",
         href: "/dashboard/force",
         icon: Assessment,
+        role: ["CHI_HUY", "TO_TRUONG"],
+      },
+      {
+        id: "dashboard-performance",
+        label: "Hiệu suất",
+        href: "/dashboard/hieu-suat",
+        icon: Assessment,
+        role: ["CHI_HUY", "TO_TRUONG", "DQTT"],
       },
     ],
   },
@@ -161,7 +170,7 @@ export const menuConfig: MenuItem[] = [
     id: "website-cms",
     label: "Trang thông tin",
     icon: Globe,
-    href: "/website",
+    href: "https://bchqsbp.vn/",
   },
   {
     id: "manage-website-cms",

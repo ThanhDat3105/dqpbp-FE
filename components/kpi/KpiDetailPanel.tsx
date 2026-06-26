@@ -69,11 +69,11 @@ export function KpiDetailPanel({ userId, period }: KpiDetailPanelProps) {
       try {
         const [kpiResponse, taskResponse] = await Promise.all([
           getKpiUser({ user_id: userId, period }),
-          getRecentTasks({ user_id: userId, limit: 5 }),
+          getRecentTasks({ user_id: userId, period,  limit: 50 }),
         ]);
 
         setUserData(kpiResponse.data[0] ?? null);
-        setTasks(taskResponse.slice(0, 5));
+        setTasks(taskResponse);
       } catch (error) {
         console.error(error);
         toast.error("Không tải được dữ liệu KPI");

@@ -3,7 +3,7 @@ import type { WebsiteDocument } from "@/lib/mock/website";
 export const DOCUMENT_CATEGORIES = [
   { value: "tsqs", label: "Tuyển sinh quân sự" },
   { value: "tuoi17", label: "Tuổi 17" },
-  { value: "tinhnguyen", label: "Tình nguyện" },
+  { value: "tinhnguyen", label: "Tình nguyện tham gia NVQS" },
   { value: "dqtt", label: "Dân quân tự vệ" },
   { value: "doituongchinhsach", label: "Đối tượng chính sách" },
   { value: "siquandubi", label: "Sĩ quan dự bị" },

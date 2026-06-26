@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import AppPagination from "@/components/ui/AppPagination";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -27,8 +28,11 @@ import { axiosInstance } from "@/lib/axios.config";
 
 import type { KpiPeriod } from "@/components/kpi/KpiPageLayout";
 import DialogDetailKPI from "@/components/force/DialogDetailKPI";
+import Link from "next/link";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
+
+const LIMIT = 10;
 
 export const ROLE_LABELS: Record<string, string> = {
   TO_TRUONG: "Tổ trưởng",
@@ -192,6 +196,7 @@ function KpiDeptCard({ dept }: { dept: KpiDeptGroup }) {
 interface Overview {
   total_users: number;
   total_departments: number;
+  total_dqtt: number;
   alerts: number;
   readiness_percent: number;
 }
@@ -385,15 +390,22 @@ export default function LucLuongDashboardPage() {
   const { user, isLoadingFetchUser } = useAuth();
   const router = useRouter();
 
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [byDept, setByDept] = useState<DeptItem[]>([]);
   const [personnelList, setPersonnelList] = useState<PersonnelItem[]>([]);
   const [kpiDepts, setKpiDepts] = useState<KpiDeptGroup[]>([]);
   const [loading, setLoading] = useState(true);
+    const mainRef = useRef<HTMLDivElement>(null);
 
   const [selectedPerson, setSelectedPerson] = useState<PersonnelItem | null>(
     null,
   );
+
+  useEffect(() => {
+    mainRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [page]);
 
   // ── Role guard ──
   useEffect(() => {
@@ -415,7 +427,7 @@ export default function LucLuongDashboardPage() {
           axiosInstance.get("/api/personnel/overview"),
           axiosInstance.get("/api/personnel/by-department"),
           axiosInstance.get("/api/personnel/list", {
-            params: { status: "on_duty", limit: 10, role: "DQTT" },
+            params: { status: "on_duty", page, limit: LIMIT, role: "DQTT" },
           }),
           axiosInstance.get("/api/kpi/departments", {
             params: { period: "month" },
@@ -425,6 +437,7 @@ export default function LucLuongDashboardPage() {
         setOverview(ovRes.data.metaData);
         setByDept(deptRes.data.metaData.data ?? []);
         setPersonnelList(listRes.data.metaData.data ?? []);
+        setTotal(listRes.data.metaData.pagination.total ?? 0);
         setKpiDepts(kpiDeptRes.data.metaData?.departments ?? []);
       } catch (err) {
         toast.error("Không thể tải dữ liệu nhân sự. Vui lòng thử lại.");
@@ -435,7 +448,7 @@ export default function LucLuongDashboardPage() {
     };
 
     fetchAll();
-  }, [user, isLoadingFetchUser]);
+  }, [user, isLoadingFetchUser, page]);
 
   // ── Loading / auth guard ──
   if (isLoadingFetchUser) {
@@ -453,8 +466,8 @@ export default function LucLuongDashboardPage() {
         {
           id: "kpi-total-users",
           label: "Tổng số dân quân",
-          value: String(overview.total_users),
-          badge: `+${overview.total_users} người`,
+          value: String(overview.total_dqtt),
+          badge: `+${overview.total_dqtt} người`,
           badgeColor: "bg-green-100 text-green-700",
           icon: PeopleAltOutlined,
           iconBg: "bg-indigo-50",
@@ -481,17 +494,17 @@ export default function LucLuongDashboardPage() {
           iconBg: "bg-red-50",
           iconColor: "text-red-500",
         },
-        {
-          id: "kpi-readiness",
-          label: "Sẵn sàng chiến đấu",
-          value: `${overview.readiness_percent}%`,
-          badge: "Tốt",
-          badgeColor: "bg-green-100 text-green-700",
-          subText: "Tỷ lệ toàn lực lượng",
-          icon: ShieldOutlined,
-          iconBg: "bg-green-50",
-          iconColor: "text-green-600",
-        },
+        // {
+        //   id: "kpi-readiness",
+        //   label: "Sẵn sàng chiến đấu",
+        //   value: `${overview.readiness_percent}%`,
+        //   badge: "Tốt",
+        //   badgeColor: "bg-green-100 text-green-700",
+        //   subText: "Tỷ lệ toàn lực lượng",
+        //   icon: ShieldOutlined,
+        //   iconBg: "bg-green-50",
+        //   iconColor: "text-green-600",
+        // },
       ]
     : [];
 
@@ -506,9 +519,9 @@ export default function LucLuongDashboardPage() {
       </header>
 
       {/* ── Section 1: KPI Cards ── */}
-      <section id="kpi-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <section id="kpi-cards" className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {loading
-          ? Array.from({ length: 4 }).map((_, i) => (
+          ? Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="h-32" />
             ))
           : KPI_CARDS.map((card) => <KpiCard key={card.id} {...card} />)}
@@ -594,6 +607,7 @@ export default function LucLuongDashboardPage() {
       <section
         id="personnel-table"
         className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+        ref={mainRef} 
       >
         {/* Table Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -602,12 +616,12 @@ export default function LucLuongDashboardPage() {
               Danh sách nhân sự
             </h2>
           </div>
-          <a
-            href="#"
+          <Link
+            href="/personnel/dqtt"
             className="text-xs font-semibold text-[#6B8E23] hover:text-[#556b2f] transition-colors whitespace-nowrap"
           >
             Xem tất cả →
-          </a>
+          </Link>
         </div>
 
         {loading ? (
@@ -713,6 +727,18 @@ export default function LucLuongDashboardPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {!loading && personnelList.length > 0 && (
+          <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100">
+            <span className="text-sm text-gray-500">Tổng {total} nhân sự</span>
+
+            <AppPagination
+              page={page}
+              limit={LIMIT}
+              total={total}
+              onPageChange={(p) => setPage(p)}
+            />
           </div>
         )}
       </section>

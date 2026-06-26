@@ -19,7 +19,9 @@ export interface User {
   name: string;
   role: "DQTT" | "CHI_HUY" | "TO_TRUONG" | "DQCD";
   department: string;
-  military_rank: string
+  department_id: number | null;
+  department_name: string | null;
+  military_rank: string;
   position: string;
 }
 

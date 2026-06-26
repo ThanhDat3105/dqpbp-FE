@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { DEPARTMENT_MAP } from "@/types/user";
 import { useAuth } from "@/context/AuthContext";
 import { TaskHistoryItem, fetchUserTasks } from "@/services/api/activity-task";
+import { getRecentTasks, KpiRecentTask } from "@/services/api/kpi";
 import {
   ArrowLeft,
   Edit,
@@ -26,6 +27,46 @@ import {
 import { fetchUserDetail, UserWithKpi } from "@/services/api/user";
 import { getKpiSummary, KpiSummary } from "@/services/api/kpi";
 
+const toDateParam = (date: Date) => date.toISOString().slice(0, 10);
+
+const getDateRange = ({
+  periodType,
+  selectedMonth,
+  selectedQuarter,
+  selectedYear,
+}: {
+  periodType: "month" | "quarter" | "year";
+  selectedMonth: number;
+  selectedQuarter: number;
+  selectedYear: number;
+}) => {
+  if (periodType === "month") {
+    const from = new Date(selectedYear, selectedMonth - 1, 1);
+    const to = new Date(selectedYear, selectedMonth, 0);
+
+    return {
+      from: toDateParam(from),
+      to: toDateParam(to),
+    };
+  }
+
+  if (periodType === "quarter") {
+    const startMonth = (selectedQuarter - 1) * 3;
+    const from = new Date(selectedYear, startMonth, 1);
+    const to = new Date(selectedYear, startMonth + 3, 0);
+
+    return {
+      from: toDateParam(from),
+      to: toDateParam(to),
+    };
+  }
+
+  return {
+    from: `${selectedYear}-01-01`,
+    to: `${selectedYear}-12-31`,
+  };
+};
+
 export default function UserDetailPage() {
   const { token } = useAuth();
   const params = useParams();
@@ -34,16 +75,21 @@ export default function UserDetailPage() {
   const userId = Number(rawId);
 
   const [user, setUser] = useState<UserWithKpi | null>(null);
-  const [tasks, setTasks] = useState<TaskHistoryItem[]>([]);
+  // const [tasks, setTasks] = useState<TaskHistoryItem[]>([]);
+  const [tasks, setTasks] = useState<KpiRecentTask[]>([]);
   const [kpiSummary, setKpiSummary] = useState<KpiSummary | null>(null);
   const [kpiLoading, setKpiLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const now = new Date();
-  const [periodType, setPeriodType] = useState<"month" | "quarter" | "year">("month");
+  const [periodType, setPeriodType] = useState<"month" | "quarter" | "year">(
+    "month",
+  );
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
-  const [selectedQuarter, setSelectedQuarter] = useState(Math.ceil((now.getMonth() + 1) / 3));
+  const [selectedQuarter, setSelectedQuarter] = useState(
+    Math.ceil((now.getMonth() + 1) / 3),
+  );
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
 
   useEffect(() => {
@@ -64,13 +110,11 @@ export default function UserDetailPage() {
       setError(null);
 
       try {
-        const [userData, taskData] = await Promise.all([
-          fetchUserDetail(userId),
-          fetchUserTasks(userId),
-        ]);
+        const userData = await fetchUserDetail(userId);
+        // fetchUserTasks(userId),
 
         setUser(userData);
-        setTasks(taskData);
+        // setTasks(taskData);
       } catch {
         setError("Không tải được thông tin nhân sự");
       } finally {
@@ -81,26 +125,81 @@ export default function UserDetailPage() {
     void load();
   }, [userId, token]);
 
+  // useEffect(() => {
+  //   if (!Number.isFinite(userId)) return;
+
+  //   const loadKpi = async () => {
+  //     setKpiLoading(true);
+  //     try {
+  //       const params: Parameters<typeof getKpiSummary>[0] = { user_id: userId };
+  //       if (periodType === "month") {
+  //         params.month = selectedMonth;
+  //         params.year = selectedYear;
+  //       } else if (periodType === "quarter") {
+  //         params.quarter = selectedQuarter;
+  //         params.year = selectedYear;
+  //       } else {
+  //         params.year = selectedYear;
+  //       }
+  //       const kpiData = await getKpiSummary(params);
+  //       setKpiSummary(kpiData.summary);
+  //     } catch {
+  //       setKpiSummary(null);
+  //     } finally {
+  //       setKpiLoading(false);
+  //     }
+  //   };
+
+  //   void loadKpi();
+  // }, [userId, periodType, selectedMonth, selectedQuarter, selectedYear]);
+
   useEffect(() => {
     if (!Number.isFinite(userId)) return;
 
     const loadKpi = async () => {
       setKpiLoading(true);
+
       try {
-        const params: Parameters<typeof getKpiSummary>[0] = { user_id: userId };
+        const range = getDateRange({
+          periodType,
+          selectedMonth,
+          selectedQuarter,
+          selectedYear,
+        });
+
+        const kpiParams: Parameters<typeof getKpiSummary>[0] = {
+          user_id: userId,
+          from: range.from,
+          to: range.to,
+        };
+
         if (periodType === "month") {
-          params.month = selectedMonth;
-          params.year = selectedYear;
+          kpiParams.month = selectedMonth;
+          kpiParams.year = selectedYear;
         } else if (periodType === "quarter") {
-          params.quarter = selectedQuarter;
-          params.year = selectedYear;
+          kpiParams.quarter = selectedQuarter;
+          kpiParams.year = selectedYear;
         } else {
-          params.year = selectedYear;
+          kpiParams.year = selectedYear;
         }
-        const kpiData = await getKpiSummary(params);
+
+        const [kpiData, taskData] = await Promise.all([
+          getKpiSummary(kpiParams),
+          getRecentTasks({
+            user_id: userId,
+            period: periodType,
+            from: range.from,
+            to: range.to,
+            limit: 50,
+          }),
+        ]);
+
         setKpiSummary(kpiData.summary);
-      } catch {
+        setTasks(taskData);
+      } catch (error) {
+        console.error(error);
         setKpiSummary(null);
+        setTasks([]);
       } finally {
         setKpiLoading(false);
       }
@@ -111,11 +210,15 @@ export default function UserDetailPage() {
 
   const handleKpiPrev = () => {
     if (periodType === "month") {
-      if (selectedMonth === 1) { setSelectedMonth(12); setSelectedYear((y) => y - 1); }
-      else setSelectedMonth((m) => m - 1);
+      if (selectedMonth === 1) {
+        setSelectedMonth(12);
+        setSelectedYear((y) => y - 1);
+      } else setSelectedMonth((m) => m - 1);
     } else if (periodType === "quarter") {
-      if (selectedQuarter === 1) { setSelectedQuarter(4); setSelectedYear((y) => y - 1); }
-      else setSelectedQuarter((q) => q - 1);
+      if (selectedQuarter === 1) {
+        setSelectedQuarter(4);
+        setSelectedYear((y) => y - 1);
+      } else setSelectedQuarter((q) => q - 1);
     } else {
       setSelectedYear((y) => y - 1);
     }
@@ -123,11 +226,15 @@ export default function UserDetailPage() {
 
   const handleKpiNext = () => {
     if (periodType === "month") {
-      if (selectedMonth === 12) { setSelectedMonth(1); setSelectedYear((y) => y + 1); }
-      else setSelectedMonth((m) => m + 1);
+      if (selectedMonth === 12) {
+        setSelectedMonth(1);
+        setSelectedYear((y) => y + 1);
+      } else setSelectedMonth((m) => m + 1);
     } else if (periodType === "quarter") {
-      if (selectedQuarter === 4) { setSelectedQuarter(1); setSelectedYear((y) => y + 1); }
-      else setSelectedQuarter((q) => q + 1);
+      if (selectedQuarter === 4) {
+        setSelectedQuarter(1);
+        setSelectedYear((y) => y + 1);
+      } else setSelectedQuarter((q) => q + 1);
     } else {
       setSelectedYear((y) => y + 1);
     }
@@ -352,7 +459,9 @@ export default function UserDetailPage() {
                 {/* Header */}
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp className="w-5 h-5 text-emerald-500 shrink-0" />
-                  <h3 className="text-base font-bold text-slate-800">Hiệu suất (KPI)</h3>
+                  <h3 className="text-base font-bold text-slate-800">
+                    Hiệu suất (KPI)
+                  </h3>
                 </div>
 
                 {/* Period controls */}
@@ -369,7 +478,11 @@ export default function UserDetailPage() {
                             : "text-slate-500 hover:text-slate-700"
                         }`}
                       >
-                        {type === "month" ? "Tháng" : type === "quarter" ? "Quý" : "Năm"}
+                        {type === "month"
+                          ? "Tháng"
+                          : type === "quarter"
+                            ? "Quý"
+                            : "Năm"}
                       </button>
                     ))}
                   </div>
@@ -383,8 +496,10 @@ export default function UserDetailPage() {
                       <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
                     <span className="text-xs font-bold text-slate-700 w-16 text-center tabular-nums">
-                      {periodType === "month" && `T${selectedMonth}/${selectedYear}`}
-                      {periodType === "quarter" && `Q${selectedQuarter}/${selectedYear}`}
+                      {periodType === "month" &&
+                        `T${selectedMonth}/${selectedYear}`}
+                      {periodType === "quarter" &&
+                        `Q${selectedQuarter}/${selectedYear}`}
                       {periodType === "year" && selectedYear}
                     </span>
                     <button
@@ -397,27 +512,62 @@ export default function UserDetailPage() {
                 </div>
 
                 {/* Stats grid */}
-                <div className={`grid grid-cols-2 gap-3 transition-opacity ${kpiLoading ? "opacity-40 pointer-events-none" : ""}`}>
+                <div
+                  className={`grid grid-cols-2 gap-3 transition-opacity ${kpiLoading ? "opacity-40 pointer-events-none" : ""}`}
+                >
                   {(() => {
                     const total = kpiSummary?.total_assigned ?? 0;
                     const completed = kpiSummary?.completed ?? 0;
-                    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+                    const rate =
+                      total > 0 ? Math.round((completed / total) * 100) : 0;
 
                     return [
-                      { label: "Tổng NV", value: total, color: "text-slate-800", bg: "bg-slate-50" },
-                      { label: "Hoàn thành", value: completed, color: "text-emerald-700", bg: "bg-emerald-50" },
-                      { label: "Đúng hạn", value: kpiSummary?.completed_on_time ?? 0, color: "text-blue-700", bg: "bg-blue-50" },
+                      {
+                        label: "Tổng NV",
+                        value: total,
+                        color: "text-slate-800",
+                        bg: "bg-slate-50",
+                      },
+                      {
+                        label: "Hoàn thành",
+                        value: completed,
+                        color: "text-emerald-700",
+                        bg: "bg-emerald-50",
+                      },
+                      {
+                        label: "Đúng hạn",
+                        value: kpiSummary?.completed_on_time ?? 0,
+                        color: "text-blue-700",
+                        bg: "bg-blue-50",
+                      },
                       {
                         label: "Tỉ lệ HT",
                         value: kpiSummary ? `${rate}%` : "-",
-                        color: rate >= 70 ? "text-emerald-700" : rate >= 40 ? "text-amber-700" : "text-red-600",
-                        bg: rate >= 70 ? "bg-emerald-50" : rate >= 40 ? "bg-amber-50" : "bg-red-50",
+                        color:
+                          rate >= 70
+                            ? "text-emerald-700"
+                            : rate >= 40
+                              ? "text-amber-700"
+                              : "text-red-600",
+                        bg:
+                          rate >= 70
+                            ? "bg-emerald-50"
+                            : rate >= 40
+                              ? "bg-amber-50"
+                              : "bg-red-50",
                       },
                     ];
                   })().map((stat) => (
-                    <div key={stat.label} className={`${stat.bg} rounded-xl p-3 text-center border border-white/50`}>
-                      <p className="text-xs text-slate-500 font-medium mb-1">{stat.label}</p>
-                      <p className={`text-lg font-bold ${stat.color}`}>{stat.value}</p>
+                    <div
+                      key={stat.label}
+                      className={`${stat.bg} rounded-xl p-3 text-center border border-white/50`}
+                    >
+                      <p className="text-xs text-slate-500 font-medium mb-1">
+                        {stat.label}
+                      </p>
+                      <p className={`text-lg font-bold ${stat.color}`}>
+                        {stat.value}
+                      </p>
                     </div>
                   ))}
                 </div>
