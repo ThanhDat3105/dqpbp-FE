@@ -144,7 +144,8 @@ const getDocuments = async (
   const res = await axiosInstance.get("/api/website/documents", {
     params: filters,
   });
-  const raw = res.data.metaData as PaginatedResponse<unknown>;
+  console.log(res, "resss");
+  const raw = res.data as PaginatedResponse<unknown>;
   return { ...raw, data: raw.data.map(mapDocument) };
 };
 

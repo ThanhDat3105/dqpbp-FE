@@ -6,29 +6,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { chatAPI } from "@/services/api/chat";
-import { MOCK_FLOW, FlowOption } from "./chat-fab/chat-flow-data";
+import { ROOT_OPTIONS, FlowOption, matchOptionByInput } from "./chat-fab/chat-flow-data";
 import { ChatMessageList, Message } from "./chat-fab/chat-message-list";
 import { ChatQuickOptions } from "./chat-fab/chat-quick-options";
 
 const now = () =>
-  new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  new Date().toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-const WELCOME: Message = {
+const makeWelcome = (): Message => ({
   id: 0,
   role: "bot",
   text: "Xin chào! Tôi có thể giúp gì cho bạn về các thủ tục và thông tin quân sự địa phương?",
   time: now(),
-};
+});
 
 const ERROR_MESSAGE =
   "Xin lỗi, hiện tại tôi không thể xử lý yêu cầu của bạn. Vui lòng thử lại sau.";
 
 export default function ChatFAB() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([WELCOME]);
+  const [messages, setMessages] = useState<Message[]>([makeWelcome()]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
-  const [currentOptions, setCurrentOptions] = useState<FlowOption[]>(MOCK_FLOW);
+  const [currentOptions, setCurrentOptions] =
+    useState<FlowOption[]>(ROOT_OPTIONS);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -40,12 +44,20 @@ export default function ChatFAB() {
     if (open) setTimeout(() => inputRef.current?.focus(), 100);
   }, [open]);
 
-  const handleFlowOption = (option: FlowOption) => {
-    const t = now();
+  const handleFlowOption = async (option: FlowOption) => {
     setMessages((prev) => [
       ...prev,
-      { id: Date.now(), role: "user", text: option.label, time: t },
-      { id: Date.now() + 1, role: "bot", text: option.next.reply, time: t },
+      { id: Date.now(), role: "user", text: option.label, time: now() },
+    ]);
+    setCurrentOptions([]);
+    setTyping(true);
+
+    await new Promise((r) => setTimeout(r, 3000));
+
+    setTyping(false);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now() + 1, role: "bot", text: option.next.reply, time: now() },
     ]);
     setCurrentOptions(option.next.options ?? []);
   };
@@ -54,6 +66,8 @@ export default function ChatFAB() {
     const text = input.trim();
     if (!text || typing) return;
 
+    const optionsSnapshot = currentOptions;
+
     setMessages((prev) => [
       ...prev,
       { id: Date.now(), role: "user", text, time: now() },
@@ -61,6 +75,22 @@ export default function ChatFAB() {
     setInput("");
     setTyping(true);
     setCurrentOptions([]);
+
+    await new Promise((r) => setTimeout(r, 3000));
+
+    const matched =
+      matchOptionByInput(text, optionsSnapshot) ??
+      matchOptionByInput(text, ROOT_OPTIONS);
+
+    if (matched) {
+      setTyping(false);
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now() + 1, role: "bot", text: matched.next.reply, time: now() },
+      ]);
+      setCurrentOptions(matched.next.options ?? []);
+      return;
+    }
 
     try {
       const res = await chatAPI.sendMessage(text);
@@ -76,12 +106,13 @@ export default function ChatFAB() {
       ]);
     } finally {
       setTyping(false);
+      setCurrentOptions(optionsSnapshot);
     }
   };
 
   const handleReset = () => {
-    setMessages([{ ...WELCOME, time: now() }]);
-    setCurrentOptions(MOCK_FLOW);
+    setMessages([makeWelcome()]);
+    setCurrentOptions(ROOT_OPTIONS);
     setInput("");
   };
 
@@ -106,7 +137,7 @@ export default function ChatFAB() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-semibold text-sm leading-tight">
-              Dân Quân Phường Bình Phú
+              Ban CHQS phường
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -134,9 +165,16 @@ export default function ChatFAB() {
           </div>
         </div>
 
-        <ChatMessageList messages={messages} typing={typing} bottomRef={bottomRef} />
+        <ChatMessageList
+          messages={messages}
+          typing={typing}
+          bottomRef={bottomRef}
+        />
 
-        <ChatQuickOptions options={currentOptions} onSelect={handleFlowOption} />
+        <ChatQuickOptions
+          options={currentOptions}
+          onSelect={handleFlowOption}
+        />
 
         {/* Input area */}
         <div className="p-3 bg-white flex gap-2 items-center border-t border-gray-100">
@@ -165,8 +203,17 @@ export default function ChatFAB() {
         aria-label="Chat hỗ trợ"
         className="relative w-14 h-14 bg-[#546a2f] text-white rounded-full shadow-xl flex items-center justify-center hover:bg-[#3d5020] transition-colors"
       >
-        <div className={cn("transition-transform duration-200", open ? "rotate-90" : "rotate-0")}>
-          {open ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+        <div
+          className={cn(
+            "transition-transform duration-200",
+            open ? "rotate-90" : "rotate-0",
+          )}
+        >
+          {open ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <MessageCircle className="w-6 h-6" />
+          )}
         </div>
       </button>
     </div>
