@@ -6,6 +6,7 @@ import {
   Image,
   Link2,
   LogOut,
+  MessageSquare,
   Newspaper,
   Shield,
 } from "lucide-react";
@@ -26,6 +27,11 @@ const navItems = [
     href: "/quan-ly/website/ho-so-dang-ky",
     label: "Quản lý hồ sơ đăng ký",
     icon: FileCheck2,
+  },
+  {
+    href: "/quan-ly/website/lien-he",
+    label: "Liên Hệ",
+    icon: MessageSquare,
   },
 ];
 

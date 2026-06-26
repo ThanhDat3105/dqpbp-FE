@@ -24,10 +24,7 @@ export const CATEGORY_BADGE: Record<string, string> = {
   dqtt: "bg-emerald-100 text-emerald-700",
 };
 
-export const STATUS_CONFIG: Record<
-  string,
-  { label: string; color: string }
-> = {
+export const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   active: { label: "Hiệu lực", color: "text-green-600" },
   expired: { label: "Hết hiệu lực", color: "text-red-500" },
   new: { label: "Mới", color: "text-blue-600" },

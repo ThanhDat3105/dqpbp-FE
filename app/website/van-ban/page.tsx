@@ -5,6 +5,7 @@ import { ChevronRight, Filter, Bell } from "lucide-react";
 import DocumentRow from "@/components/website/DocumentRow";
 import { websiteAPI } from "@/services/api/website";
 import type { WebsiteDocument, NewsArticle } from "@/lib/mock/website";
+import { DOCUMENT_CATEGORIES } from "@/app/(cms)/quan-ly/website/van-ban/document-constants";
 
 const DOC_TYPES = [
   "Tuyển sinh quân sự (TSQS)",
@@ -53,18 +54,17 @@ export default function VanBanPage() {
   };
 
   useEffect(() => {
-    fetchDocs();
-    websiteAPI.getArticles({ limit: 3 }).then((res) => {
-      setNotifications(
-        res.data.filter((a) => a.category === "Thông báo").slice(0, 3),
-      );
+    fetchDocs({
+      ...(category ? { category: category } : {}),
+      ...(keyword ? { keyword: keyword } : {}),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [category, keyword]);
 
   const handleSearch = () => {
     setPage(1);
-    fetchDocs({ page: 1 });
+    // fetchDocs({ page: 1 });
+    setKeyword(keyword);
   };
 
   const handleClearFilter = () => {
@@ -132,7 +132,7 @@ export default function VanBanPage() {
                 <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">
                   Loại văn bản
                 </label>
-                <select
+                {/* <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white outline-none focus:border-[#546a2f]"
@@ -143,17 +143,20 @@ export default function VanBanPage() {
                       {t}
                     </option>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">
-                  Năm ban hành
-                </label>
-                <select className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white outline-none focus:border-[#546a2f]">
+                </select> */}
+                <select
+                  value={category}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white outline-none focus:border-[#546a2f]"
+                >
                   <option value="">-- Tất cả --</option>
-                  {YEARS.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
+
+                  {DOCUMENT_CATEGORIES.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
                     </option>
                   ))}
                 </select>

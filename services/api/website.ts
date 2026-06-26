@@ -109,6 +109,7 @@ export interface ArticleFilters {
   limit?: number;
   category?: string;
   featured?: boolean;
+  keyword?: string;
 }
 
 export interface DocumentFilters {

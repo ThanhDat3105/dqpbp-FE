@@ -41,13 +41,14 @@ export default function TinTucPage() {
         page,
         limit: LIMIT,
         ...(activeCategory ? { category: activeCategory } : {}),
+        ...(keyword ? { keyword: keyword } : {}),
       })
       .then((res) => {
         setArticles(res.data);
         setTotal(res.total);
       })
       .finally(() => setLoading(false));
-  }, [page, activeCategory]);
+  }, [page, activeCategory, keyword]);
 
   useEffect(() => {
     websiteAPI.getArticles({ page: 1, limit: 4 }).then((res) => setPopular(res.data));
@@ -77,7 +78,7 @@ export default function TinTucPage() {
         style={{ background: 'linear-gradient(135deg, #2d3a1a, #546a2f)' }}
       >
         <h1 className="text-3xl md:text-4xl font-black">Tin Tức & Sự Kiện</h1>
-        <nav className="flex items-center justify-center gap-2 text-sm text-white/60 mt-3">
+        <nav ref={mainRef} className="flex items-center justify-center gap-2 text-sm text-white/60 mt-3">
           <a href="/website" className="hover:text-white transition-colors">Trang chủ</a>
           <ChevronRight className="w-3.5 h-3.5" />
           <span className="text-white/80">Tin tức</span>
@@ -85,9 +86,9 @@ export default function TinTucPage() {
       </section>
 
       {/* Content */}
-      <section className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <section  className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main */}
-        <div ref={mainRef} className="lg:col-span-2 space-y-6">
+        <div  className="lg:col-span-2 space-y-6">
           <h2 className="text-xl font-bold text-[#546a2f] flex items-center gap-2">
             <span className="w-1 h-6 bg-yellow-300 rounded-full" />
             {CATEGORIES.find((c) => c.value === activeCategory)?.label ?? 'Tất cả'}

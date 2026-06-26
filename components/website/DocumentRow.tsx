@@ -52,11 +52,11 @@ export default function DocumentRow({ doc }: Props) {
           <h3 className="font-semibold text-gray-800 text-sm leading-snug">
             {doc.title}
           </h3>
-          <span
+          {/* <span
             className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${status.className}`}
           >
             {status.label}
-          </span>
+          </span> */}
         </div>
         <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
           <span>Số: {doc.docNumber}</span>

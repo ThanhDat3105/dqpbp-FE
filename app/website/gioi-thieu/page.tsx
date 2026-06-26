@@ -11,10 +11,12 @@ import {
   Mail,
   MapPin,
   Clock,
+  BadgeCheck, 
+  ClipboardCheck 
 } from "lucide-react";
 import Image from "next/image";
 import ImgPopup from "./ImagePopUp";
-
+import OrgMemberPopUp from "./OrgMemberPopUp";
 
 const values = [
   {
@@ -41,6 +43,8 @@ const values = [
 
 const orgStructure = {
   commander: "Chỉ huy trưởng",
+  pol: "Chính trị viên",
+  deputyPol: "Phó Chính trị viên",
   deputy: "Phó Chỉ huy trưởng",
   staff: [
     "Trợ lý Chính trị",
@@ -50,6 +54,44 @@ const orgStructure = {
     "Nhân viên Tài Chính",
   ],
 };
+
+const orgMembers = [
+  {
+    key: "pol",
+    role: "Chính trị viên",
+    name: "Nguyễn Văn A",
+    birthYear: "1975",
+    avatar: "/avatar.png",
+  },
+  {
+    key: "commander",
+    role: "Chỉ huy trưởng",
+    name: "Nguyễn Văn Minh",
+    birthYear: "1975",
+    avatar: "/avatar.png",
+  },
+  {
+    key: "deputyPol",
+    role: "Phó Chính trị viên",
+    name: "Nguyễn Văn B",
+    birthYear: "1980",
+    avatar: "/avatar.png",
+  },
+  {
+    key: "deputy",
+    role: "Phó Chỉ huy trưởng",
+    name: "Nguyễn Văn C",
+    birthYear: "1982",
+    avatar: "/avatar.png",
+  },
+  ...orgStructure.staff.map((role, index) => ({
+    key: `staff-${index}`,
+    role,
+    name: "Nguyễn Văn D",
+    birthYear: "1985",
+    avatar: "/avatar.png",
+  })),
+];
 
 const gallery = [
   "https://pub-961ac25df80d4464a675ea2d2ab13fca.r2.dev/657384672_122233447880299127_3630868676577276621_n.jpg",
@@ -62,6 +104,35 @@ const gallery = [
 
 export default function GioiThieuPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedMember, setSelectedMember] = useState<any | null>(null);
+
+  const OrgNode = ({
+    member,
+    variant = "green",
+  }: {
+    member: any;
+    variant?: "green" | "white";
+  }) => (
+    <button
+      type="button"
+      onClick={() => setSelectedMember(member)}
+      className={
+        variant === "green"
+          ? "w-full min-h-[60px] bg-[#546a2f] text-white rounded-xl px-6 py-4 text-center shadow-md hover:scale-[1.02] transition"
+          : "w-full min-h-[60px] bg-white border-2 border-[#546a2f]/30 rounded-xl px-2 py-3 text-center shadow-sm hover:border-[#546a2f] hover:shadow-md transition-all flex items-center justify-center"
+      }
+    >
+      <div
+        className={
+          variant === "green"
+            ? "font-bold text-base"
+            : "text-xs font-medium text-gray-700 leading-snug"
+        }
+      >
+        {member.role}
+      </div>
+    </button>
+  );
 
   return (
     <>
@@ -105,39 +176,87 @@ export default function GioiThieuPage() {
             </h2>
             <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed space-y-3">
               <p>
-                Ban Chỉ Huy Quân Sự Phường Bình Phú là cơ quan quân sự địa
-                phương cấp phường, trực thuộc UBND Phường Bình Phú, TP. Hồ Chí
-                Minh. Đơn vị có chức năng tham mưu cho cấp ủy, chính quyền địa
-                phương về công tác quốc phòng — quân sự và quản lý nhà nước về
-                quốc phòng trên địa bàn phường.
+                Ban Chỉ huy Quân sự Phường Bình Phú là cơ quan quân sự địa
+                phương cấp phường, đặt dưới sự lãnh đạo, chỉ đạo trực tiếp của
+                Đảng ủy, Ủy ban nhân dân Phường Bình Phú và sự chỉ đạo nghiệp vụ
+                của cơ quan quân sự cấp trên.
               </p>
               <p>
-                Đơn vị thực hiện nhiệm vụ xây dựng lực lượng dân quân tự vệ, tổ
-                chức huấn luyện quân sự, thực hiện công tác tuyển quân, quản lý
-                quân nhân dự bị và thực hiện các nhiệm vụ bảo vệ an ninh, trật
-                tự địa bàn.
+                Đơn vị có chức năng tham mưu cho cấp ủy, chính quyền địa phương
+                về công tác quốc phòng, quân sự; trực tiếp quản lý nhà nước về
+                quốc phòng trên địa bàn phường, đảm bảo an ninh, trật tự và sẵn
+                sàng chiến đấu khi có yêu cầu.
               </p>
+              <p>Các nhiệm vụ trọng tâm của đơn vị bao gồm:</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
               <div className="bg-[#546a2f]/5 border border-[#546a2f]/20 rounded-xl p-5">
-                <div className="flex items-center gap-2 mb-3">
+                {/* <div className="flex items-center gap-2 mb-3">
                   <Target className="w-5 h-5 text-[#546a2f]" />
                   <h3 className="font-bold text-[#546a2f]">Sứ Mệnh</h3>
-                </div>
+                </div> */}
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  Bảo vệ vững chắc Tổ quốc, giữ gìn an ninh trật tự địa bàn, xây
-                  dựng nền quốc phòng toàn dân vững mạnh tại địa phương.
+                  Xây dựng, quản lý và huấn luyện lực lượng dân quân tự vệ trên
+                  địa bàn phường
                 </p>
               </div>
-              <div className="bg-yellow-300/5 border border-yellow-300/30 rounded-xl p-5">
-                <div className="flex items-center gap-2 mb-3">
+              <div className="bg-[#546a2f]/5 border border-[#546a2f]/20 rounded-xl p-5">
+                {/* <div className="flex items-center gap-2 mb-3">
                   <Eye className="w-5 h-5 text-yellow-300" />
                   <h3 className="font-bold text-gray-700">Tầm Nhìn</h3>
+                </div> */}
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Tổ chức công tác tuyển chọn, gọi công dân nhập ngũ hằng năm
+                </p>
+              </div>
+              <div className="bg-[#546a2f]/5 border border-[#546a2f]/20 rounded-xl p-5">
+                {/* <div className="flex items-center gap-2 mb-3">
+                  <Eye className="w-5 h-5 text-yellow-300" />
+                  <h3 className="font-bold text-gray-700">Tầm Nhìn</h3>
+                </div> */}
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Quản lý lực lượng quân nhân dự bị theo quy định
+                </p>
+              </div>
+              <div className="bg-[#546a2f]/5 border border-[#546a2f]/20 rounded-xl p-5">
+                {/* <div className="flex items-center gap-2 mb-3">
+                  <Eye className="w-5 h-5 text-yellow-300" />
+                  <h3 className="font-bold text-gray-700">Tầm Nhìn</h3>
+                </div> */}
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Phối hợp thực hiện nhiệm vụ bảo vệ an ninh, trật tự an toàn xã
+                  hội trên địa bàn
+                </p>
+              </div>
+
+              <div className="bg-yellow-300/5 border border-yellow-300/30 rounded-xl p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <BadgeCheck className="w-5 h-5 text-[#546a2f]" />
+                  <h3 className="font-bold text-[#546a2f]">Vai Trò</h3>
                 </div>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  Xây dựng đơn vị dân quân tự vệ vững mạnh toàn diện, là lực
-                  lượng nòng cốt trong công tác bảo vệ an ninh địa phương.
+                  Ban Chỉ huy Quân sự Phường Bình Phú là lực lượng nòng cốt
+                  trong xây dựng nền quốc phòng toàn dân tại địa phương, giữ vai
+                  trò trung tâm trong công tác quân sự, quốc phòng trên địa bàn
+                  phường, đồng thời là cầu nối giữa lực lượng vũ trang nhân dân
+                  với cấp ủy, chính quyền và nhân dân địa phương.
+                </p>
+              </div>
+
+              <div className="bg-yellow-300/5 border border-yellow-300/30 rounded-xl p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <ClipboardCheck  className="w-5 h-5 text-yellow-300" />
+                  <h3 className="font-bold text-gray-700">Trách Nhiệm</h3>
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Đơn vị có trách nhiệm bảo vệ vững chắc an ninh chính trị, trật
+                  tự an toàn xã hội trên địa bàn phường; xây dựng lực lượng dân
+                  quân tự vệ vững mạnh toàn diện cả về số lượng và chất lượng;
+                  duy trì khả năng sẵn sàng chiến đấu, sẵn sàng huy động khi có
+                  yêu cầu của cấp trên hoặc tình huống đột xuất tại địa bàn;
+                  thực hiện đầy đủ, kịp thời các nhiệm vụ quốc phòng – quân sự
+                  được cấp ủy, chính quyền địa phương giao.
                 </p>
               </div>
             </div>
@@ -150,7 +269,7 @@ export default function GioiThieuPage() {
               Lịch Sử & Truyền Thống
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-6">
-              <div className="sm:col-span-2 bg-[#546a2f]/10 rounded-xl h-48 flex items-center justify-center text-[#546a2f]/30 relative">
+              <div className="sm:col-span-2 bg-[#546a2f]/10 rounded-xl h-66 flex items-center justify-center text-[#546a2f]/30 relative">
                 <Image
                   src="https://pub-961ac25df80d4464a675ea2d2ab13fca.r2.dev/banner-image%20(1)%20(1)%20(1).png"
                   alt="Lịch sử BCH Quân Sự Phường Bình Phú"
@@ -159,19 +278,29 @@ export default function GioiThieuPage() {
               </div>
               <div className="sm:col-span-3 space-y-3 text-sm text-gray-600 leading-relaxed">
                 <p>
-                  Được thành lập từ những năm đầu sau giải phóng miền Nam, Ban
-                  CHQS Phường Bình Phú đã trải qua nhiều giai đoạn phát triển,
-                  không ngừng củng cố và trưởng thành.
+                  Ban Chỉ huy Quân sự Phường Bình Phú được thành lập theo Nghị
+                  quyết số 1685/NQ-UBTVQH15 của Ủy ban Thường vụ Quốc hội, trên
+                  cơ sở sáp nhập Phường 10, Phường 11 (Quận 6) và một phần
+                  Phường 16 (Quận 8), chính thức đi vào hoạt động từ ngày
+                  01/7/2025.
                 </p>
                 <p>
-                  Qua các thời kỳ, đơn vị đã hoàn thành xuất sắc nhiệm vụ được
-                  giao, nhiều lần được Quận ủy, UBND Phường Bình Phú và các cấp
-                  trên khen thưởng vì có thành tích xuất sắc trong công tác quân
-                  sự địa phương.
+                  Tuy mới được thành lập với địa giới hành chính hiện tại, đơn
+                  vị kế thừa truyền thống xây dựng và bảo vệ địa bàn của lực
+                  lượng dân quân tự vệ các phường tiền thân, đã nhiều năm gắn
+                  bó, đồng hành cùng nhân dân trong công tác quốc phòng – an
+                  ninh tại địa phương.
+                </p>
+                <p>
+                  Từ khi thành lập đến nay, đơn vị tập trung ổn định tổ chức,
+                  kiện toàn lực lượng và từng bước hiện đại hóa công tác quản
+                  lý, hướng đến mục tiêu xây dựng một đơn vị dân quân tự vệ vững
+                  mạnh toàn diện, đáp ứng yêu cầu nhiệm vụ trong giai đoạn mới.
                 </p>
               </div>
             </div>
           </div>
+
 
           {/* Cơ cấu tổ chức */}
           <div>
@@ -179,49 +308,130 @@ export default function GioiThieuPage() {
               <span className="w-1 h-7 bg-yellow-300 rounded-full" />
               Cơ Cấu Tổ Chức Hiện Nay
             </h2>
-            <div className="flex flex-col items-center gap-0">
-              {/* Cấp 1: Chỉ huy trưởng */}
-              <div className="w-full max-w-xs">
-                <div className="bg-[#546a2f] text-white rounded-xl px-6 py-4 text-center shadow-md">
-                  <div className="font-bold text-base">{orgStructure.commander}</div>
+
+            <div className="w-full">
+              {/* Cấp 1 */}
+              <div className="grid grid-cols-1 sm:grid-cols-5  w-full">
+                <div className="sm:col-start-1">
+                  {/* <div className="h-full bg-[#546a2f] text-white rounded-xl px-6 py-4 text-center shadow-md">
+                    <div className="font-bold text-base">
+                      {orgStructure.pol}
+                    </div>
+                  </div> */}
+                  <OrgNode member={orgMembers.find((m) => m.key === "pol")} />
+                </div>
+
+                <div className="hidden sm:flex items-center">
+                  <div className="w-full h-0.5 bg-[#546a2f]/40" />
+                </div>
+
+                <div className="sm:col-start-3">
+                  {/* <div className="h-full bg-[#546a2f] text-white rounded-xl px-6 py-4 text-center shadow-md">
+                    <div className="font-bold text-base">
+                      {orgStructure.commander}
+                    </div>
+                  </div> */}
+                  <OrgNode
+                    member={orgMembers.find((m) => m.key === "commander")}
+                  />
                 </div>
               </div>
 
-              {/* Connector */}
-              <div className="flex justify-center">
-                <div className="w-0.5 h-6 bg-[#546a2f]/40" />
-              </div>
+              {/* Line từ cấp 1 xuống cấp 2 */}
+              <div className="hidden sm:grid grid-cols-5 gap-x-4 w-full">
+                <div className="flex justify-center">
+                  <div className="w-0.5 h-6 bg-[#546a2f]/40" />
+                </div>
 
-              {/* Cấp 2: Phó Chỉ huy trưởng */}
-              <div className="w-full max-w-xs">
-                <div className="bg-[#546a2f] text-white rounded-xl px-6 py-4 text-center shadow-md">
-                  <div className="font-bold text-base">{orgStructure.deputy}</div>
+                <div />
+
+                <div className="flex justify-center">
+                  <div className="w-0.5 h-6 bg-[#546a2f]/40" />
                 </div>
               </div>
 
-              {/* Connector dọc từ deputy xuống thanh ngang */}
-              <div className="flex justify-center">
-                <div className="w-0.5 h-6 bg-[#546a2f]/40" />
-              </div>
-
-              {/* Cấp 3: Layout ngang với đường kết nối */}
-              <div className="w-full">
-                {/* Thanh ngang trên cùng */}
-                <div className="relative flex justify-center">
-                  <div className="absolute top-0 left-[10%] right-[10%] h-0.5 bg-[#546a2f]/40" />
+              {/* Cấp 2 */}
+              <div className="grid grid-cols-1 sm:grid-cols-5 w-full">
+                <div className="sm:col-start-1">
+                  {/* <div className="h-full bg-[#546a2f] text-white rounded-xl px-6 py-4 text-center shadow-md">
+                    <div className="font-bold text-base">
+                      {orgStructure.deputyPol}
+                    </div>
+                  </div> */}
+                  <OrgNode
+                    member={orgMembers.find((m) => m.key === "deputyPol")}
+                  />
                 </div>
 
-                {/* Các node staff */}
-                <div className="grid grid-cols-5 gap-2 pt-0">
-                  {orgStructure.staff.map((s, i) => (
-                    <div key={i} className="flex flex-col items-center">
-                      {/* Đường dọc từ thanh ngang xuống node */}
-                      <div className="w-0.5 h-6 bg-[#546a2f]/40" />
-                      <div className="bg-white border-2 border-[#546a2f]/30 rounded-xl px-2 py-3 text-center shadow-sm hover:border-[#546a2f] hover:shadow-md transition-all w-full">
-                        <div className="text-xs font-medium text-gray-700 leading-snug">{s}</div>
+                <div className="hidden sm:flex items-center">
+                  <div className="w-full h-0.5 bg-[#546a2f]/40" />
+                </div>
+
+                <div className="sm:col-start-3">
+                  {/* <div className="h-full bg-[#546a2f] text-white rounded-xl px-6 py-4 text-center shadow-md">
+                    <div className="font-bold text-base">
+                      {orgStructure.deputy}
+                    </div>
+                  </div> */}
+                  <OrgNode
+                    member={orgMembers.find((m) => m.key === "deputy")}
+                  />
+                </div>
+              </div>
+
+              {/* Line từ cấp 2 xuống staff */}
+              <div className="hidden sm:grid grid-cols-5 gap-x-4 w-full">
+                <div className="flex justify-center">
+                  <div className="w-0.5 h-12 bg-[#546a2f]/40" />
+                </div>
+
+                <div />
+
+                <div className="flex justify-center">
+                  <div className="w-0.5 h-4 bg-[#546a2f]/40" />
+                </div>
+              </div>
+
+              {/* Cấp 3 */}
+              <div className="w-full -mt-8">
+                {/* Line nối staff */}
+                <div className="hidden sm:grid grid-cols-5 gap-x-2 w-full">
+                  <div />
+
+                  <div className="col-start-2 col-span-4 relative h-8">
+                    <div className="absolute top-0 left-[12.5%] right-[12.5%] h-0.5 bg-[#546a2f]/40" />
+
+                    <div className="grid grid-cols-4 h-full">
+                      {orgStructure.staff.slice(1).map((_, i) => (
+                        <div key={i} className="flex justify-center">
+                          <div className="w-0.5 h-8 bg-[#546a2f]/40" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-x-2 gap-y-3 w-full">
+                  {/* {orgStructure.staff.map((s, i) => (
+                    <div key={i} className="flex">
+                      <div className="w-full min-h-[60px] bg-white border-2 border-[#546a2f]/30 rounded-xl px-2 py-3 text-center shadow-sm hover:border-[#546a2f] hover:shadow-md transition-all flex items-center justify-center">
+                        <div className="text-xs font-medium text-gray-700 leading-snug">
+                          {s}
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  ))} */}
+                  {orgStructure.staff.map((s, i) => {
+                    const member = orgMembers.find(
+                      (m) => m.key === `staff-${i}`,
+                    );
+
+                    return (
+                      <div key={i} className="flex">
+                        <OrgNode member={member} variant="white" />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -283,6 +493,10 @@ export default function GioiThieuPage() {
       <ImgPopup
         imageUrl={selectedImage}
         onClose={() => setSelectedImage(null)}
+      />
+      <OrgMemberPopUp
+        selectedMember={selectedMember}
+        setSelectedMember={setSelectedMember}
       />
     </>
   );
