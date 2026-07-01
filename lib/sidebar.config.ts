@@ -170,7 +170,7 @@ export const menuConfig: MenuItem[] = [
     id: "website-cms",
     label: "Trang thông tin",
     icon: Globe,
-    href: "https://bchqsbp.vn/",
+    href: "/website",
   },
   {
     id: "manage-website-cms",
