@@ -11,8 +11,10 @@ import { useActivity } from "@/context/ActivityContext";
 
 export default function ActivityDetailSheet({
   activityId,
+  onActivityUpdated,
 }: {
   activityId: string | number;
+  onActivityUpdated?: (activity: any) => void;
 }) {
   const { fetchActivityDetail, activity, loadingDetail } = useActivity();
 
@@ -60,7 +62,13 @@ export default function ActivityDetailSheet({
         {activity?.tasks?.length > 0 && (
           <div className="w-full space-y-4">
             {activity.tasks?.map((task: TaskInterface) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard
+                key={task.id}
+                task={task}
+                onActivityUpdated={() => {
+                  onActivityUpdated?.();
+                }}
+              />
             ))}
           </div>
         )}

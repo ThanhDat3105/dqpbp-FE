@@ -1,13 +1,21 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
-import type { PersonType } from "@/components/map/types";
-import { MOCK_PERSONS } from "@/components/map/mockData";
+import { useEffect, useState } from "react";
+import type { Person, PersonType } from "@/components/map/types";
 import FilterSidebar from "@/components/map/FilterSidebar";
-import { useAuth } from "@/context/AuthContext";
+import { MOCK_PERSONS } from "@/components/map/mockData";
+import NeighborhoodFilterPanel from "@/components/map/NeighborhoodFilterPanel";
+import type {
+  NeighborhoodCode,
+  NeighborhoodFeatureCollection,
+} from "@/components/map/neighborhood-types";
+// import type { PersonType } from "@/components/map/types";
 
-// Dynamic import to avoid SSR issues with Leaflet
+import { useAuth } from "@/context/AuthContext";
+import { mapNeighborhoodApi } from "@/services/api/map-neighborhood";
+import { getMapPersons } from "@/services/api/map";
+
 const MapView = dynamic(() => import("@/components/map/MapView"), {
   ssr: false,
   loading: () => (
@@ -22,7 +30,6 @@ const MapView = dynamic(() => import("@/components/map/MapView"), {
   ),
 });
 
-// DQTT chỉ thấy DQCD; TO_TRUONG trở lên thấy tất cả
 const DQTT_VISIBLE_TYPES: PersonType[] = ["DQCD"];
 const ALL_VISIBLE_TYPES: PersonType[] = ["TUOI_17", "QUAN_NHAN_DU_BI", "DQCD"];
 
@@ -32,20 +39,79 @@ function buildInitialVisibility(
   return {
     TUOI_17: allowedTypes.includes("TUOI_17"),
     QUAN_NHAN_DU_BI: allowedTypes.includes("QUAN_NHAN_DU_BI"),
-    DQCD: false,
+    DQCD: allowedTypes.includes("DQCD"),
     HQ: true,
   };
 }
 
 export default function BanDoPage() {
   const { user } = useAuth();
+
   const isDQTT = user?.role === "DQTT";
   const allowedTypes = isDQTT ? DQTT_VISIBLE_TYPES : ALL_VISIBLE_TYPES;
+
+  const [persons, setPersons] = useState<Person[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [visibleTypes, setVisibleTypes] = useState<Record<PersonType, boolean>>(
     () => buildInitialVisibility(allowedTypes),
   );
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [neighborhoodData, setNeighborhoodData] =
+    useState<NeighborhoodFeatureCollection | null>(null);
+  const [visibleNeighborhoodCodes, setVisibleNeighborhoodCodes] = useState<
+    NeighborhoodCode[]
+  >([]);
+  const [neighborhoodError, setNeighborhoodError] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+
+    mapNeighborhoodApi
+      .getNeighborhoods()
+      .then((data) => {
+        if (cancelled) return;
+        const codes = data.features
+          .filter((feature) => feature.properties.kind === "neighborhood")
+          .map((feature) => feature.properties.code as NeighborhoodCode);
+
+        setNeighborhoodData(data);
+        setVisibleNeighborhoodCodes(codes);
+        setNeighborhoodError(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setNeighborhoodData(null);
+        setNeighborhoodError(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  useEffect(() => {
+    setVisibleTypes(buildInitialVisibility(allowedTypes));
+  }, [user?.role]);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await getMapPersons();
+        setPersons(data);
+      } catch (err) {
+        console.error(err);
+        setError("Không thể tải dữ liệu bản đồ");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
 
   function handleToggle(type: PersonType) {
     if (!allowedTypes.includes(type)) return;
@@ -53,71 +119,69 @@ export default function BanDoPage() {
   }
 
   return (
-    /*
-     * The (root) layout sets `main` to have `p-6` and `overflow-y-auto`.
-     * We use -m-6 to bleed all the way to the main edges, then set explicit
-     * height so the map fills the available viewport height.
-     */
     <div className="-m-6 flex flex-col" style={{ height: "calc(100vh - 0px)" }}>
-      {/* Top Banner */}
-      {/* <div
-        className="flex items-center gap-3 px-4 py-2.5 shrink-0 shadow-md z-10"
-        style={{ background: "#2D3B2D" }}
-      >
-        <div className="w-8 h-8 shrink-0">
-          <svg viewBox="0 0 32 32" width="32" height="32">
-            <circle
-              cx="16"
-              cy="16"
-              r="15"
-              fill="#D69E2E"
-              stroke="#fff"
-              strokeWidth="1"
-            />
-            <polygon
-              points="16,5 18.47,12.6 26.51,12.6 20.02,17.4 22.49,25 16,20.2 9.51,25 11.98,17.4 5.49,12.6 13.53,12.6"
-              fill="#2D3B2D"
-            />
-          </svg>
-        </div>
-        <div className="flex flex-col flex-1 min-w-0">
-          <span className="text-white font-bold text-sm leading-tight tracking-wide">
-            BẢN ĐỒ ĐỊNH VỊ LỰC LƯỢNG
-          </span>
-          <span className="text-green-300 text-xs leading-tight">
-            Dân quân Phường Bình Phú — Quận 6, TP. Hồ Chí Minh
-          </span>
-        </div>
-
-        <button
-          className="md:hidden bg-white/10 hover:bg-white/20 text-white rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors shrink-0"
-          onClick={() => setSidebarOpen((v) => !v)}
-        >
-          {sidebarOpen ? "✕ Đóng" : "☰ Lọc"}
-        </button>
-      </div> */}
-
       <div className="flex-1 flex relative overflow-hidden">
-        <div className="flex-1 relative">
-          <MapView persons={MOCK_PERSONS} visibleTypes={visibleTypes} />
-        </div>
+        {loading && (
+          <div className="absolute inset-0 z-[9999] flex items-center justify-center bg-white/70">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-gray-600 text-sm font-medium">
+                Đang tải dữ liệu...
+              </span>
+            </div>
+          </div>
+        )}
 
-        <div className="hidden md:block absolute right-3 top-3 z-1000 pointer-events-auto">
-          <FilterSidebar
-            visibleTypes={visibleTypes}
-            onToggle={handleToggle}
+        {error && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[9999] bg-red-600 text-white px-4 py-2 rounded-lg shadow">
+            {error}
+          </div>
+        )}
+
+        <div className="flex-1 relative">
+          <MapView
             persons={MOCK_PERSONS}
-            allowedTypes={allowedTypes}
+            visibleTypes={visibleTypes}
+            neighborhoodData={neighborhoodData}
+            visibleNeighborhoodCodes={visibleNeighborhoodCodes}
           />
         </div>
 
+        <div className="pointer-events-auto absolute right-3 top-3 z-1000 hidden flex-col items-stretch gap-3 md:flex">
+          <FilterSidebar
+            visibleTypes={visibleTypes}
+            onToggle={handleToggle}
+            persons={persons}
+            allowedTypes={allowedTypes}
+          />
+          {neighborhoodData && (
+            <NeighborhoodFilterPanel
+              data={neighborhoodData}
+              visibleCodes={visibleNeighborhoodCodes}
+              onVisibleCodesChange={setVisibleNeighborhoodCodes}
+            />
+          )}
+        </div>
+        {neighborhoodError && (
+          <div className="pointer-events-none absolute left-14 top-3 z-1000 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700 shadow">
+            Không thể tải ranh giới Khu phố
+          </div>
+        )}
+        <button
+          type="button"
+          className="absolute right-3 top-3 z-1000 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow md:hidden"
+          onClick={() => setSidebarOpen((open) => !open)}
+        >
+          {sidebarOpen ? "Đóng bộ lọc" : "Mở bộ lọc"}
+        </button>
         {/* Mobile bottom sheet */}
+
         {sidebarOpen && (
           <div className="md:hidden absolute bottom-0 left-0 right-0 z-2000 p-3">
             <FilterSidebar
               visibleTypes={visibleTypes}
               onToggle={handleToggle}
-              persons={MOCK_PERSONS}
+              persons={persons}
               allowedTypes={allowedTypes}
             />
           </div>

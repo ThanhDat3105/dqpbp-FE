@@ -11,12 +11,12 @@ interface FilterSidebarProps {
 }
 
 const ALL_FILTER_TYPES: PersonType[] = ["TUOI_17", "QUAN_NHAN_DU_BI", "DQCD"];
-const DISPLAY_COUNTS: Record<PersonType, number> = {
-  TUOI_17: 14,
-  QUAN_NHAN_DU_BI: 48,
-  DQCD: 19,
-  HQ: 1,
-};
+// const DISPLAY_COUNTS: Record<PersonType, number> = {
+//   TUOI_17: 14,
+//   QUAN_NHAN_DU_BI: 48,
+//   DQCD: 19,
+//   HQ: 1,
+// };
 
 export default function FilterSidebar({
   visibleTypes,
@@ -114,7 +114,7 @@ export default function FilterSidebar({
                 className="text-xs font-bold px-2 py-0.5 rounded-full text-white shrink-0"
                 style={{ background: checked ? cfg.color : "#9CA3AF" }}
               >
-                {DISPLAY_COUNTS[type]}
+                {persons.filter((p) => p.type === type).length}
               </span>
             </label>
           );

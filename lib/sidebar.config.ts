@@ -151,7 +151,7 @@ export const menuConfig: MenuItem[] = [
     label: "Bản đồ",
     href: "/ban-do",
     icon: Map,
-    role: ["CHI_HUY", "TO_TRUONG"],
+    role: ["CHI_HUY", "TO_TRUONG", "DQTT"],
   },
   {
     id: "document",
@@ -170,7 +170,7 @@ export const menuConfig: MenuItem[] = [
     id: "website-cms",
     label: "Trang thông tin",
     icon: Globe,
-    href: "/website",
+    href: "https://bchqsbp.vn/",
   },
   {
     id: "manage-website-cms",

@@ -1,13 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import NeighborhoodPolygonLayer from "./NeighborhoodPolygonLayer";
+import type {
+  NeighborhoodCode,
+  NeighborhoodFeatureCollection,
+} from "./neighborhood-types";
+import PersonPopup from "./PersonPopup";
 import type { Person, PersonType } from "./types";
 import { PIN_CONFIG } from "./types";
-import PersonPopup from "./PersonPopup";
 
 interface MapViewProps {
   persons: Person[];
   visibleTypes: Record<PersonType, boolean>;
+  neighborhoodData?: NeighborhoodFeatureCollection | null;
+  visibleNeighborhoodCodes?: readonly NeighborhoodCode[];
 }
 
 const MAP_CENTER: [number, number] = [10.74, 106.628];
@@ -29,10 +36,18 @@ function makeStarIcon(color = "#D69E2E", size = 36) {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 
-export default function MapView({ persons, visibleTypes }: MapViewProps) {
+export default function MapView({
+  persons,
+  visibleTypes,
+  neighborhoodData = null,
+  visibleNeighborhoodCodes = [],
+}: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<import("leaflet").Map | null>(null);
   const markersRef = useRef<Map<string, import("leaflet").Marker>>(new Map());
+  const [leafletMap, setLeafletMap] = useState<import("leaflet").Map | null>(
+    null,
+  );
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [mapType, setMapType] = useState<"street" | "satellite" | "hybrid">(
     "street",
@@ -55,7 +70,13 @@ export default function MapView({ persons, visibleTypes }: MapViewProps) {
     if (typeof window === "undefined" || !mapRef.current) return;
     if (leafletMapRef.current) return;
 
-    import("leaflet").then((L) => {
+    let cancelled = false;
+    let createdMap: import("leaflet").Map | null = null;
+    const container = mapRef.current;
+
+    void import("leaflet").then((L) => {
+      if (cancelled || !container.isConnected || leafletMapRef.current) return;
+
       // Fix default icon paths
       delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)
         ._getIconUrl;
@@ -65,11 +86,12 @@ export default function MapView({ persons, visibleTypes }: MapViewProps) {
         shadowUrl: "",
       });
 
-      const map = L.map(mapRef.current!, {
+      const map = L.map(container, {
         center: MAP_CENTER,
         zoom: MAP_ZOOM,
         zoomControl: true,
       });
+      createdMap = map;
 
       // Default tile layer
       tileLayerRef.current = L.tileLayer(TILE_LAYERS.street, {
@@ -78,22 +100,28 @@ export default function MapView({ persons, visibleTypes }: MapViewProps) {
       }).addTo(map);
 
       leafletMapRef.current = map;
-
+      setLeafletMap(map);
       // Close popup when clicking map background
       map.on("click", () => setSelectedPerson(null));
     });
 
     return () => {
-      leafletMapRef.current?.remove();
-      leafletMapRef.current = null;
+      cancelled = true;
+      if (!createdMap) return;
+
+      markersRef.current.clear();
+      createdMap.remove();
+
+      if (leafletMapRef.current === createdMap) {
+        leafletMapRef.current = null;
+      }
     };
   }, []);
 
   // Update tile layer when mapType changes
   useEffect(() => {
-    if (!leafletMapRef.current) return;
-    import("leaflet").then((L) => {
-      const map = leafletMapRef.current!;
+    if (!leafletMap) return;
+    void import("leaflet").then((L) => {
       tileLayerRef.current?.remove();
       labelLayerRef.current?.remove();
 
@@ -101,34 +129,34 @@ export default function MapView({ persons, visibleTypes }: MapViewProps) {
         tileLayerRef.current = L.tileLayer(TILE_LAYERS.street, {
           attribution: "© OpenStreetMap",
           maxZoom: 20,
-        }).addTo(map);
+        }).addTo(leafletMap);
         labelLayerRef.current = null;
       } else {
         tileLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
           attribution: "© Esri",
           maxZoom: 20,
-        }).addTo(map);
+        }).addTo(leafletMap);
         if (mapType === "hybrid") {
           labelLayerRef.current = L.tileLayer(
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
             { attribution: "© OpenStreetMap", opacity: 0.5, maxZoom: 20 },
-          ).addTo(map);
+          ).addTo(leafletMap);
         } else {
           labelLayerRef.current = null;
         }
       }
     });
-  }, [mapType]);
+  }, [leafletMap, mapType]);
 
   // Sync markers
   useEffect(() => {
-    if (!leafletMapRef.current) return;
+    if (!leafletMap) return;
 
-    import("leaflet").then((L) => {
-      const map = leafletMapRef.current!;
-
+    void import("leaflet").then((L) => {
       // Remove all existing markers
-      markersRef.current.forEach((m) => m.remove());
+      markersRef.current.forEach((marker) => {
+        marker.remove();
+      });
       markersRef.current.clear();
 
       persons.forEach((person) => {
@@ -147,17 +175,17 @@ export default function MapView({ persons, visibleTypes }: MapViewProps) {
         });
 
         const marker = L.marker([person.lat, person.lng], { icon })
-          .addTo(map)
+          .addTo(leafletMap)
           .on("click", (e) => {
             e.originalEvent.stopPropagation();
             setSelectedPerson(person);
-            map.panTo([person.lat, person.lng]);
+            leafletMap.panTo([person.lat, person.lng]);
           });
 
         markersRef.current.set(person.id, marker);
       });
     });
-  }, [persons, visibleTypes]);
+  }, [leafletMap, persons, visibleTypes]);
 
   const btnBase =
     "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer";
@@ -168,7 +196,11 @@ export default function MapView({ persons, visibleTypes }: MapViewProps) {
     <div className="relative w-full h-full">
       {/* Map container */}
       <div ref={mapRef} className="w-full h-full" />
-
+      <NeighborhoodPolygonLayer
+        map={leafletMap}
+        data={neighborhoodData}
+        visibleCodes={visibleNeighborhoodCodes}
+      />
       {/* Map type controls — top left */}
       <div className="absolute bottom-3 left-3 z-1000 flex gap-1 bg-white/90 backdrop-blur rounded-xl p-1 shadow-lg">
         {(
@@ -180,6 +212,7 @@ export default function MapView({ persons, visibleTypes }: MapViewProps) {
         ).map(({ key, label }) => (
           <button
             key={key}
+            type="button"
             onClick={() => setMapType(key)}
             className={`${btnBase} ${mapType === key ? btnActive : btnInactive}`}
           >

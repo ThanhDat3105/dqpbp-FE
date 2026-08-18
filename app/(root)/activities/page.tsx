@@ -198,7 +198,7 @@ export default function ActivityListPage() {
 
   useEffect(() => {
     handleGetDepartments();
-  }, [handleGetDepartments]);
+  }, [handleGetDepartments, selectedId]);
 
   const handlePageChange = (newPage: number) => {
     setParams((prev) => ({ ...prev, page: newPage }));
@@ -589,7 +589,12 @@ export default function ActivityListPage() {
           className="w-120 sm:w-150 overflow-y-auto px-4 py-4 border-none pb-20"
         >
           {selectedId !== null && (
-            <ActivityDetailSheet activityId={selectedId} />
+            <ActivityDetailSheet
+              activityId={selectedId}
+              onActivityUpdated={() => {
+                handleGetActivities();
+              }}
+            />
           )}
         </SheetContent>
       </Sheet>

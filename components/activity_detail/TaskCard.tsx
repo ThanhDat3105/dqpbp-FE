@@ -64,7 +64,13 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function TaskCard({ task }: { task: TaskInterface }) {
+export default function TaskCard({
+  task,
+  onActivityUpdated,
+}: {
+  task: TaskInterface;
+  onActivityUpdated?: () => void;
+}) {
   const { user } = useAuth();
   const { fetchActivityDetail, activity } = useActivity();
 
@@ -144,6 +150,7 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
       await activityAPI.updateTaskStatus(task.id, "in_progress");
       toast.success("Đã nhận nhiệm vụ");
       await fetchActivityDetail(activity.id);
+      onActivityUpdated?.();
     } catch {
       toast.error("Cập nhật thất bại");
     } finally {
@@ -190,6 +197,7 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
       await activityAPI.updateTaskStatus(task.id, "completed", uploadedUrls);
       toast.success("Hoàn thành nhiệm vụ");
       await fetchActivityDetail(activity.id);
+      onActivityUpdated?.();
     } catch {
       toast.error("Cập nhật thất bại");
     } finally {
@@ -358,50 +366,53 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
               )}
 
               {/* Tìm DQCD rảnh */}
-              {dqcdDate && dqcdStartTime && dqcdEndTime && dqcdEndTime > dqcdStartTime && (
-                <>
-                  {dqcdUsers.length === 0 && !loadingDqcd && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full text-xs"
-                      onClick={() =>
-                        fetchDqcdUsers(
-                          `${dqcdDate}T${dqcdStartTime}:00`,
-                          `${dqcdDate}T${dqcdEndTime}:00`,
-                        )
-                      }
-                    >
-                      Tìm DQCĐ rảnh
-                    </Button>
-                  )}
+              {dqcdDate &&
+                dqcdStartTime &&
+                dqcdEndTime &&
+                dqcdEndTime > dqcdStartTime && (
+                  <>
+                    {dqcdUsers.length === 0 && !loadingDqcd && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs"
+                        onClick={() =>
+                          fetchDqcdUsers(
+                            `${dqcdDate}T${dqcdStartTime}:00`,
+                            `${dqcdDate}T${dqcdEndTime}:00`,
+                          )
+                        }
+                      >
+                        Tìm DQCĐ rảnh
+                      </Button>
+                    )}
 
-                  {loadingDqcd && (
-                    <p className="text-xs text-gray-400 text-center py-1">
-                      Đang tải...
-                    </p>
-                  )}
+                    {loadingDqcd && (
+                      <p className="text-xs text-gray-400 text-center py-1">
+                        Đang tải...
+                      </p>
+                    )}
 
-                  {!loadingDqcd && dqcdSearched && dqcdUsers.length === 0 && (
-                    <p className="text-xs text-amber-600 text-center py-1">
-                      Hệ thống không tìm thấy DQCĐ rảnh trong khung giờ này
-                    </p>
-                  )}
+                    {!loadingDqcd && dqcdSearched && dqcdUsers.length === 0 && (
+                      <p className="text-xs text-amber-600 text-center py-1">
+                        Hệ thống không tìm thấy DQCĐ rảnh trong khung giờ này
+                      </p>
+                    )}
 
-                  {!loadingDqcd && dqcdUsers.length > 0 && (
-                    <MultiSelect
-                      options={dqcdUsers.map((u) => ({
-                        value: String(u.id),
-                        label: u.name,
-                      }))}
-                      value={selectedDqcd}
-                      onValueChange={setSelectedDqcd}
-                      placeholder="Chọn DQCĐ"
-                    />
-                  )}
-                </>
-              )}
+                    {!loadingDqcd && dqcdUsers.length > 0 && (
+                      <MultiSelect
+                        options={dqcdUsers.map((u) => ({
+                          value: String(u.id),
+                          label: u.name,
+                        }))}
+                        value={selectedDqcd}
+                        onValueChange={setSelectedDqcd}
+                        placeholder="Chọn DQCĐ"
+                      />
+                    )}
+                  </>
+                )}
             </div>
           )}
 
@@ -428,16 +439,40 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
                 }}
               >
                 <div className="flex gap-3 text-gray-400">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
                     <rect x="3" y="3" width="18" height="18" rx="2" />
                     <circle cx="8.5" cy="8.5" r="1.5" />
                     <path d="m21 15-5-5L5 21" />
                   </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                     <polyline points="14 2 14 8 20 8" />
                   </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
                     <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                   </svg>
                 </div>
@@ -467,13 +502,31 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
                         className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-gray-200 bg-gray-50 text-xs text-gray-700 max-w-40"
                       >
                         {isImage ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500 shrink-0">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            className="text-green-500 shrink-0"
+                          >
                             <rect x="3" y="3" width="18" height="18" rx="2" />
                             <circle cx="8.5" cy="8.5" r="1.5" />
                             <path d="m21 15-5-5L5 21" />
                           </svg>
                         ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-500 shrink-0">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            className="text-amber-500 shrink-0"
+                          >
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                             <polyline points="14 2 14 8 20 8" />
                           </svg>
@@ -567,7 +620,16 @@ export default function TaskCard({ task }: { task: TaskInterface }) {
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs text-gray-700 max-w-45 transition-colors"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-500 shrink-0">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          className="text-amber-500 shrink-0"
+                        >
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                           <polyline points="14 2 14 8 20 8" />
                         </svg>
