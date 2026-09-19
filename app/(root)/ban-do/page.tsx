@@ -1,20 +1,19 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
-import type { Person, PersonType } from "@/components/map/types";
+import { useEffect, useMemo, useState } from "react";
+import { HQ_MARKER } from "@/components/map/constants";
 import FilterSidebar from "@/components/map/FilterSidebar";
-import { MOCK_PERSONS } from "@/components/map/mockData";
 import NeighborhoodFilterPanel from "@/components/map/NeighborhoodFilterPanel";
 import type {
   NeighborhoodCode,
   NeighborhoodFeatureCollection,
 } from "@/components/map/neighborhood-types";
-// import type { PersonType } from "@/components/map/types";
+import type { Person, PersonType } from "@/components/map/types";
 
 import { useAuth } from "@/context/AuthContext";
-import { mapNeighborhoodApi } from "@/services/api/map-neighborhood";
 import { getMapPersons } from "@/services/api/map";
+import { mapNeighborhoodApi } from "@/services/api/map-neighborhood";
 
 const MapView = dynamic(() => import("@/components/map/MapView"), {
   ssr: false,
@@ -118,11 +117,22 @@ export default function BanDoPage() {
     setVisibleTypes((prev) => ({ ...prev, [type]: !prev[type] }));
   }
 
+  // Nhân sự thật từ API + marker trụ sở UBND (điểm cố định)
+  const mapPersons = useMemo<Person[]>(
+    () => [
+      ...persons.filter((person) => allowedTypes.includes(person.type)),
+      ...HQ_MARKER,
+    ],
+    [persons, allowedTypes],
+  );
+
+  const hasNoData = !loading && !error && persons.length === 0;
+
   return (
     <div className="-m-6 flex flex-col" style={{ height: "calc(100vh - 0px)" }}>
       <div className="flex-1 flex relative overflow-hidden">
         {loading && (
-          <div className="absolute inset-0 z-[9999] flex items-center justify-center bg-white/70">
+          <div className="absolute inset-0 z-9999 flex items-center justify-center bg-white/70">
             <div className="flex flex-col items-center gap-3">
               <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
               <span className="text-gray-600 text-sm font-medium">
@@ -133,14 +143,20 @@ export default function BanDoPage() {
         )}
 
         {error && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[9999] bg-red-600 text-white px-4 py-2 rounded-lg shadow">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-9999 bg-red-600 text-white px-4 py-2 rounded-lg shadow">
             {error}
+          </div>
+        )}
+
+        {hasNoData && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-9999 rounded-lg bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 shadow">
+            Chưa có nhân sự nào có toạ độ để hiển thị trên bản đồ
           </div>
         )}
 
         <div className="flex-1 relative">
           <MapView
-            persons={MOCK_PERSONS}
+            persons={mapPersons}
             visibleTypes={visibleTypes}
             neighborhoodData={neighborhoodData}
             visibleNeighborhoodCodes={visibleNeighborhoodCodes}

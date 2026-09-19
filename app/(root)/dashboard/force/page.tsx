@@ -28,6 +28,7 @@ import { axiosInstance } from "@/lib/axios.config";
 
 import type { KpiPeriod } from "@/components/kpi/KpiPageLayout";
 import DialogDetailKPI from "@/components/force/DialogDetailKPI";
+import KpiTargetStatistics from "@/components/force/KpiTargetStatistics";
 import Link from "next/link";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -603,7 +604,10 @@ export default function LucLuongDashboardPage() {
         )}
       </section>
 
-      {/* ── Section 4: Personnel Table ── */}
+      {/* ── Section 4: KPI Target Statistics ── */}
+      <KpiTargetStatistics />
+
+      {/* ── Section 5: Personnel Table ── */}
       <section
         id="personnel-table"
         className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"

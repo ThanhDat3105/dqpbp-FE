@@ -6,11 +6,7 @@ import ArrowLeftIcon from "@mui/icons-material/ArrowLeft";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
 import { formatMonth } from "@/utils/formatDate";
 import { activityAPI, ActivityInterface } from "@/services/api/activity";
-import {
-  handleGetDepartment,
-  handleGetWorkType,
-  getDeadlineDisplay,
-} from "@/utils/activity";
+import { handleGetDepartment, getDeadlineDisplay } from "@/utils/activity";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import ActivityDetailSheet from "@/components/activity/ActivityDetailSheet";
 import ActivityCreateSheet from "@/components/activity/ActivityCreateSheet";
@@ -403,9 +399,6 @@ export default function ActivityListPage() {
                         </Tooltip>
                       </TooltipProvider>
                       <div className="flex gap-2 mb-3 flex-wrap">
-                        <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-semibold">
-                          {handleGetWorkType(activity.work_type)}
-                        </span>
                         <span className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-full font-semibold">
                           {handleGetDepartment(activity.department)}
                         </span>
@@ -447,9 +440,6 @@ export default function ActivityListPage() {
                         </th>
                         <th className="px-4 py-3 text-left font-semibold text-gray-600 min-w-min-w-50">
                           Tên công tác
-                        </th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-600">
-                          Loại
                         </th>
                         <th className="px-4 py-3 text-left font-semibold text-gray-600 hidden md:table-cell">
                           Bộ phận
@@ -493,11 +483,6 @@ export default function ActivityListPage() {
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-semibold whitespace-nowrap">
-                              {handleGetWorkType(activity.work_type)}
-                            </span>
                           </td>
                           <td className="px-4 py-3 hidden md:table-cell">
                             <span className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-full font-semibold whitespace-nowrap">

@@ -16,7 +16,6 @@ export interface ActivityTemplateInterface {
   id: number;
   name: string;
   description: string | null;
-  work_type: string | null;
   department: string | null;
   location: string | null;
   document_number: string | null;
@@ -31,7 +30,6 @@ export interface ActivityTemplateInterface {
 export interface CreateTemplatePayload {
   name: string;
   description?: string;
-  work_type?: string;
   department?: string;
   location?: string;
   document_number?: string;
@@ -45,7 +43,6 @@ export interface GetTemplatesParams {
   page?: number;
   limit?: number;
   status?: string;
-  work_type?: string;
   department?: string;
   search?: string;
 }
@@ -61,7 +58,6 @@ export interface CreateActivityFromTemplatePayload {
   name: string;
   start_date: string;
   end_date: string;
-  work_type?: string;
   department?: string;
   location?: string;
   document_number?: string;

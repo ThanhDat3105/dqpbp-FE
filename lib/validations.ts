@@ -38,7 +38,6 @@ export const createActivitySchema = z
       .string()
       .min(1, { message: "Tên kế hoạch là bắt buộc" })
       .min(3, { message: "Tên kế hoạch phải có ít nhất 3 ký tự" }),
-    work_type: z.string().min(1, { message: "Loại hoạt động là bắt buộc" }),
     department: z.string().min(1, { message: "Tổ phụ trách là bắt buộc" }),
     location: z.string().optional().default(""),
     document_number: z.string().optional().default(""),

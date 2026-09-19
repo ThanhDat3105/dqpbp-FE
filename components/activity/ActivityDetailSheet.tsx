@@ -6,7 +6,7 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import { TaskInterface } from "@/services/api/activity";
 import Information from "@/components/activity_detail/Information";
 import TaskCard from "@/components/activity_detail/TaskCard";
-import { handleGetDepartment, handleGetWorkType } from "@/utils/activity";
+import { handleGetDepartment } from "@/utils/activity";
 import { useActivity } from "@/context/ActivityContext";
 
 export default function ActivityDetailSheet({
@@ -42,9 +42,6 @@ export default function ActivityDetailSheet({
           {activity.name}
         </h1>
         <div className="flex gap-2 flex-wrap">
-          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-bold flex gap-1 items-center">
-            <span>{handleGetWorkType(activity.work_type)}</span>
-          </span>
           <span className="px-2 py-1 bg-orange-100 text-orange-700 flex items-center text-xs rounded-full font-bold gap-1">
             <PeopleOutlinedIcon fontSize="small" />
             <span>{handleGetDepartment(activity.department)}</span>

@@ -114,7 +114,6 @@ export async function getRecentTasks(params: {
       activity: {
         id: Number(item.activity?.id ?? item.activity_id ?? index + 1),
         name: String(item.activity?.name ?? item.activity_name ?? "-"),
-        work_type: String(item.activity?.work_type ?? item.work_type ?? "-"),
       },
       due_date: String(item.due_date ?? ""),
       status: String(item.status ?? "pending") as KpiRecentTask["status"],

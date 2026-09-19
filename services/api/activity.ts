@@ -203,7 +203,6 @@ export const departments: Department[] = [
 export interface ActivityInterface {
   id: string;
   name: string;
-  work_type: string;
   department: string;
   start_date: Date;
   end_date: Date;
@@ -220,7 +219,6 @@ export interface ActivityInterface {
 
 export interface CreateActivityInterface {
   name: string;
-  work_type: string;
   department: string;
   start_date: string;
   end_date: string;
@@ -244,6 +242,12 @@ export interface CreateActivityInterface {
   created_by: string;
   created_at: string;
   updated_at: string;
+  /** kpi_target_line.id — null nếu kế hoạch phát sinh, ngoài chỉ tiêu */
+  kpi_target_line_id?: number | null;
+  /** departments.id của tổ sở hữu chỉ tiêu */
+  kpi_team_id?: number | null;
+  /** true = không tính vào KPI, chỉ đếm vào outOfTargetCount */
+  out_of_target?: boolean;
 }
 
 export interface TaskInterface {

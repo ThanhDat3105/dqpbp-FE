@@ -20,19 +20,64 @@ interface MapViewProps {
 const MAP_CENTER: [number, number] = [10.74, 106.628];
 const MAP_ZOOM = 15;
 
-/* ---------- SVG icon helpers ---------- */
-function makeCircleIcon(color: string, size = 32) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-    <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 3}" fill="${color}" stroke="white" stroke-width="3"/>
-  </svg>`;
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+/* ---------- SVG pin helpers ---------- */
+
+// Kích thước marker khi render (px)
+const PIN_SIZE = { width: 22, height: 35 };
+const HQ_PIN_SIZE = { width: 27, height: 43 };
+
+/**
+ * Hệ toạ độ gốc của pin — mọi hằng số hình học bên dưới nằm trong viewBox này.
+ * Dáng "quả bóng": đầu tròn to r=11 tâm (12,12), thân thóp ngắn xuống
+ * mũi (12, 29.4), kèm một chấm tròn rời bên dưới đánh dấu vị trí thật.
+ */
+const PIN_VIEWBOX = { width: 24, height: 38 };
+
+// Hai cạnh thân là tiếp tuyến từ mũi tới đầu tròn (cos a = r/d, d = 17.4)
+const PIN_PATH = "M12 29.4 L3.477 18.954 A11 11 0 1 1 20.523 18.954 Z";
+
+// Chấm rời dưới mũi — tâm chấm chính là điểm neo của marker
+const PIN_DOT = { cx: 12, cy: 34.2, r: 2.5 };
+
+const PIN_HOLE = { cx: 12, cy: 12, r: 4.6 };
+
+// Sao 5 cánh tâm (12,12), R=6.2 / r=2.7 — dùng cho trụ sở
+const HQ_STAR_POINTS =
+  "12,5.8 13.59,9.82 17.9,10.08 14.57,12.83 15.64,17.02 12,14.7 8.36,17.02 9.43,12.83 6.1,10.08 10.41,9.82";
+
+/** Tỉ lệ vị trí điểm neo theo chiều cao icon */
+const PIN_ANCHOR_RATIO = PIN_DOT.cy / PIN_VIEWBOX.height;
+
+/**
+ * Chỉ những person có toạ độ thật mới dựng được marker.
+ * Number.isFinite loại luôn null / undefined / NaN / chuỗi mà không ép kiểu,
+ * nên bắt được cả trường hợp API trả về null dù type khai báo là number.
+ */
+function hasValidCoords(person: Person) {
+  return (
+    Number.isFinite(person.lat) &&
+    Number.isFinite(person.lng) &&
+    Math.abs(person.lat) <= 90 &&
+    Math.abs(person.lng) <= 180
+  );
 }
 
-function makeStarIcon(color = "#D69E2E", size = 36) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24">
-    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
-      fill="${color}" stroke="white" stroke-width="1.5"/>
+function makePinIcon(
+  color: string,
+  variant: "dot" | "star" = "dot",
+  size = PIN_SIZE,
+) {
+  const inner =
+    variant === "star"
+      ? `<polygon points="${HQ_STAR_POINTS}" fill="#fff"/>`
+      : `<circle cx="${PIN_HOLE.cx}" cy="${PIN_HOLE.cy}" r="${PIN_HOLE.r}" fill="#fff"/>`;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size.width}" height="${size.height}" viewBox="0 0 ${PIN_VIEWBOX.width} ${PIN_VIEWBOX.height}">
+    <path d="${PIN_PATH}" fill="${color}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/>
+    <circle cx="${PIN_DOT.cx}" cy="${PIN_DOT.cy}" r="${PIN_DOT.r}" fill="${color}" stroke="#fff" stroke-width="1.4"/>
+    ${inner}
   </svg>`;
+
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 
@@ -162,16 +207,31 @@ export default function MapView({
       persons.forEach((person) => {
         if (!visibleTypes[person.type]) return;
 
+        console.log(
+          hasValidCoords(person),
+          person.name,
+          person.lat,
+          person.lng,
+        );
+
+        // Chưa có lat/lng thì không render marker
+        if (!hasValidCoords(person)) return;
+
         const isHQ = person.type === "HQ";
-        const iconUrl = isHQ
-          ? makeStarIcon("#D69E2E", 36)
-          : makeCircleIcon(PIN_CONFIG[person.type].color, 28);
+        const size = isHQ ? HQ_PIN_SIZE : PIN_SIZE;
+        const iconUrl = makePinIcon(
+          PIN_CONFIG[person.type].color,
+          isHQ ? "star" : "dot",
+          size,
+        );
 
         const icon = L.icon({
           iconUrl,
-          iconSize: isHQ ? [36, 36] : [28, 28],
-          iconAnchor: isHQ ? [18, 18] : [14, 14],
-          popupAnchor: [0, -20],
+          iconSize: [size.width, size.height],
+          // Chấm tròn dưới cùng trùng đúng toạ độ thật
+          iconAnchor: [size.width / 2, size.height * PIN_ANCHOR_RATIO],
+          popupAnchor: [0, -size.height * PIN_ANCHOR_RATIO],
+          className: "dq-map-pin",
         });
 
         const marker = L.marker([person.lat, person.lng], { icon })
@@ -229,11 +289,19 @@ export default function MapView({
         />
       )}
 
-      {/* Popup animation style */}
+      {/* Popup animation + pin style */}
       <style>{`
         @keyframes popupIn {
           from { opacity: 0; transform: translateX(-50%) translateY(8px); }
           to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        /* Không đụng transform: Leaflet dùng transform để định vị marker */
+        .dq-map-pin {
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+          transition: filter 0.15s ease;
+        }
+        .dq-map-pin:hover {
+          filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4)) brightness(1.08);
         }
       `}</style>
     </div>

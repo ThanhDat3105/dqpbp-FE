@@ -17,7 +17,6 @@ const ActivityContext = createContext<ActivityContextType>({
   activity: {
     id: "",
     name: "",
-    work_type: "",
     department: "",
     start_date: new Date(),
     end_date: new Date(),
@@ -43,7 +42,6 @@ export function ActivityProvider({ children }: ActivityProviderProps) {
   const [activity, setActivity] = useState<ActivityInterface>({
     id: "",
     name: "",
-    work_type: "",
     department: "",
     start_date: new Date(),
     end_date: new Date(),

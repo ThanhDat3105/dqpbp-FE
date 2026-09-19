@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
-import { Info, ListTodo, Save, AlertTriangle, Paperclip, X, Loader2 } from "lucide-react";
+import {
+  Info,
+  ListTodo,
+  Save,
+  AlertTriangle,
+  Paperclip,
+  X,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +33,7 @@ import { activityAPI, CreateActivityInterface } from "@/services/api/activity";
 import Task from "@/components/activity/Task";
 import { createActivitySchema } from "@/lib/validations";
 import { toast } from "sonner";
-import { departmentAPI } from "@/services/api/department";
+import { departmentAPI, DepartmentInterface } from "@/services/api/department";
 import { handleGetDepartment } from "@/utils/activity";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -33,11 +41,16 @@ import {
   ActivityTemplateInterface,
 } from "@/services/api/activity-template";
 import { uploadAPI } from "@/services/api/upload";
+import { kpiTargetAPI, KpiTargetInterface } from "@/services/api/kpi-target";
+
+/** Radix Select không cho SelectItem có value rỗng, nên cần giá trị đại diện */
+const NO_KPI_TARGET = "none";
 
 interface FormData {
   name: string;
-  work_type: string;
   department: string;
+  /** KpiTargetLine["id"] được chọn, null = chưa chọn */
+  kpiTargetLine: number | null;
   location: string;
   start_date: string;
   end_date: string;
@@ -79,12 +92,15 @@ export default function ActivityCreateSheet({
   const [applyingTemplate, setApplyingTemplate] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [attachedFile, setAttachedFile] = useState<{ name: string; url: string } | null>(null);
+  const [attachedFile, setAttachedFile] = useState<{
+    name: string;
+    url: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
-    work_type: "",
     department: "",
+    kpiTargetLine: null,
     location: "",
     start_date: new Date().toISOString().split("T")[0],
     end_date: new Date().toISOString().split("T")[0],
@@ -98,8 +114,8 @@ export default function ActivityCreateSheet({
 
   const isDirty =
     formData.name !== "" ||
-    formData.work_type !== "" ||
     formData.department !== "" ||
+    formData.kpiTargetLine !== null ||
     formData.location !== "" ||
     formData.document_number !== "" ||
     formData.tasks.length > 0;
@@ -118,8 +134,13 @@ export default function ActivityCreateSheet({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateErrors, setDateErrors] = useState<Record<string, string>>({});
-  const [department, setDepartment] = useState<string[]>([]);
+  const [department, setDepartment] = useState<DepartmentInterface[]>([]);
+  const [kpiTarget, setKpiTarget] = useState<KpiTargetInterface[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const selectedDepartmentId = department.find(
+    (dept) => dept.code === formData.department,
+  )?.id;
 
   const validateDateRange = (
     start: string,
@@ -237,9 +258,15 @@ export default function ActivityCreateSheet({
 
     setLoading(true);
     try {
+      const { kpiTargetLine, ...activityFields } = formData;
+
       const payload: CreateActivityInterface = {
-        ...formData,
+        ...activityFields,
         created_by: String(user?.id) || "admin",
+        kpi_target_line_id: kpiTargetLine,
+        // luôn gắn tổ, kể cả kế hoạch phát sinh, để outOfTargetCount đếm được
+        kpi_team_id: selectedDepartmentId ?? null,
+        out_of_target: kpiTargetLine === null,
         tasks: formData.tasks.map((task) => ({
           ...task,
           start_date: formData.start_date,
@@ -378,9 +405,22 @@ export default function ActivityCreateSheet({
     setLoading(true);
     try {
       const res = await departmentAPI.getAllDepartment();
-      setDepartment(res.map((de) => de.code));
+      setDepartment(res);
     } catch (error) {
       console.error("Error fetching departments:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // nhận teamId qua tham số để useCallback([]) không bắt phải giá trị cũ
+  const handleGetKpiTarget = useCallback(async (teamId: number) => {
+    setLoading(true);
+    try {
+      const res = await kpiTargetAPI.getAllKpiTargets(teamId);
+      setKpiTarget(res);
+    } catch (error) {
+      console.error("Error fetching KPI targets:", error);
     } finally {
       setLoading(false);
     }
@@ -389,6 +429,14 @@ export default function ActivityCreateSheet({
   useEffect(() => {
     handleGetDepartments();
   }, [handleGetDepartments]);
+
+  useEffect(() => {
+    if (!selectedDepartmentId) {
+      setKpiTarget([]);
+      return;
+    }
+    handleGetKpiTarget(selectedDepartmentId);
+  }, [selectedDepartmentId, handleGetKpiTarget]);
 
   useEffect(() => {
     activityTemplateAPI
@@ -433,8 +481,8 @@ export default function ActivityCreateSheet({
       setFormData((prev) => ({
         ...prev,
         name: tpl.name ?? prev.name,
-        work_type: tpl.work_type ?? prev.work_type,
         department: tpl.department ?? prev.department,
+        kpiTargetLine: null,
         location: tpl.location ?? prev.location,
         document_number: tpl.document_number ?? prev.document_number,
         tasks: tpl.tasks.map((t) => ({
@@ -516,30 +564,16 @@ export default function ActivityCreateSheet({
             />
           </FormField>
 
-          <FormField label="Loại Hoạt Động" required error={errors.work_type}>
-            <Select
-              value={formData.work_type}
-              onValueChange={(val) =>
-                setFormData((prev) => ({ ...prev, work_type: val }))
-              }
-            >
-              <SelectTrigger
-                className={errors.work_type ? "border-red-500" : ""}
-              >
-                <SelectValue placeholder="-- Chọn loại công việc --" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="suddenly">Công việc đột xuất</SelectItem>
-                <SelectItem value="annual">Công việc theo năm</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormField>
-
           <FormField label="Tổ Công Tác" required error={errors.department}>
             <Select
               value={formData.department}
               onValueChange={(val) =>
-                setFormData((prev) => ({ ...prev, department: val }))
+                // đổi tổ thì chỉ tiêu cũ không còn hợp lệ -> reset
+                setFormData((prev) => ({
+                  ...prev,
+                  department: val,
+                  kpiTargetLine: null,
+                }))
               }
             >
               <SelectTrigger
@@ -549,8 +583,62 @@ export default function ActivityCreateSheet({
               </SelectTrigger>
               <SelectContent>
                 {department.map((dept) => (
-                  <SelectItem key={dept} value={dept}>
-                    {handleGetDepartment(dept)}
+                  <SelectItem key={dept.id} value={dept.code}>
+                    {handleGetDepartment(dept.code)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+
+          <FormField
+            label="Chỉ Tiêu"
+            error={errors.kpiTargetLine}
+            hint={
+              !formData.department ? (
+                <span className="text-gray-500">
+                  Chọn tổ công tác trước để hiện danh sách chỉ tiêu
+                </span>
+              ) : kpiTarget[0]?.lines.length === 0 ? (
+                <span className="text-amber-600">
+                  Tổ này chưa có chỉ tiêu nào
+                </span>
+              ) : (
+                <span className="text-gray-500">
+                  Để trống nếu là nhiệm vụ phát sinh — sẽ không tính vào KPI
+                </span>
+              )
+            }
+          >
+            <Select
+              // Radix không nhận SelectItem value="" nên dùng sentinel cho "phát sinh"
+              value={
+                formData.kpiTargetLine === null
+                  ? NO_KPI_TARGET
+                  : String(formData.kpiTargetLine)
+              }
+              onValueChange={(val) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  kpiTargetLine: val === NO_KPI_TARGET ? null : Number(val),
+                }))
+              }
+              disabled={
+                !formData.department || kpiTarget[0]?.lines.length === 0
+              }
+            >
+              <SelectTrigger
+                className={errors.kpiTargetLine ? "border-red-500" : ""}
+              >
+                <SelectValue placeholder="-- Chọn chỉ tiêu --" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_KPI_TARGET}>
+                  -- Không thuộc chỉ tiêu (phát sinh) --
+                </SelectItem>
+                {kpiTarget[0]?.lines.map((line) => (
+                  <SelectItem key={line.id} value={String(line.id)}>
+                    {line.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -720,15 +808,12 @@ export default function ActivityCreateSheet({
               <DialogTitle>Xác nhận đóng</DialogTitle>
             </div>
             <DialogDescription>
-              Bạn đã nhập một số thông tin. Nếu đóng, dữ liệu sẽ bị mất. Bạn
-              có chắc muốn đóng không?
+              Bạn đã nhập một số thông tin. Nếu đóng, dữ liệu sẽ bị mất. Bạn có
+              chắc muốn đóng không?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowConfirm(false)}
-            >
+            <Button variant="outline" onClick={() => setShowConfirm(false)}>
               Tiếp tục chỉnh sửa
             </Button>
             <Button

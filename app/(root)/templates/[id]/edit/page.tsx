@@ -19,7 +19,6 @@ import { departments } from "@/services/api/activity";
 interface FormData {
   name: string;
   description: string;
-  work_type: string;
   department: string;
   location: string;
   document_number: string;
@@ -34,7 +33,6 @@ export default function EditTemplatePage() {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     description: "",
-    work_type: "",
     department: "",
     location: "",
     document_number: "",
@@ -51,7 +49,6 @@ export default function EditTemplatePage() {
       setFormData({
         name: tpl.name,
         description: tpl.description ?? "",
-        work_type: tpl.work_type ?? "",
         department: tpl.department ?? "",
         location: tpl.location ?? "",
         document_number: tpl.document_number ?? "",
@@ -197,7 +194,6 @@ export default function EditTemplatePage() {
       const payload: UpdateTemplatePayload = {
         name: formData.name,
         description: formData.description || undefined,
-        work_type: formData.work_type || undefined,
         department: formData.department || undefined,
         location: formData.location || undefined,
         document_number: formData.document_number || undefined,
@@ -283,36 +279,21 @@ export default function EditTemplatePage() {
             />
           </FormField>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField label="Loại Hoạt Động">
-              <select
-                name="work_type"
-                value={formData.work_type}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">-- Chọn loại công việc --</option>
-                <option value="suddenly">Công việc đột xuất</option>
-                <option value="annual">Công việc theo năm</option>
-              </select>
-            </FormField>
-
-            <FormField label="Tổ Công Tác">
-              <select
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">-- Chọn tổ công tác --</option>
-                {departments.map((dept) => (
-                  <option key={dept.value} value={dept.value}>
-                    {dept.label}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-          </div>
+          <FormField label="Tổ Công Tác">
+            <select
+              name="department"
+              value={formData.department}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">-- Chọn tổ công tác --</option>
+              {departments.map((dept) => (
+                <option key={dept.value} value={dept.value}>
+                  {dept.label}
+                </option>
+              ))}
+            </select>
+          </FormField>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Địa Điểm">

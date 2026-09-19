@@ -2,7 +2,6 @@
 
 import {
   AlertCircle,
-  ArrowLeft,
   CheckCircle2,
   ChevronRight,
   Download,
@@ -12,6 +11,8 @@ import {
   ShieldCheck,
   UserRound,
   CheckCircle,
+  ArrowLeft,
+  Save,
 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
@@ -27,6 +28,14 @@ import {
   type RegistrationFormTemplate,
   websiteRegistrationAPI,
 } from "@/services/api/website-registration";
+import {
+  militaryCvApi,
+  type MilitaryCvCreatePayload,
+  type MilitaryCvPeriod,
+  type MilitaryCvRelative,
+  type MilitaryCvRecord,
+} from "@/services/api/military-cv";
+import { PhotoUploader } from "@/components/photoUploader/photoUploader";
 
 const categories: Array<{
   value: RegistrationCategory;
@@ -78,6 +87,13 @@ const categories: Array<{
     title: "Đăng ký đào tạo sĩ quan dự bị",
     subtitle: "Đăng ký nguyện vọng tham gia đào tạo sĩ quan dự bị.",
   },
+  {
+    value: "khamsuckhoenghiavuquansu",
+    shortLabel: "KSK",
+    label: "Tờ khai khám sức khỏe nghĩa vụ quân sự",
+    title: "Tờ khai khám sức khỏe nghĩa vụ quân sự",
+    subtitle: "Tờ khai khám sức khỏe để xét nghĩa vụ quân sự.",
+  },
 ];
 
 type FormState = Omit<
@@ -86,14 +102,15 @@ type FormState = Omit<
 > & {
   permanent_address: string;
   temporary_address: string;
+  id_no: string;
+  military_cv: MilitaryCvCreatePayload;
+  spouse_enabled: boolean;
   training_system: "cao_dang_dai_hoc" | "thieu_sinh_quan" | "";
 };
 
-const heOptions = [
-  { value: "cdh", label: "Cao đẳng đại học" },
-  { value: "tsq", label: "Thiếu sinh quân" },
-] as const;
-type FormErrors = Partial<Record<keyof FormState | "captcha", string>>;
+type FormErrors = Partial<
+  Record<keyof FormState | "captcha" | "family_counts", string>
+>;
 
 const skeletonRows = [
   "form-skeleton-1",
@@ -102,11 +119,78 @@ const skeletonRows = [
   "form-skeleton-4",
 ];
 
+const emptyRelative = {
+  name: "",
+  alive: true,
+  dob: "",
+  job: "",
+  addr: "",
+  label: "",
+  gender: "",
+  adopted: null,
+  econ: "",
+  politics: "",
+} as const;
+
+const emptyMilitaryCv: MilitaryCvCreatePayload = {
+  full_name: "",
+  dob: "",
+  id_no: "",
+  photo: "",
+  profile: {
+    gender: "",
+    pob: "",
+    hometown: "",
+    ethnicity: "Kinh",
+    religion: "Không",
+    nationality: "Việt Nam",
+    home_addr: "",
+    curr_addr: "",
+    family_class: "",
+    self_class: "",
+    edu_level: "",
+    degree: "",
+    language: "",
+    major: "",
+    party_date: "",
+    party_full: "",
+    union_date: "",
+    reward: "Chưa",
+    discipline: "Chưa",
+    job: "",
+    salary: "",
+    grade: "",
+    step: "",
+    workplace: "",
+    overseas: "Không",
+  },
+  family: {
+    sibling_count: 0,
+    son_count: 0,
+    daughter_count: 0,
+    birth_order: 0,
+    child_count: 0,
+    father: { ...emptyRelative, gender: "nam" },
+    mother: { ...emptyRelative, gender: "nu" },
+    spouse: { ...emptyRelative },
+    siblings: [],
+    children: [],
+  },
+  history: {
+    politics: "",
+    periods: [],
+  },
+  reviews: null,
+};
+
 const emptyForm: FormState = {
   full_name: "",
   phone: "",
   permanent_address: "",
   temporary_address: "",
+  id_no: "",
+  military_cv: emptyMilitaryCv,
+  spouse_enabled: false,
   dob: "",
   workplace: "",
   guardian_phone: "",
@@ -121,6 +205,54 @@ const formatDate = (value: string) => {
   return date.toLocaleDateString("vi-VN");
 };
 
+const nullableDate = (value: string | null | undefined) =>
+  value?.trim() ? value : null;
+
+const normalizeMilitaryCvDates = (
+  payload: MilitaryCvCreatePayload,
+): MilitaryCvCreatePayload => ({
+  ...payload,
+  profile: payload.profile
+    ? {
+        ...payload.profile,
+        party_date: nullableDate(payload.profile.party_date),
+        party_full: nullableDate(payload.profile.party_full),
+        union_date: nullableDate(payload.profile.union_date),
+      }
+    : payload.profile,
+  family: payload.family
+    ? {
+        ...payload.family,
+        father: payload.family.father
+          ? {
+              ...payload.family.father,
+              dob: nullableDate(payload.family.father.dob),
+            }
+          : payload.family.father,
+        mother: payload.family.mother
+          ? {
+              ...payload.family.mother,
+              dob: nullableDate(payload.family.mother.dob),
+            }
+          : payload.family.mother,
+        spouse: payload.family.spouse
+          ? {
+              ...payload.family.spouse,
+              dob: nullableDate(payload.family.spouse.dob),
+            }
+          : payload.family.spouse,
+        siblings: payload.family.siblings?.map((relative) => ({
+          ...relative,
+          dob: nullableDate(relative.dob),
+        })),
+        children: payload.family.children?.map((relative) => ({
+          ...relative,
+          dob: nullableDate(relative.dob),
+        })),
+      }
+    : payload.family,
+});
+
 function validateForm(
   form: FormState,
   captchaToken: string | null,
@@ -132,6 +264,9 @@ function validateForm(
     errors.phone = "Số điện thoại gồm 10 chữ số và bắt đầu bằng 0.";
   if (!form.permanent_address.trim())
     errors.permanent_address = "Vui lòng nhập địa chỉ thường trú.";
+  if (category === "khamsuckhoenghiavuquansu" && !/^\d{12}$/.test(form.id_no)) {
+    errors.id_no = "Số CCCD gồm đúng 12 chữ số.";
+  }
   if (!form.dob) {
     errors.dob = "Vui lòng chọn ngày sinh.";
   } else if (new Date(form.dob) >= new Date()) {
@@ -139,12 +274,24 @@ function validateForm(
   }
   if (!form.workplace.trim())
     errors.workplace = "Vui lòng nhập nơi học tập hoặc làm việc.";
-  if (!phoneRegex.test(form.guardian_phone)) {
+  if (
+    category !== "khamsuckhoenghiavuquansu" &&
+    !phoneRegex.test(form.guardian_phone)
+  ) {
     errors.guardian_phone =
       "Số điện thoại người thân gồm 10 chữ số và bắt đầu bằng 0.";
   }
   if (category === "tsqs" && !form.training_system)
     errors.training_system = "Vui lòng chọn hệ đào tạo.";
+  if (
+    category === "khamsuckhoenghiavuquansu" &&
+    Number(form.military_cv.family.son_count ?? 0) +
+      Number(form.military_cv.family.daughter_count ?? 0) !==
+      Number(form.military_cv.family.sibling_count ?? 0)
+  ) {
+    errors.family_counts =
+      "Số anh/em trai + số chị/em gái phải bằng tổng số anh chị em.";
+  }
   if (!captchaToken)
     errors.captcha = "Vui lòng xác nhận captcha trước khi gửi.";
   return errors;
@@ -175,6 +322,720 @@ function Field({
       {error ? (
         <p className="mt-1 text-xs font-medium text-red-600">{error}</p>
       ) : null}
+    </div>
+  );
+}
+
+type MilitaryCvProfileState = NonNullable<MilitaryCvCreatePayload["profile"]>;
+type MilitaryCvFamilyState = NonNullable<MilitaryCvCreatePayload["family"]>;
+type MilitaryCvRelativeState = NonNullable<MilitaryCvFamilyState["father"]>;
+
+function CvInput({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder = "",
+  required = true,
+  type = "text",
+}: {
+  id: string;
+  label: string;
+  value: string | number;
+  placeholder?: string;
+  onChange: (value: string) => void;
+  type?: "text" | "date" | "number";
+  required?: boolean;
+}) {
+  return (
+    <Field id={id} label={label} required>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        required={required}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 w-full rounded border border-gray-200 px-3 text-sm outline-none focus:border-[#546a2f]"
+      />
+    </Field>
+  );
+}
+
+function CvSelect({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <Field id={id} label={label} required>
+      <select
+        id={id}
+        value={value}
+        required
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 w-full rounded border border-gray-200 px-3 text-sm outline-none focus:border-[#546a2f]"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </Field>
+  );
+}
+
+function KskCvFields({
+  value,
+  onChange,
+  spouseEnabled,
+  onSpouseEnabledChange,
+  familyCountError,
+}: {
+  value: MilitaryCvCreatePayload;
+  onChange: (value: MilitaryCvCreatePayload) => void;
+  spouseEnabled: boolean;
+  onSpouseEnabledChange: (enabled: boolean) => void;
+  familyCountError?: string;
+}) {
+  const profile = value.profile as MilitaryCvProfileState;
+  const family = value.family as MilitaryCvFamilyState;
+  const history = value.history as NonNullable<
+    MilitaryCvCreatePayload["history"]
+  >;
+
+  const updateProfile = (field: keyof MilitaryCvProfileState, next: string) =>
+    onChange({ ...value, profile: { ...profile, [field]: next } });
+
+  const updateFamily = (
+    field: keyof MilitaryCvFamilyState,
+    next: string | number,
+  ) => {
+    const nextFamily = { ...family, [field]: next };
+    const siblingCount = Math.max(0, Number(nextFamily.sibling_count) || 0);
+    const sonCount = Math.max(0, Number(nextFamily.son_count) || 0);
+    const daughterCount = Math.max(0, Number(nextFamily.daughter_count) || 0);
+    const childCount = Math.max(0, Number(nextFamily.child_count) || 0);
+
+    const siblings: MilitaryCvRelative[] = Array.from(
+      { length: siblingCount },
+      (_, index) => ({
+        ...(family.siblings?.[index] ?? emptyRelative),
+        gender:
+          index < sonCount
+            ? "nam"
+            : index < sonCount + daughterCount
+              ? "nu"
+              : "",
+      }),
+    );
+    const children: MilitaryCvRelative[] = Array.from(
+      { length: childCount },
+      (_, index) => ({
+        ...(family.children?.[index] ?? emptyRelative),
+      }),
+    );
+
+    onChange({
+      ...value,
+      family: {
+        ...nextFamily,
+        sibling_count: siblingCount,
+        son_count: sonCount,
+        daughter_count: daughterCount,
+        child_count: childCount,
+        siblings,
+        children,
+      },
+    });
+  };
+
+  const updateRelative = (
+    relation: "father" | "mother" | "spouse",
+    field: keyof MilitaryCvRelativeState,
+    next: string | boolean | null,
+  ) =>
+    onChange({
+      ...value,
+      family: {
+        ...family,
+        [relation]: {
+          ...family[relation],
+          [field]: next,
+        },
+      },
+    });
+
+  const updateRelativeList = (
+    relation: "siblings" | "children",
+    index: number,
+    field: keyof MilitaryCvRelative,
+    next: string | boolean,
+  ) => {
+    const relatives = [...(family[relation] ?? [])];
+    relatives[index] = { ...relatives[index], [field]: next };
+    onChange({ ...value, family: { ...family, [relation]: relatives } });
+  };
+
+  const updatePeriod = (
+    index: number,
+    field: keyof MilitaryCvPeriod,
+    next: string,
+  ) => {
+    const periods = [...(history.periods ?? [])];
+    periods[index] = {
+      ...periods[index],
+      [field]: field.startsWith("year_") ? Number(next) : next,
+    };
+    onChange({ ...value, history: { ...history, periods } });
+  };
+
+  const addPeriod = () =>
+    onChange({
+      ...value,
+      history: {
+        ...history,
+        periods: [
+          ...(history.periods ?? []),
+          {
+            subject: "self",
+            year_from: 0,
+            year_to: 0,
+            note: "",
+            econ: "",
+            politics: "",
+          },
+        ],
+      },
+    });
+
+  const removePeriod = (index: number) =>
+    onChange({
+      ...value,
+      history: {
+        ...history,
+        periods: (history.periods ?? []).filter(
+          (_, itemIndex) => itemIndex !== index,
+        ),
+      },
+    });
+
+  const renderRelative = (
+    relation: "father" | "mother" | "spouse",
+    title: string,
+  ) => {
+    const relative = family[relation] as MilitaryCvRelativeState;
+    return (
+      <div className="rounded border border-gray-200 p-4">
+        <h4 className="mb-3 text-sm font-bold text-gray-700">{title}</h4>
+        <div className="grid gap-4 md:grid-cols-2">
+          <CvSelect
+            id={`${relation}-alive`}
+            label="Tình trạng"
+            value={relative.alive ? "true" : "false"}
+            options={[
+              { value: "true", label: "Còn sống" },
+              { value: "false", label: "Đã mất" },
+            ]}
+            onChange={(next) =>
+              updateRelative(relation, "alive", next === "true")
+            }
+          />
+          <CvSelect
+            id={`${relation}-gender`}
+            label="Giới tính"
+            value={relative.gender ?? ""}
+            options={[
+              { value: "", label: "-- Chọn --" },
+              { value: "nam", label: "Nam" },
+              { value: "nu", label: "Nữ" },
+            ]}
+            onChange={(next) => updateRelative(relation, "gender", next)}
+          />
+          <CvInput
+            id={`${relation}-name`}
+            label="Họ tên"
+            value={relative.name ?? ""}
+            placeholder="Ví dụ: Nguyễn Văn B"
+            onChange={(next) => updateRelative(relation, "name", next)}
+          />
+          <CvInput
+            id={`${relation}-dob`}
+            label="Ngày sinh"
+            type="date"
+            value={relative.dob ?? ""}
+            onChange={(next) => updateRelative(relation, "dob", next)}
+          />
+          <CvInput
+            id={`${relation}-job`}
+            label="Nghề nghiệp"
+            value={relative.job ?? ""}
+            placeholder="Ví dụ: Công nhân"
+            onChange={(next) => updateRelative(relation, "job", next)}
+          />
+          <CvInput
+            id={`${relation}-addr`}
+            label="Nơi ở hiện tại"
+            value={relative.addr ?? ""}
+            placeholder="Ví dụ: Phường Bình Phú, TP.HCM"
+            onChange={(next) => updateRelative(relation, "addr", next)}
+          />
+          <CvInput
+            id={`${relation}-econ`}
+            label="Tình hình kinh tế"
+            value={relative.econ ?? ""}
+            placeholder="Ví dụ: Ổn định"
+            onChange={(next) => updateRelative(relation, "econ", next)}
+          />
+          <CvInput
+            id={`${relation}-politics`}
+            label="Thái độ chính trị"
+            value={relative.politics ?? ""}
+            placeholder="Ví dụ: Chấp hành tốt chủ trương, pháp luật"
+            onChange={(next) => updateRelative(relation, "politics", next)}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const profileFields: Array<{
+    key: keyof MilitaryCvProfileState;
+    label: string;
+    type?: "text" | "date";
+    required?: boolean;
+  }> = [
+    { key: "gender", label: "Giới tính" },
+    { key: "pob", label: "Nơi đăng ký khai sinh" },
+    { key: "hometown", label: "Quê quán" },
+    { key: "ethnicity", label: "Dân tộc" },
+    { key: "religion", label: "Tôn giáo" },
+    { key: "nationality", label: "Quốc tịch" },
+    { key: "family_class", label: "Thành phần gia đình" },
+    { key: "self_class", label: "Thành phần bản thân" },
+    { key: "edu_level", label: "Trình độ giáo dục phổ thông" },
+    { key: "degree", label: "Trình độ đào tạo" },
+    { key: "language", label: "Ngoại ngữ" },
+    { key: "major", label: "Chuyên ngành đào tạo" },
+    {
+      key: "party_date",
+      label: "Ngày vào Đảng dự bị",
+      type: "date",
+      required: false,
+    },
+    {
+      key: "party_full",
+      label: "Ngày vào Đảng chính thức",
+      type: "date",
+      required: false,
+    },
+    {
+      key: "union_date",
+      label: "Ngày vào Đoàn",
+      type: "date",
+      required: false,
+    },
+    { key: "reward", label: "Khen thưởng" },
+    { key: "discipline", label: "Kỷ luật" },
+    { key: "job", label: "Nghề nghiệp" },
+    { key: "salary", label: "Lương" },
+    { key: "grade", label: "Ngạch lương" },
+    { key: "step", label: "Bậc lương" },
+    { key: "overseas", label: "Đã đi nước ngoài" },
+  ];
+
+  return (
+    <div className="mt-6 space-y-6 border-t border-gray-200 pt-6">
+      <div>
+        <h3 className="text-base font-bold text-gray-800">I. Sơ yếu lý lịch</h3>
+        <div className="mt-4">
+          {/* <CvInput
+            id="photo"
+            label="Ảnh 4x6 (URL hoặc đường dẫn tệp)"
+            value={value.photo}
+            placeholder="Ví dụ: /uploads/cvs/cccd.jpg"
+            onChange={(next) => onChange({ ...value, photo: next })}
+          />           <PhotoUploader
+            value={value.photo}
+            onChange={(next) =>
+              onChange({
+                ...value,
+                photo: next,
+              })
+            }
+          />*/}
+        </div>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {profileFields.map((field) => (
+            <CvInput
+              key={field.key}
+              id={`profile-${field.key}`}
+              label={field.label}
+              type={field.type}
+              value={String(profile[field.key] ?? "")}
+              placeholder={
+                field.type === "date"
+                  ? "Chọn ngày"
+                  : `Nhập ${field.label.toLowerCase()}`
+              }
+              onChange={(next) => updateProfile(field.key, next)}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-base font-bold text-gray-800">Gia đình</h3>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <CvInput
+            id="sibling-count"
+            label="Tổng số anh chị em"
+            type="number"
+            value={family.sibling_count ?? 0}
+            placeholder="Ví dụ: 2"
+            onChange={(next) => updateFamily("sibling_count", Number(next))}
+          />
+          <CvInput
+            id="son-count"
+            label="Số anh/em trai"
+            type="number"
+            value={family.son_count ?? 0}
+            placeholder="Ví dụ: 1"
+            onChange={(next) => updateFamily("son_count", Number(next))}
+          />
+          <CvInput
+            id="daughter-count"
+            label="Số chị/em gái"
+            type="number"
+            value={family.daughter_count ?? 0}
+            placeholder="Ví dụ: 1"
+            onChange={(next) => updateFamily("daughter_count", Number(next))}
+          />
+          <CvInput
+            id="birth-order"
+            label="Bản thân là con thứ"
+            type="number"
+            value={family.birth_order ?? 0}
+            placeholder="Ví dụ: 2"
+            onChange={(next) => updateFamily("birth_order", Number(next))}
+          />
+          <CvInput
+            id="child-count"
+            label="Số con của bản thân"
+            type="number"
+            value={family.child_count ?? 0}
+            placeholder="Chưa có con: 0, có con: nhập số lượng"
+            onChange={(next) => updateFamily("child_count", Number(next))}
+          />
+        </div>
+        {familyCountError ? (
+          <p className="mt-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
+            {familyCountError}
+          </p>
+        ) : null}
+        <div className="mt-4 space-y-4">
+          {renderRelative("father", "Cha")}
+          {renderRelative("mother", "Mẹ")}
+          <div className="rounded border border-gray-200 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <h4 className="text-sm font-bold text-gray-700">
+                Vợ / chồng (không bắt buộc)
+              </h4>
+              {spouseEnabled ? (
+                <button
+                  type="button"
+                  onClick={() => onSpouseEnabledChange(false)}
+                  className="rounded border border-red-200 px-3 py-2 text-xs font-semibold text-red-600"
+                >
+                  Xóa vợ / chồng
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onSpouseEnabledChange(true)}
+                  className="rounded bg-[#546a2f] px-3 py-2 text-xs font-semibold text-white"
+                >
+                  Thêm vợ / chồng
+                </button>
+              )}
+            </div>
+            {spouseEnabled ? (
+              <div className="mt-4">
+                {renderRelative("spouse", "Thông tin vợ / chồng")}
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-gray-500">
+                Có thể bỏ qua nếu chưa kết hôn.
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="mt-4 rounded border border-gray-200 p-4">
+          <h4 className="text-sm font-bold text-gray-700">
+            Anh, chị, em ruột ({family.sibling_count ?? 0})
+          </h4>
+          {(family.siblings ?? []).map((relative, index) => (
+            <div
+              key={`sibling-${index}`}
+              className="mt-4 rounded-lg border border-[#dce5c8] bg-[#f7f9f1] p-4 shadow-sm"
+            >
+              <h5 className="mb-4 border-b border-[#dce5c8] pb-2 text-sm font-bold text-[#3d5020]">
+                Thông tin anh/chị/em thứ {index + 1}
+              </h5>
+              <div className="grid gap-4 md:grid-cols-2">
+                <CvSelect
+                  id={`sibling-${index}-label`}
+                  label="Quan hệ"
+                  value={relative.label ?? ""}
+                  options={[
+                    { value: "", label: "-- Chọn --" },
+                    { value: "anh", label: "Anh" },
+                    { value: "chi", label: "Chị" },
+                    { value: "em", label: "Em" },
+                  ]}
+                  onChange={(next) =>
+                    updateRelativeList("siblings", index, "label", next)
+                  }
+                />
+                <CvInput
+                  id={`sibling-${index}-name`}
+                  label="Họ tên"
+                  value={relative.name ?? ""}
+                  placeholder="Ví dụ: Nguyễn Văn B"
+                  onChange={(next) =>
+                    updateRelativeList("siblings", index, "name", next)
+                  }
+                />
+                <CvInput
+                  id={`sibling-${index}-dob`}
+                  label="Ngày sinh"
+                  type="date"
+                  value={relative.dob ?? ""}
+                  onChange={(next) =>
+                    updateRelativeList("siblings", index, "dob", next)
+                  }
+                />
+                <CvInput
+                  id={`sibling-${index}-job`}
+                  label="Nghề nghiệp"
+                  value={relative.job ?? ""}
+                  placeholder="Ví dụ: Nhân viên văn phòng"
+                  onChange={(next) =>
+                    updateRelativeList("siblings", index, "job", next)
+                  }
+                />
+                <CvInput
+                  id={`sibling-${index}-addr`}
+                  label="Ngụ tại"
+                  value={relative.addr ?? ""}
+                  placeholder="Ví dụ: Phường Bình Phú, TP.HCM"
+                  onChange={(next) =>
+                    updateRelativeList("siblings", index, "addr", next)
+                  }
+                />
+                <CvSelect
+                  id={`sibling-${index}-gender`}
+                  label="Giới tính"
+                  value={relative.gender ?? ""}
+                  options={[
+                    { value: "", label: "-- Chọn --" },
+                    { value: "nam", label: "Nam" },
+                    { value: "nu", label: "Nữ" },
+                  ]}
+                  onChange={(next) =>
+                    updateRelativeList("siblings", index, "gender", next)
+                  }
+                />
+                <CvInput
+                  id={`sibling-${index}-econ`}
+                  label="Tình hình kinh tế"
+                  value={relative.econ ?? ""}
+                  placeholder="Ví dụ: Ổn định"
+                  onChange={(next) =>
+                    updateRelativeList("siblings", index, "econ", next)
+                  }
+                />
+                <CvInput
+                  id={`sibling-${index}-politics`}
+                  label="Thái độ chính trị"
+                  value={relative.politics ?? ""}
+                  placeholder="Ví dụ: Chấp hành tốt pháp luật"
+                  onChange={(next) =>
+                    updateRelativeList("siblings", index, "politics", next)
+                  }
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 rounded border border-gray-200 p-4">
+          <h4 className="text-sm font-bold text-gray-700">
+            Con đẻ / con nuôi ({family.child_count ?? 0})
+          </h4>
+          {(family.children ?? []).map((relative, index) => (
+            <div
+              key={`child-${index}`}
+              className="mt-4 rounded-lg border border-[#dce5c8] bg-[#f7f9f1] p-4 shadow-sm"
+            >
+              <h5 className="mb-4 border-b border-[#dce5c8] pb-2 text-sm font-bold text-[#3d5020]">
+                Thông tin người con thứ {index + 1}
+              </h5>
+              <div className="grid gap-4 md:grid-cols-2">
+                <CvInput
+                  id={`child-${index}-name`}
+                  label="Họ tên"
+                  value={relative.name ?? ""}
+                  placeholder="Ví dụ: Nguyễn Văn C"
+                  onChange={(next) =>
+                    updateRelativeList("children", index, "name", next)
+                  }
+                />
+                <CvInput
+                  id={`child-${index}-dob`}
+                  label="Ngày sinh"
+                  type="date"
+                  value={relative.dob ?? ""}
+                  onChange={(next) =>
+                    updateRelativeList("children", index, "dob", next)
+                  }
+                />
+                <CvSelect
+                  id={`child-${index}-gender`}
+                  label="Giới tính"
+                  value={relative.gender ?? ""}
+                  options={[
+                    { value: "", label: "-- Chọn --" },
+                    { value: "nam", label: "Nam" },
+                    { value: "nu", label: "Nữ" },
+                  ]}
+                  onChange={(next) =>
+                    updateRelativeList("children", index, "gender", next)
+                  }
+                />
+                <CvSelect
+                  id={`child-${index}-adopted`}
+                  label="Con nuôi"
+                  value={relative.adopted ? "true" : "false"}
+                  options={[
+                    { value: "false", label: "Không" },
+                    { value: "true", label: "Có" },
+                  ]}
+                  onChange={(next) =>
+                    updateRelativeList(
+                      "children",
+                      index,
+                      "adopted",
+                      next === "true",
+                    )
+                  }
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-base font-bold text-gray-800">II. Quá trình</h3>
+        <div className="mt-4">
+          <CvInput
+            id="history-politics"
+            label="Thái độ chính trị của bản thân"
+            value={history.politics ?? ""}
+            placeholder="Ví dụ: Luôn chấp hành chủ trương, pháp luật"
+            onChange={(next) =>
+              onChange({ ...value, history: { ...history, politics: next } })
+            }
+          />
+        </div>
+        <div className="mt-4 rounded border border-gray-200 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="text-sm font-bold text-gray-700">
+              Các giai đoạn quá trình
+            </h4>
+            <button
+              type="button"
+              onClick={addPeriod}
+              className="rounded bg-[#546a2f] px-3 py-2 text-xs font-semibold text-white"
+            >
+              Thêm giai đoạn
+            </button>
+          </div>
+          {(history.periods ?? []).map((period, index) => (
+            <div
+              key={`period-${index}`}
+              className="mt-4 grid gap-4 border-t border-gray-100 pt-4 md:grid-cols-2"
+            >
+              <CvSelect
+                id={`period-${index}-subject`}
+                label="Đối tượng"
+                value={period.subject ?? ""}
+                options={[
+                  { value: "self", label: "Bản thân" },
+                  { value: "father", label: "Cha" },
+                  { value: "mother", label: "Mẹ" },
+                  { value: "spouse", label: "Vợ / chồng" },
+                  { value: "sibling", label: "Anh / chị / em" },
+                ]}
+                onChange={(next) => updatePeriod(index, "subject", next)}
+              />
+              <CvInput
+                id={`period-${index}-year-from`}
+                label="Từ năm"
+                type="number"
+                value={period.year_from ?? 0}
+                placeholder="Ví dụ: 2021"
+                onChange={(next) => updatePeriod(index, "year_from", next)}
+              />
+              <CvInput
+                id={`period-${index}-year-to`}
+                label="Đến năm"
+                type="number"
+                value={period.year_to ?? 0}
+                placeholder="Ví dụ: 2024"
+                onChange={(next) => updatePeriod(index, "year_to", next)}
+              />
+              <CvInput
+                id={`period-${index}-note`}
+                label="Nội dung quá trình"
+                value={period.note ?? ""}
+                placeholder="Ví dụ: Học tại trường THPT..."
+                onChange={(next) => updatePeriod(index, "note", next)}
+              />
+              <CvInput
+                id={`period-${index}-econ`}
+                label="Tình hình kinh tế"
+                value={period.econ ?? ""}
+                placeholder="Ví dụ: Ổn định"
+                onChange={(next) => updatePeriod(index, "econ", next)}
+              />
+              <CvInput
+                id={`period-${index}-politics`}
+                label="Thái độ chính trị"
+                value={period.politics ?? ""}
+                placeholder="Ví dụ: Chấp hành tốt pháp luật"
+                onChange={(next) => updatePeriod(index, "politics", next)}
+              />
+              <button
+                type="button"
+                onClick={() => removePeriod(index)}
+                className="h-10 self-end rounded border border-red-200 px-3 text-sm font-semibold text-red-600"
+              >
+                Xóa giai đoạn
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -257,7 +1118,9 @@ function RegistrationContent() {
   const [forms, setForms] = useState<RegistrationFormTemplate[]>([]);
   const [formsLoading, setFormsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState<PublicRegistration | null>(null);
+  const [success, setSuccess] = useState<
+    PublicRegistration | MilitaryCvRecord | null
+  >(null);
 
   const activeCategory = useMemo(
     () => categories.find((item) => item.value === category) ?? categories[0],
@@ -371,18 +1234,51 @@ function RegistrationContent() {
 
     setSubmitting(true);
     try {
-      const { permanent_address, temporary_address, training_system, ...rest } =
-        form;
+      const {
+        permanent_address,
+        temporary_address,
+        training_system,
+        id_no,
+        military_cv,
+        spouse_enabled,
+        ...rest
+      } = form;
 
-      const payload: PublicRegistrationPayload = {
-        category,
-        ...rest,
-        address: permanent_address.trim(),
-        temporary_address: temporary_address.trim(),
-        ...(category === "tsqs" && training_system ? { training_system } : {}),
-        captcha_token: captchaToken as string,
-      };
-      const created = await websiteRegistrationAPI.createRegistration(payload);
+      const created =
+        category === "khamsuckhoenghiavuquansu"
+          ? await militaryCvApi.create(
+              normalizeMilitaryCvDates({
+                ...military_cv,
+                full_name: rest.full_name.trim(),
+                dob: rest.dob,
+                id_no: id_no.trim(),
+                photo: military_cv.photo || "",
+                profile: {
+                  ...military_cv.profile,
+                  home_addr: permanent_address.trim(),
+                  curr_addr:
+                    temporary_address.trim() || permanent_address.trim(),
+                  workplace: rest.workplace.trim(),
+                },
+                family: {
+                  ...military_cv.family,
+                  spouse: spouse_enabled
+                    ? military_cv.family.spouse
+                    : { ...emptyRelative },
+                },
+                reviews: null,
+              }),
+            )
+          : await websiteRegistrationAPI.createRegistration({
+              category,
+              ...rest,
+              address: permanent_address.trim(),
+              temporary_address: temporary_address.trim(),
+              ...(category === "tsqs" && training_system
+                ? { training_system }
+                : {}),
+              captcha_token: captchaToken as string,
+            });
       setSuccess(created);
       setCaptchaToken(null);
       recaptchaRef.current?.reset();
@@ -629,26 +1525,51 @@ function RegistrationContent() {
                       }`}
                     />
                   </Field>
-                  <Field
-                    id="guardian_phone"
-                    label="Số điện thoại người thân"
-                    required
-                    error={errors.guardian_phone}
-                  >
-                    <input
+                  {category === "khamsuckhoenghiavuquansu" ? (
+                    <Field
+                      id="id_no"
+                      label="Số CCCD"
+                      required
+                      error={errors.id_no}
+                    >
+                      <input
+                        id="id_no"
+                        value={form.id_no}
+                        inputMode="numeric"
+                        maxLength={12}
+                        onChange={(event) =>
+                          updateField("id_no", event.target.value)
+                        }
+                        placeholder="Nhập 12 chữ số CCCD"
+                        className={`h-10 w-full rounded border px-3 text-sm outline-none focus:border-[#546a2f] ${
+                          errors.id_no
+                            ? "border-red-400 bg-red-50"
+                            : "border-gray-200"
+                        }`}
+                      />
+                    </Field>
+                  ) : (
+                    <Field
                       id="guardian_phone"
-                      value={form.guardian_phone}
-                      onChange={(event) =>
-                        updateField("guardian_phone", event.target.value)
-                      }
-                      placeholder="Ví dụ: 0912345678"
-                      className={`h-10 w-full rounded border px-3 text-sm outline-none focus:border-[#546a2f] ${
-                        errors.guardian_phone
-                          ? "border-red-400 bg-red-50"
-                          : "border-gray-200"
-                      }`}
-                    />
-                  </Field>
+                      label="Số điện thoại người thân"
+                      required
+                      error={errors.guardian_phone}
+                    >
+                      <input
+                        id="guardian_phone"
+                        value={form.guardian_phone}
+                        onChange={(event) =>
+                          updateField("guardian_phone", event.target.value)
+                        }
+                        placeholder="Ví dụ: 0912345678"
+                        className={`h-10 w-full rounded border px-3 text-sm outline-none focus:border-[#546a2f] ${
+                          errors.guardian_phone
+                            ? "border-red-400 bg-red-50"
+                            : "border-gray-200"
+                        }`}
+                      />
+                    </Field>
+                  )}
                   <Field
                     id="permanent_address"
                     label="Địa chỉ thường trú"
@@ -736,6 +1657,20 @@ function RegistrationContent() {
                     </Field>
                   ) : null}
                 </div>
+
+                {category === "khamsuckhoenghiavuquansu" ? (
+                  <KskCvFields
+                    value={form.military_cv}
+                    spouseEnabled={form.spouse_enabled}
+                    familyCountError={errors.family_counts}
+                    onSpouseEnabledChange={(spouse_enabled) =>
+                      setForm((current) => ({ ...current, spouse_enabled }))
+                    }
+                    onChange={(military_cv) =>
+                      setForm((current) => ({ ...current, military_cv }))
+                    }
+                  />
+                ) : null}
 
                 <div className="mt-5">
                   <ReCAPTCHA

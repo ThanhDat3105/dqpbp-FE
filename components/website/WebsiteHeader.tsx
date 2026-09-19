@@ -4,7 +4,7 @@ import { ChevronDown, Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { RegistrationCategory } from "@/services/api/website-registration";
 
 const navLinks = [
@@ -25,12 +25,18 @@ const registrationLinks: Array<{
   { category: "dqtt", label: "Đăng ký tham gia DQTT - Dân quân nòng cốt" },
   { category: "doituongchinhsach", label: "Đối tượng chính sách" },
   { category: "siquandubi", label: "Đăng ký đào tạo sĩ quan dự bị" },
+  { category: "khamsuckhoenghiavuquansu", label: "Khám sức khỏe NVQS" },
 ];
 
 export default function WebsiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [registrationMenuOpen, setRegistrationMenuOpen] = useState(false);
   const pathname = usePathname();
   const registrationActive = pathname.startsWith("/website/tiep-nhan-dang-ky");
+
+  useEffect(() => {
+    setRegistrationMenuOpen(false);
+  }, [pathname]);
 
   return (
     <header className="sticky top-0 z-50 bg-[#546a2f] shadow-lg">
@@ -78,9 +84,14 @@ export default function WebsiteHeader() {
             );
           })}
 
-          <div className="group relative">
+          <div
+            className="group relative"
+            onMouseEnter={() => setRegistrationMenuOpen(true)}
+            onMouseLeave={() => setRegistrationMenuOpen(false)}
+          >
             <Link
               href="/website/tiep-nhan-dang-ky"
+              onClick={() => setRegistrationMenuOpen(false)}
               className={`flex items-center gap-1 rounded px-4 py-2 text-sm font-medium transition-colors ${
                 registrationActive
                   ? "bg-yellow-300 text-[#546a2f]"
@@ -90,11 +101,18 @@ export default function WebsiteHeader() {
               Tiếp Nhận Đăng Ký - Hồ Sơ
               <ChevronDown className="h-4 w-4" />
             </Link>
-            <div className="invisible absolute left-0 top-full w-72 overflow-hidden rounded-b bg-white py-1 opacity-0 shadow-xl transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+            <div
+              className={`absolute left-0 top-full w-72 overflow-hidden rounded-b bg-white py-1 shadow-xl transition-opacity ${
+                registrationMenuOpen
+                  ? "visible opacity-100"
+                  : "invisible opacity-0"
+              }`}
+            >
               {registrationLinks.map((item) => (
                 <Link
                   key={item.category}
                   href={`/website/tiep-nhan-dang-ky?category=${item.category}`}
+                  onClick={() => setRegistrationMenuOpen(false)}
                   className="block px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-yellow-300 hover:text-[#3d5020]"
                 >
                   {item.label}

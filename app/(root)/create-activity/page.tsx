@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 import { Plus, Info, ListTodo, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,11 +15,14 @@ import Task from "@/components/activity/Task";
 import { createActivitySchema } from "@/lib/validations";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { departmentAPI, DepartmentInterface } from "@/services/api/department";
+import { kpiTargetAPI, KpiTargetInterface } from "@/services/api/kpi-target";
 
 interface FormData {
   name: string;
-  work_type: string;
   department: string;
+  /** KpiTargetLine["id"] được chọn, null = nhiệm vụ phát sinh, không tính KPI */
+  kpiTargetLine: number | null;
   location: string;
   start_date: string;
   end_date: string;
@@ -51,8 +54,8 @@ export default function CreateActivityPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     name: "",
-    work_type: "",
     department: "",
+    kpiTargetLine: null,
     location: "",
     start_date: new Date().toISOString().split("T")[0],
     end_date: new Date().toISOString().split("T")[0],
@@ -67,6 +70,42 @@ export default function CreateActivityPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateErrors, setDateErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  // danh sách `departments` tĩnh chỉ có code/label, cần bản từ API để lấy id số
+  const [departmentRecords, setDepartmentRecords] = useState<
+    DepartmentInterface[]
+  >([]);
+  const [kpiTarget, setKpiTarget] = useState<KpiTargetInterface[]>([]);
+
+  const selectedDepartmentId = departmentRecords.find(
+    (dept) => dept.code === formData.department,
+  )?.id;
+
+  const kpiTargetLines = kpiTarget.flatMap((target) => target.lines);
+
+  const handleGetKpiTarget = useCallback(async (teamId: number) => {
+    try {
+      const res = await kpiTargetAPI.getAllKpiTargets(teamId);
+      setKpiTarget(res);
+    } catch (error) {
+      console.error("Error fetching KPI targets:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    departmentAPI
+      .getAllDepartment()
+      .then(setDepartmentRecords)
+      .catch((error) => console.error("Error fetching departments:", error));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDepartmentId) {
+      setKpiTarget([]);
+      return;
+    }
+    handleGetKpiTarget(selectedDepartmentId);
+  }, [selectedDepartmentId, handleGetKpiTarget]);
 
   const validateDateRange = (
     start: string,
@@ -103,6 +142,8 @@ export default function CreateActivityPage() {
     const { name, value } = e.target;
 
     const nextFormData = { ...formData, [name]: value };
+    // đổi tổ thì chỉ tiêu cũ không còn thuộc tổ này nữa
+    if (name === "department") nextFormData.kpiTargetLine = null;
     setFormData(nextFormData);
 
     if (name === "start_date" && value) {
@@ -180,8 +221,14 @@ export default function CreateActivityPage() {
 
     setLoading(true);
     try {
+      const { kpiTargetLine, ...activityFields } = formData;
+
       const payload: CreateActivityInterface = {
-        ...formData,
+        ...activityFields,
+        kpi_target_line_id: kpiTargetLine,
+        // luôn gắn tổ, kể cả kế hoạch phát sinh, để outOfTargetCount đếm được
+        kpi_team_id: selectedDepartmentId ?? null,
+        out_of_target: kpiTargetLine === null,
         tasks: formData.tasks.map((task) => ({
           ...task,
           created_at:
@@ -349,45 +396,69 @@ export default function CreateActivityPage() {
               />
             </FormField>
 
-            {/* Work Type + Department */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                label="Loại Hoạt Động"
-                required
-                error={errors.work_type}
+            {/* Department */}
+            <FormField label="Tổ Công Tác" required error={errors.department}>
+              <select
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.department ? "border-red-500" : "border-gray-200"
+                }`}
               >
-                <select
-                  name="work_type"
-                  value={formData.work_type}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.work_type ? "border-red-500" : "border-gray-200"
-                  }`}
-                >
-                  <option value="">-- Chọn loại công việc --</option>
-                  <option value="suddenly">Công việc đột xuất</option>
-                  <option value="annual">Công việc theo năm</option>
-                </select>
-              </FormField>
+                <option value="">-- Chọn tổ công tác --</option>
+                {departments.map((dept) => (
+                  <option key={dept.value} value={dept.value}>
+                    {dept.label}
+                  </option>
+                ))}
+              </select>
+            </FormField>
 
-              <FormField label="Tổ Công Tác" required error={errors.department}>
-                <select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.department ? "border-red-500" : "border-gray-200"
-                  }`}
-                >
-                  <option value="">-- Chọn tổ công tác --</option>
-                  {departments.map((dept) => (
-                    <option key={dept.value} value={dept.value}>
-                      {dept.label}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-            </div>
+            {/* KPI target line — không bắt buộc */}
+            <FormField
+              label="Chỉ Tiêu"
+              hint={
+                !formData.department ? (
+                  <span className="text-gray-500">
+                    Chọn tổ công tác trước để hiện danh sách chỉ tiêu
+                  </span>
+                ) : kpiTargetLines.length === 0 ? (
+                  <span className="text-amber-600">
+                    Tổ này chưa có chỉ tiêu nào
+                  </span>
+                ) : (
+                  <span className="text-gray-500">
+                    Để trống nếu là nhiệm vụ phát sinh — sẽ không tính vào KPI
+                  </span>
+                )
+              }
+            >
+              <select
+                name="kpiTargetLine"
+                value={
+                  formData.kpiTargetLine === null
+                    ? ""
+                    : String(formData.kpiTargetLine)
+                }
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    kpiTargetLine:
+                      e.target.value === "" ? null : Number(e.target.value),
+                  }))
+                }
+                disabled={!formData.department || kpiTargetLines.length === 0}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
+              >
+                <option value="">-- Không thuộc chỉ tiêu (phát sinh) --</option>
+                {kpiTargetLines.map((line) => (
+                  <option key={line.id} value={String(line.id)}>
+                    {line.name}
+                  </option>
+                ))}
+              </select>
+            </FormField>
 
             {/* Location + Date */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

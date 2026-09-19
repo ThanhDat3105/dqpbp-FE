@@ -13,11 +13,6 @@ import {
 import { departments } from "@/services/api/activity";
 import AppPagination from "@/components/ui/AppPagination";
 
-const WORK_TYPE_LABEL: Record<string, string> = {
-  suddenly: "Đột xuất",
-  annual: "Theo năm",
-};
-
 const STATUS_STYLE: Record<string, { bg: string; dot: string; text: string; label: string }> = {
   active: { bg: "bg-green-100", dot: "bg-green-500", text: "text-green-700", label: "Đang dùng" },
   inactive: { bg: "bg-gray-100", dot: "bg-gray-400", text: "text-gray-500", label: "Tạm ẩn" },
@@ -135,7 +130,6 @@ export default function TemplatesPage() {
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="px-4 py-3 text-left font-semibold text-gray-600 w-10">#</th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">Tên mẫu</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 hidden md:table-cell">Loại</th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600 hidden md:table-cell">Bộ phận</th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">Nhiệm vụ</th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">Trạng thái</th>
@@ -145,7 +139,7 @@ export default function TemplatesPage() {
               <tbody>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-gray-100">
-                    {Array.from({ length: 7 }).map((__, j) => (
+                    {Array.from({ length: 6 }).map((__, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 bg-gray-100 animate-pulse rounded" />
                       </td>
@@ -169,7 +163,6 @@ export default function TemplatesPage() {
                   <tr className="bg-gray-50 border-b border-gray-200">
                     <th className="px-4 py-3 text-left font-semibold text-gray-600 w-10">#</th>
                     <th className="px-4 py-3 text-left font-semibold text-gray-600 min-w-50">Tên mẫu</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600 hidden md:table-cell">Loại</th>
                     <th className="px-4 py-3 text-left font-semibold text-gray-600 hidden md:table-cell">Bộ phận</th>
                     <th className="px-4 py-3 text-left font-semibold text-gray-600">Nhiệm vụ</th>
                     <th className="px-4 py-3 text-left font-semibold text-gray-600">Trạng thái</th>
@@ -196,15 +189,6 @@ export default function TemplatesPage() {
                           <span className="text-xs text-gray-400 truncate block max-w-75 mt-0.5">
                             {tpl.description}
                           </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell">
-                        {tpl.work_type ? (
-                          <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-semibold whitespace-nowrap">
-                            {WORK_TYPE_LABEL[tpl.work_type] ?? tpl.work_type}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-xs">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">

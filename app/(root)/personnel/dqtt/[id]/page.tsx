@@ -621,10 +621,6 @@ export default function UserDetailPage() {
                             </h4>
                             <p className="text-sm text-slate-500 mt-1 font-medium flex items-center gap-1.5">
                               {task.activity.name || "---"}
-                              <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                              <span className="text-slate-600">
-                                {task.activity.work_type || "---"}
-                              </span>
                             </p>
                           </div>
                           <StatusBadge status={task.status} />

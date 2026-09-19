@@ -1,7 +1,7 @@
 "use client";
 
 import { ActivityInterface } from "@/services/api/activity";
-import { handleGetDepartment, handleGetWorkType } from "@/utils/activity";
+import { handleGetDepartment } from "@/utils/activity";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { Paperclip, Download } from "lucide-react";
@@ -30,13 +30,6 @@ export default function Information({
         </h2>
 
         <div className="grid grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Loại công việc</p>
-            <p className="font-medium text-gray-900">
-              {handleGetWorkType(activity.work_type)}
-            </p>
-          </div>
-
           <div>
             <p className="text-sm text-gray-500 mb-1">Tổ công tác</p>
             <p className="font-medium text-gray-900">

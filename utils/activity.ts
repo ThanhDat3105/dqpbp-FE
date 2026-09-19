@@ -12,15 +12,6 @@ export const handleGetDepartment = (value: string) => {
   return departmentMap[value] || "Không xác định";
 };
 
-export const handleGetWorkType = (value: string) => {
-  const departmentMap: Record<string, string> = {
-    suddenly: "Đột xuất",
-    annual: "Định kỳ",
-  };
-
-  return departmentMap[value] || "Không xác định";
-};
-
 export type DeadlineDisplay = {
   text: string;
   color: "red" | "yellow" | "green" | "blue";

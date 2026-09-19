@@ -7,7 +7,14 @@ import {
   Map,
   Warehouse,
 } from "@mui/icons-material";
-import { FileCheck2, Globe, LayoutList, MessageSquare } from "lucide-react";
+import {
+  FileCheck2,
+  Globe,
+  LayoutList,
+  MessageSquare,
+  ScrollText,
+  ShieldCheck,
+} from "lucide-react";
 import type { ElementType } from "react";
 
 export type MenuRole = "DQTT" | "CHI_HUY" | "DQCD" | "TO_TRUONG";
@@ -144,6 +151,13 @@ export const menuConfig: MenuItem[] = [
         hiddenForRoles: ["DQCD", "DQTT"],
         icon: FileCheck2,
       },
+      {
+        id: "military-cv",
+        label: "Hồ sơ KSK NVQS",
+        href: "/military-cv",
+        hiddenForRoles: ["DQCD", "DQTT"],
+        icon: ScrollText,
+      },
     ],
   },
   {
@@ -209,6 +223,13 @@ export const menuConfig: MenuItem[] = [
         icon: MessageSquare,
       },
     ],
+  },
+  {
+    id: "permission",
+    label: "Phân quyền",
+    href: "/permission",
+    icon: ShieldCheck,
+    role: ["CHI_HUY"],
   },
 ];
 

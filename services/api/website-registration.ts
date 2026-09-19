@@ -8,7 +8,8 @@ export type RegistrationCategory =
   | "tinhnguyen"
   | "dqtt"
   | "doituongchinhsach"
-  | "siquandubi";
+  | "siquandubi"
+  | "khamsuckhoenghiavuquansu";
 export type RegistrationStatus = "pending" | "approved" | "rejected";
 
 export interface RegistrationFormTemplate {

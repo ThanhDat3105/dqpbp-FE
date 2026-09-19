@@ -26,6 +26,7 @@ export const categoryLabel: Record<RegistrationCategory, string> = {
   dqtt: "DQTT",
   doituongchinhsach: "Đối tượng chính sách",
   siquandubi: "Sĩ quan dự bị",
+  khamsuckhoenghiavuquansu: "Khám sức khỏe NVQS",
 };
 
 const statusLabel = {

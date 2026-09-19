@@ -35,7 +35,6 @@ export interface KpiRecentTask {
   activity: {
     id: number;
     name: string;
-    work_type: string;
   };
   due_date: string;
   status: "pending" | "in_progress" | "completed" | "cancelled";

@@ -10,7 +10,7 @@ import { useParams } from "next/navigation";
 import { activityAPI, TaskInterface } from "@/services/api/activity";
 import Information from "@/components/activity_detail/Information";
 import TaskCard from "@/components/activity_detail/TaskCard";
-import { handleGetDepartment, handleGetWorkType } from "@/utils/activity";
+import { handleGetDepartment } from "@/utils/activity";
 import { useActivity } from "@/context/ActivityContext";
 
 export default function ActivityDetailPage() {
@@ -41,10 +41,6 @@ export default function ActivityDetailPage() {
             </h1>
 
             <div className="flex gap-2 mb-1 sm:mb-3 flex-wrap">
-              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded-full font-bold flex gap-1 items-center shrink-0">
-                <span>{handleGetWorkType(activity.work_type)}</span>
-              </span>
-
               <span className="px-2 py-1 bg-orange-100 text-orange-700 flex items-center text-sm rounded-full font-bold gap-1 shrink-0">
                 <PeopleOutlinedIcon fontSize="small" />
                 <span>{handleGetDepartment(activity.department)}</span>

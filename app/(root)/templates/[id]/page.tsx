@@ -22,11 +22,6 @@ import {
 } from "@/services/api/activity-template";
 import { departments } from "@/services/api/activity";
 
-const WORK_TYPE_LABEL: Record<string, string> = {
-  suddenly: "Đột xuất",
-  annual: "Theo năm",
-};
-
 function getDeptLabel(value: string | null) {
   if (!value) return null;
   return departments.find((d) => d.value === value)?.label ?? value;
@@ -283,11 +278,6 @@ export default function TemplateDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-            {template.work_type && (
-              <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
-                {WORK_TYPE_LABEL[template.work_type] ?? template.work_type}
-              </span>
-            )}
             {template.department && (
               <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-full">
                 {getDeptLabel(template.department)}

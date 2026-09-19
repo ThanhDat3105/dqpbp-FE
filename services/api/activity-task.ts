@@ -9,7 +9,6 @@ export interface TaskHistoryItem {
   activity: {
     id: number;
     name: string;
-    work_type: string;
   };
 }
 
@@ -28,7 +27,6 @@ const normalizeTask = (item: any): TaskHistoryItem => {
     activity: {
       id: toNumber(item?.activity?.id),
       name: String(item?.activity?.name ?? ""),
-      work_type: String(item?.activity?.work_type ?? ""),
     },
   };
 };
