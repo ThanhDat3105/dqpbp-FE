@@ -17,7 +17,7 @@ export interface Token {
 export interface User {
   id: number;
   name: string;
-  role: "DQTT" | "CHI_HUY" | "TO_TRUONG" | "DQCD";
+  role: "ADMIN" | "DQTT" | "CHI_HUY" | "TO_TRUONG" | "DQCD";
   department: string;
   department_id: number | null;
   department_name: string | null;

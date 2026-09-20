@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Download,
   Eye,
   FileText,
+  History,
   Loader2,
   Search,
   UserCircle2,
@@ -16,6 +15,9 @@ import {
   type MilitaryCvListItem,
 } from "@/services/api/military-cv";
 import AppPagination from "@/components/ui/AppPagination";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
 
 const PAGE_SIZE = 10;
 
@@ -98,11 +100,11 @@ export default function MilitaryCvListPage() {
   /**
    * Export DOCX của một hồ sơ
    */
-  const handleExportDocx = async (id: number) => {
+  const handleExportDocx = async (id: number, name: string) => {
     try {
       setExportingId(id);
 
-      const result = await militaryCvApi.exportDocx(id);
+      const result = await militaryCvApi.exportDocx(id, name ?? "");
 
       downloadBlob(result.blob, result.filename);
 
@@ -285,10 +287,21 @@ export default function MilitaryCvListPage() {
                               <Eye className="h-4 w-4" />
                             </button>
 
+                            <button
+                              type="button"
+                              onClick={() =>
+                                router.push(`/military-cv/${item.id}/history`)
+                              }
+                              title="Lịch sử chỉnh sửa"
+                              className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-amber-50 hover:text-amber-600"
+                            >
+                              <History className="h-4 w-4" />
+                            </button>
+
                             {/* Download DOCX */}
                             <button
                               type="button"
-                              onClick={() => handleExportDocx(item.id)}
+                              onClick={() =>handleExportDocx(item.id, item.full_name ?? "")}
                               disabled={exportingAll || exportingId !== null}
                               title="Tải DOCX"
                               className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-green-50 hover:text-green-600 disabled:cursor-not-allowed disabled:opacity-50"

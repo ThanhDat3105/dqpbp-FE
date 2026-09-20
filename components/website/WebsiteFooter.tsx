@@ -1,5 +1,6 @@
 import { Clock, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
+import OnlineCount from "@/components/website/OnlineCount";
 
 export default function WebsiteFooter() {
   return (
@@ -63,6 +64,8 @@ export default function WebsiteFooter() {
       <div className="border-t border-white/10 bg-[#1e2710]">
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-center gap-2 text-white/50 text-xs">
           <span>© 2025 BCH Quân Sự Phường Bình Phú. Bảo lưu mọi quyền.</span>
+          <span className="hidden md:inline text-white/20">•</span>
+          <OnlineCount />
         </div>
       </div>
     </footer>

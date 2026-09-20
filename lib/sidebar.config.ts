@@ -4,20 +4,27 @@ import {
   Assessment,
   Event,
   Group,
-  Map,
+  Map as MapIcon,
   Warehouse,
 } from "@mui/icons-material";
 import {
   FileCheck2,
   Globe,
+  History,
   LayoutList,
+  ListChecks,
   MessageSquare,
   ScrollText,
   ShieldCheck,
 } from "lucide-react";
 import type { ElementType } from "react";
 
-export type MenuRole = "DQTT" | "CHI_HUY" | "DQCD" | "TO_TRUONG";
+export type MenuRole =
+  | "ADMIN"
+  | "DQTT"
+  | "CHI_HUY"
+  | "DQCD"
+  | "TO_TRUONG";
 
 export interface MenuItem {
   id: string;
@@ -68,6 +75,20 @@ export const menuConfig: MenuItem[] = [
         href: "/dashboard/hieu-suat",
         icon: Assessment,
         role: ["CHI_HUY", "TO_TRUONG", "DQTT"],
+      },
+    ],
+  },
+  {
+    id: "kpi-targets",
+    label: "Chỉ tiêu KPI",
+    icon: ListChecks,
+    role: ["ADMIN", "CHI_HUY", "TO_TRUONG"],
+    children: [
+      {
+        id: "kpi-target-history",
+        label: "Lịch sử chỉnh sửa",
+        href: "/kpi-targets/history",
+        icon: History,
       },
     ],
   },
@@ -164,7 +185,7 @@ export const menuConfig: MenuItem[] = [
     id: "ban-do",
     label: "Bản đồ",
     href: "/ban-do",
-    icon: Map,
+    icon: MapIcon,
     role: ["CHI_HUY", "TO_TRUONG", "DQTT"],
   },
   {
@@ -251,7 +272,7 @@ export const menuConfigMobile: MenuItem[] = [
     id: "ban-do",
     label: "Bản đồ",
     href: "/ban-do",
-    icon: Map,
+    icon: MapIcon,
     role: ["CHI_HUY"],
   },
   {

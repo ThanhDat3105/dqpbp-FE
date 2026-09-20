@@ -107,6 +107,28 @@ export interface MilitaryCvListResponse {
   total: number;
 }
 
+export interface MilitaryCvEditChange {
+  field: string;
+  oldValue: unknown;
+  newValue: unknown;
+}
+
+export interface MilitaryCvEditHistoryItem {
+  id: string | number;
+  military_cv_id: number;
+  actor_id: number | null;
+  actor_name: string;
+  changes: MilitaryCvEditChange[];
+  created_at: string;
+}
+
+export interface MilitaryCvEditHistoryResponse {
+  data: MilitaryCvEditHistoryItem[];
+  page: number;
+  limit: number;
+  total: number;
+}
+
 export interface MilitaryCvListParams {
   page?: number;
   limit?: number;
@@ -164,6 +186,30 @@ const getById = async (id: number): Promise<MilitaryCvRecord> => {
   return res.data.metaData;
 };
 
+const getHistory = async (
+  id: number,
+  params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    field?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  } = {},
+): Promise<MilitaryCvEditHistoryResponse> => {
+  const res = await axiosInstance.get(`/api/military-cvs/${id}/history`, {
+    params: {
+      page: params.page ?? 1,
+      limit: params.limit ?? 20,
+      ...(params.search ? { search: params.search } : {}),
+      ...(params.field ? { field: params.field } : {}),
+      ...(params.dateFrom ? { dateFrom: params.dateFrom } : {}),
+      ...(params.dateTo ? { dateTo: params.dateTo } : {}),
+    },
+  });
+  return res.data.metaData;
+};
+
 const create = async (
   payload: MilitaryCvCreatePayload,
 ): Promise<MilitaryCvRecord> => {
@@ -179,7 +225,9 @@ const update = async (
   return res.data.metaData;
 };
 
-const exportDocx = async (id: number): Promise<ExportDocxResponse> => {
+
+
+const exportDocx = async (id: number, name: string): Promise<ExportDocxResponse> => {
   const res = await axiosInstance.get<Blob>(`/api/military-cvs/${id}/export`, {
     responseType: "blob",
   });
@@ -224,6 +272,7 @@ const exportAllDocx = async (): Promise<Blob> => {
 export const militaryCvApi = {
   getList,
   getById,
+  getHistory,
   create,
   update,
   exportDocx,
