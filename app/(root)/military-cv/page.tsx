@@ -18,7 +18,6 @@ import AppPagination from "@/components/ui/AppPagination";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-
 const PAGE_SIZE = 10;
 
 const formatDate = (value: string | null) =>
@@ -100,11 +99,15 @@ export default function MilitaryCvListPage() {
   /**
    * Export DOCX của một hồ sơ
    */
-  const handleExportDocx = async (id: number, name: string) => {
+  const handleExportDocx = async (
+    id: number,
+    name: string,
+    dob: string | null,
+  ) => {
     try {
       setExportingId(id);
 
-      const result = await militaryCvApi.exportDocx(id, name ?? "");
+      const result = await militaryCvApi.exportDocx(id, name ?? "", dob);
 
       downloadBlob(result.blob, result.filename);
 
@@ -301,7 +304,13 @@ export default function MilitaryCvListPage() {
                             {/* Download DOCX */}
                             <button
                               type="button"
-                              onClick={() =>handleExportDocx(item.id, item.full_name ?? "")}
+                              onClick={() =>
+                                handleExportDocx(
+                                  item.id,
+                                  item.full_name ?? "",
+                                  item.dob,
+                                )
+                              }
                               disabled={exportingAll || exportingId !== null}
                               title="Tải DOCX"
                               className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-green-50 hover:text-green-600 disabled:cursor-not-allowed disabled:opacity-50"

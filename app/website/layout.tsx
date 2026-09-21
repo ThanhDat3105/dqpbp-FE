@@ -13,7 +13,7 @@ export default function WebsiteLayout({ children }: { children: React.ReactNode 
       <WebsiteHeader />
       <main className="flex-1">{children}</main>
       <WebsiteFooter />
-      <ChatFAB />
+      {/* <ChatFAB /> */}
     </div>
   );
 }

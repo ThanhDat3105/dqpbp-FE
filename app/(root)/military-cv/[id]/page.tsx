@@ -1002,6 +1002,7 @@ export default function MilitaryCvDetailPage() {
       const result = await militaryCvApi.exportDocx(
         Number(id),
         payload.full_name ?? "",
+        payload.dob ?? "",
       );
       const url = URL.createObjectURL(result.blob);
       const link = document.createElement("a");

@@ -225,9 +225,69 @@ const update = async (
   return res.data.metaData;
 };
 
+// Ký tự không hợp lệ cho tên file trên Windows/macOS.
+const INVALID_FILENAME_CHARS = /[\\/:*?"<>|]/g;
 
+/**
+ * Tên file DOCX theo định dạng `${full_name}_${dob}.docx`.
+ * Thiếu họ tên thì lùi về tên cũ theo id.
+ */
+const formatDobForFilename = (value?: string | null): string => {
+  if (!value) return "";
 
-const exportDocx = async (id: number, name: string): Promise<ExportDocxResponse> => {
+  const trimmed = value.trim();
+
+  // Nếu đã là yyyy-MM-dd thì đổi sang dd-MM-yyyy
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [year, month, day] = trimmed.split("-");
+    return `${day}-${month}-${year}`;
+  }
+
+  const date = new Date(trimmed);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  if (!year || !month || !day) return "";
+
+  return `${day}-${month}-${year}`;
+};
+
+const buildExportFilename = (
+  id: number,
+  fullName?: string | null,
+  dob?: string | null,
+): string => {
+  const name = (fullName ?? "").trim();
+
+  if (!name) {
+    return `ly-lich-nghia-vu-quan-su-${id}.docx`;
+  }
+
+  const birth = formatDobForFilename(dob);
+
+  const base = birth ? `${name}_${birth}` : name;
+
+  return `${base.replace(INVALID_FILENAME_CHARS, "-")}.docx`;
+};
+
+const exportDocx = async (
+  id: number,
+  fullName: string,
+  dob?: string | null,
+): Promise<ExportDocxResponse> => {
   const res = await axiosInstance.get<Blob>(`/api/military-cvs/${id}/export`, {
     responseType: "blob",
   });
@@ -236,11 +296,13 @@ const exportDocx = async (id: number, name: string): Promise<ExportDocxResponse>
     res.headers["content-type"] ||
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
+  let filename = buildExportFilename(id, fullName, dob);
+
   const contentDisposition = res.headers["content-disposition"];
 
-  let filename = `ly-lich-nghia-vu-quan-su-${id}.docx`;
-
-  if (contentDisposition) {
+  // Server luôn gửi Content-Disposition, nên chỉ dùng tên của server khi
+  // client không có họ tên để tự đặt tên file.
+  if (!fullName?.trim() && contentDisposition) {
     const filenameStarMatch = contentDisposition.match(
       /filename\*=UTF-8''([^;]+)/i,
     );

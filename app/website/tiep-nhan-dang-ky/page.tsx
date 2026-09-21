@@ -165,13 +165,24 @@ const DEFAULT_POLITICS =
 const DEFAULT_ECON = "Ổn định";
 
 /**
+ * Giá trị điền sẵn khi người khai chọn tình trạng "Không rõ" cho cha/mẹ/vợ
+ * chồng — chọn xong thì không phải nhập thêm thông tin nào của người đó.
+ */
+const UNKNOWN_TEXT = "Không rõ";
+
+/** Trả ô về rỗng nếu đang giữ giá trị điền sẵn của tình trạng "Không rõ". */
+const clearUnknown = (text: string | null | undefined) =>
+  text === UNKNOWN_TEXT ? "" : (text ?? "");
+
+/**
  * Khung giai đoạn dựng sẵn cho mục "III. Quá trình".
  *
  * Mốc thời gian ghi bằng chữ ngay trong nội dung, cố ý KHÔNG điền year_from /
  * year_to — export mapper thấy giai đoạn không có năm thì in thẳng nội dung
  * ("- Trước 18 tuổi: ...") thay vì "- Từ năm …… đến nay: ...".
  *
- * Anh/chị/em không dựng sẵn: mỗi hồ sơ một khác, người nhập tự thêm.
+ * Đối tượng chỉ còn bản thân / cha / mẹ — vợ chồng và anh chị em không khai
+ * quá trình ở form này.
  */
 const DEFAULT_PERIOD_LABELS: Array<{
   subject: NonNullable<MilitaryCvPeriod["subject"]>;
@@ -232,13 +243,13 @@ const emptyMilitaryCv: MilitaryCvCreatePayload = {
     self_class: "",
     edu_level: "",
     degree: "",
-    language: "",
+    language: "Không",
     major: "",
     party_date: "",
     party_full: "",
     union_date: "",
-    reward: "Chưa",
-    discipline: "Chưa",
+    reward: "Không",
+    discipline: "Không",
     job: "",
     salary: "",
     grade: "",
@@ -394,6 +405,15 @@ const validateKskStep = (
 const nullableDate = (value: string | null | undefined) =>
   value?.trim() ? value : null;
 
+/**
+ * Thân nhân có tình trạng "Không rõ" thì kinh tế / thái độ chính trị cũng là
+ * "Không rõ", các trường hợp còn lại dùng câu gán cứng.
+ */
+const relativeEconPolitics = (relative: MilitaryCvRelative) =>
+  relative.alive === null
+    ? { econ: UNKNOWN_TEXT, politics: UNKNOWN_TEXT }
+    : { econ: DEFAULT_ECON, politics: DEFAULT_POLITICS };
+
 const normalizeMilitaryCvDates = (
   payload: MilitaryCvCreatePayload,
 ): MilitaryCvCreatePayload => ({
@@ -413,24 +433,21 @@ const normalizeMilitaryCvDates = (
           ? {
               ...payload.family.father,
               dob: nullableDate(payload.family.father.dob),
-              econ: DEFAULT_ECON,
-              politics: DEFAULT_POLITICS,
+              ...relativeEconPolitics(payload.family.father),
             }
           : payload.family.father,
         mother: payload.family.mother
           ? {
               ...payload.family.mother,
               dob: nullableDate(payload.family.mother.dob),
-              econ: DEFAULT_ECON,
-              politics: DEFAULT_POLITICS,
+              ...relativeEconPolitics(payload.family.mother),
             }
           : payload.family.mother,
         spouse: payload.family.spouse
           ? {
               ...payload.family.spouse,
               dob: nullableDate(payload.family.spouse.dob),
-              econ: DEFAULT_ECON,
-              politics: DEFAULT_POLITICS,
+              ...relativeEconPolitics(payload.family.spouse),
             }
           : payload.family.spouse,
         siblings: payload.family.siblings?.map((relative) => ({
@@ -701,6 +718,51 @@ function KskCvFields({
       },
     });
 
+  /**
+   * Đổi "Tình trạng" của cha/mẹ/vợ chồng.
+   *
+   * Chọn "Không rõ" ⇒ mọi thông tin của người đó được ghi nhận là "Không rõ"
+   * và form ẩn các ô còn lại. Chọn lại "Còn sống"/"Đã mất" ⇒ trả các ô đó về
+   * rỗng để người khai tự nhập.
+   */
+  const updateRelativeAlive = (
+    relation: "father" | "mother" | "spouse",
+    alive: boolean | null,
+  ) => {
+    const relative = family[relation] as MilitaryCvRelativeState;
+
+    const nextRelative =
+      alive === null
+        ? {
+            ...relative,
+            alive,
+            name: UNKNOWN_TEXT,
+            dob: "",
+            gender: "" as const,
+            job: UNKNOWN_TEXT,
+            addr: UNKNOWN_TEXT,
+            econ: UNKNOWN_TEXT,
+            politics: UNKNOWN_TEXT,
+          }
+        : {
+            ...relative,
+            alive,
+            name: clearUnknown(relative.name),
+            job: clearUnknown(relative.job),
+            addr: clearUnknown(relative.addr),
+            econ: relative.econ === UNKNOWN_TEXT ? DEFAULT_ECON : relative.econ,
+            politics:
+              relative.politics === UNKNOWN_TEXT
+                ? DEFAULT_POLITICS
+                : relative.politics,
+          };
+
+    onChange({
+      ...value,
+      family: { ...family, [relation]: nextRelative },
+    });
+  };
+
   const updateRelativeList = (
     relation: "siblings" | "children",
     index: number,
@@ -757,6 +819,8 @@ function KskCvFields({
     title: string,
   ) => {
     const relative = family[relation] as MilitaryCvRelativeState;
+    const isUnknown = relative.alive === null;
+
     return (
       <div className="rounded border border-gray-200 p-4">
         <h4 className="mb-3 text-sm font-bold text-gray-700">{title}</h4>
@@ -779,53 +843,62 @@ function KskCvFields({
               { value: "unknown", label: "Không rõ" },
             ]}
             onChange={(next) =>
-              updateRelative(
+              updateRelativeAlive(
                 relation,
-                "alive",
                 next === "true" ? true : next === "false" ? false : null,
               )
             }
           />
-          <CvSelect
-            id={`${relation}-gender`}
-            label="Giới tính"
-            value={relative.gender ?? ""}
-            options={[
-              { value: "", label: "-- Chọn --" },
-              { value: "nam", label: "Nam" },
-              { value: "nu", label: "Nữ" },
-            ]}
-            onChange={(next) => updateRelative(relation, "gender", next)}
-          />
-          <CvInput
-            id={`${relation}-name`}
-            label="Họ tên"
-            value={relative.name ?? ""}
-            placeholder="Ví dụ: Nguyễn Văn B"
-            onChange={(next) => updateRelative(relation, "name", next)}
-          />
-          <CvInput
-            id={`${relation}-dob`}
-            label="Ngày sinh"
-            type="date"
-            value={relative.dob ?? ""}
-            onChange={(next) => updateRelative(relation, "dob", next)}
-          />
-          <CvInput
-            id={`${relation}-job`}
-            label="Nghề nghiệp"
-            value={relative.job ?? ""}
-            placeholder="Ví dụ: Công nhân"
-            onChange={(next) => updateRelative(relation, "job", next)}
-          />
-          <CvInput
-            id={`${relation}-addr`}
-            label="Nơi ở hiện tại"
-            value={relative.addr ?? ""}
-            placeholder="Ví dụ: Phường Bình Phú, TP.HCM"
-            onChange={(next) => updateRelative(relation, "addr", next)}
-          />
+          {isUnknown ? null : (
+            <>
+              <CvSelect
+                id={`${relation}-gender`}
+                label="Giới tính"
+                value={relative.gender ?? ""}
+                options={[
+                  { value: "", label: "-- Chọn --" },
+                  { value: "nam", label: "Nam" },
+                  { value: "nu", label: "Nữ" },
+                ]}
+                onChange={(next) => updateRelative(relation, "gender", next)}
+              />
+              <CvInput
+                id={`${relation}-name`}
+                label="Họ tên"
+                value={relative.name ?? ""}
+                placeholder="Ví dụ: Nguyễn Văn B"
+                onChange={(next) => updateRelative(relation, "name", next)}
+              />
+              <CvInput
+                id={`${relation}-dob`}
+                label="Ngày sinh"
+                type="date"
+                value={relative.dob ?? ""}
+                onChange={(next) => updateRelative(relation, "dob", next)}
+              />
+              <CvInput
+                id={`${relation}-job`}
+                label="Nghề nghiệp"
+                value={relative.job ?? ""}
+                placeholder="Ví dụ: Công nhân"
+                onChange={(next) => updateRelative(relation, "job", next)}
+              />
+              <CvInput
+                id={`${relation}-addr`}
+                label="Nơi ở hiện tại"
+                value={relative.addr ?? ""}
+                placeholder="Ví dụ: Phường Bình Phú, TP.HCM"
+                onChange={(next) => updateRelative(relation, "addr", next)}
+              />
+            </>
+          )}
         </div>
+        {isUnknown ? (
+          <p className="mt-3 text-xs text-gray-500">
+            Đã chọn tình trạng “Không rõ” — mọi thông tin của người này được ghi
+            nhận là “Không rõ”, bạn không cần nhập thêm.
+          </p>
+        ) : null}
       </div>
     );
   };
@@ -837,8 +910,8 @@ function KskCvFields({
     required?: boolean;
     placeholder?: string;
   }> = [
-    { key: "reward", label: "Khen thưởng" },
-    { key: "discipline", label: "Kỷ luật" },
+    { key: "reward", label: "Khen thưởng", required: false },
+    { key: "discipline", label: "Kỷ luật", required: false },
     { key: "job", label: "Nghề nghiệp" },
   ];
 
@@ -960,7 +1033,7 @@ function KskCvFields({
                 />
 
                 <p className="mt-1.5 text-xs leading-5 text-gray-500">
-                  Lưu ý: Có thể nhập địa chỉ theo địa chỉ mới hoặc địa chỉ cũ.
+                  Lưu ý: Nhập địa chỉ mới.
                 </p>
               </Field>
 
@@ -1083,6 +1156,7 @@ function KskCvFields({
                 label="Ngoại ngữ"
                 value={String(profile.language ?? "")}
                 placeholder="Tiếng Anh"
+                required={false}
                 onChange={(next) => updateProfile("language", next)}
               />
               <CvInput
@@ -1106,13 +1180,14 @@ function KskCvFields({
                 value={String(profile.degree ?? "")}
                 options={[
                   { value: "", label: "-- Chọn trình độ đào tạo --" },
-                  { value: "chua", label: "Chưa qua đào tạo" },
-                  { value: "so_cap", label: "Sơ cấp" },
-                  { value: "trung_cap", label: "Trung cấp" },
-                  { value: "cao_dang", label: "Cao đẳng" },
-                  { value: "dai_hoc", label: "Đại học" },
-                  { value: "thac_si", label: "Thạc sĩ" },
-                  { value: "tien_si", label: "Tiến sĩ" },
+                  // Lưu thẳng nhãn: cột degree là text tự do, form quản trị và
+                  // file Word in nguyên giá trị này ra.
+                  { value: "Chưa qua đào tạo", label: "Chưa qua đào tạo" },
+                  { value: "Trung cấp", label: "Trung cấp" },
+                  { value: "Cao đẳng", label: "Cao đẳng" },
+                  { value: "Đại học", label: "Đại học" },
+                  { value: "Thạc sĩ", label: "Thạc sĩ" },
+                  { value: "Tiến sĩ", label: "Tiến sĩ" },
                 ]}
                 onChange={(next) => updateProfile("degree", next)}
               />
@@ -1181,6 +1256,7 @@ function KskCvFields({
                   id={`profile-${field.key}`}
                   label={field.label}
                   type={field.type}
+                  required={field.required}
                   value={String(profile[field.key] ?? "")}
                   placeholder={
                     field.type === "date"
@@ -1271,14 +1347,6 @@ function KskCvFields({
                 placeholder="Ví dụ: 2"
                 onChange={(next) => updateFamily("birth_order", Number(next))}
               />
-              <CvInput
-                id="child-count"
-                label="Số con của bản thân"
-                type="number"
-                value={family.child_count ?? 0}
-                placeholder="Chưa có con: 0, có con: nhập số lượng"
-                onChange={(next) => updateFamily("child_count", Number(next))}
-              />
             </div>
             {familyCountError ? (
               <p className="mt-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
@@ -1296,7 +1364,10 @@ function KskCvFields({
                   {spouseEnabled ? (
                     <button
                       type="button"
-                      onClick={() => onSpouseEnabledChange(false)}
+                      onClick={() => {
+                        onSpouseEnabledChange(false);
+                        updateFamily("child_count", 0);
+                      }}
                       className="rounded border border-red-200 px-3 py-2 text-xs font-semibold text-red-600"
                     >
                       Xóa vợ / chồng
@@ -1312,8 +1383,18 @@ function KskCvFields({
                   )}
                 </div>
                 {spouseEnabled ? (
-                  <div className="mt-4">
+                  <div className="mt-4 space-y-4">
                     {renderRelative("spouse", "Thông tin vợ / chồng")}
+                    <CvInput
+                      id="child-count"
+                      label="Số con của bản thân"
+                      type="number"
+                      value={family.child_count ?? 0}
+                      placeholder="Chưa có con: 0, có con: nhập số lượng"
+                      onChange={(next) =>
+                        updateFamily("child_count", Number(next))
+                      }
+                    />
                   </div>
                 ) : (
                   <p className="mt-2 text-xs text-gray-500">
@@ -1531,8 +1612,6 @@ function KskCvFields({
                           { value: "self", label: "Bản thân" },
                           { value: "father", label: "Cha" },
                           { value: "mother", label: "Mẹ" },
-                          { value: "spouse", label: "Vợ / chồng" },
-                          { value: "sibling", label: "Anh / chị / em" },
                         ]}
                         onChange={(next) =>
                           updatePeriod(index, "subject", next)
@@ -1782,6 +1861,10 @@ function RegistrationContent() {
                   // mapper vẫn in nguyên khối "Vợ (chồng)" trống vào file Word,
                   // vì nó dựa vào econ/politics để quyết định có in hay không.
                   spouse: spouse_enabled ? military_cv.family.spouse : null,
+                  child_count: spouse_enabled
+                    ? military_cv.family.child_count
+                    : 0,
+                  children: spouse_enabled ? military_cv.family.children : [],
                 },
                 reviews: null,
               }),
